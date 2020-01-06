@@ -193,7 +193,12 @@ public:
 	void _ready();
 	void _init(); // our initializer called by Godot
 
-	static void _register_methods();
+	virtual void _validate_property(PropertyInfo &property) const;
+	void _notification(int p_what);
+	void _enter_tree();
+	void _exit_tree();
+	static void _bind_methods();
+
 	void _physics_process(float delta);
 	void _process(float delta);
 
