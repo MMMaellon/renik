@@ -3,8 +3,17 @@
 #include "core/class_db.h"
 #include "renik.h"
 
+#ifdef DEBUG_MEMORY_ALLOC
+#include "renTest\renTest.h"
+#endif
+
 void register_renik_types() {
 	ClassDB::register_class<RenIK>();
+	#ifdef RENIK_UNIT_TEST_H
+		printf("Unit Testing RenIK Enabled\n");
+		ClassDB::register_class<RenIKTest>();
+		RenIKTest::test();
+	#endif
 }
 
 void unregister_renik_types() {
