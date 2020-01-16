@@ -9,8 +9,9 @@ For example, we'll test the Fabrik algorithm, the quaternion rotation algorithms
 
 #include "../renik.h"
 
-class RenIKTest : public RenIK {
-	GDCLASS(RenIKTest, RenIK);
+class RenIKTest : public Object {
+	GDCLASS(RenIKTest, Object);
+	RenIK ik;
 
 public:
 	RenIKTest();
