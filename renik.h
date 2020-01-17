@@ -96,21 +96,21 @@ public:
 	void perform_right_foot_ik(float influence = 1);
 
 	NodePath get_skeleton_path();
-	void set_skeleton_path(NodePath new_skeleton_path);
+	void set_skeleton_path(NodePath p_path);
 
-	void set_head_bone_by_name(String bone);
-	void set_hand_left_bone_by_name(String bone);
-	void set_hand_right_bone_by_name(String bone);
-	void set_hip_bone_by_name(String bone);
-	void set_foot_left_bone_by_name(String bone);
-	void set_foot_right_bone_by_name(String bone);
+	void set_head_bone_by_name(String p_bone);
+	void set_hand_left_bone_by_name(String p_bone);
+	void set_hand_right_bone_by_name(String p_bone);
+	void set_hip_bone_by_name(String p_bone);
+	void set_foot_left_bone_by_name(String p_bone);
+	void set_foot_right_bone_by_name(String p_bone);
 
-	void set_head_bone(BoneId bone);
-	void set_hand_left_bone(BoneId bone);
-	void set_hand_right_bone(BoneId bone);
-	void set_hip_bone(BoneId bone);
-	void set_foot_left_bone(BoneId bone);
-	void set_foot_right_bone(BoneId bone);
+	void set_head_bone(BoneId p_bone);
+	void set_hand_left_bone(BoneId p_bone);
+	void set_hand_right_bone(BoneId p_bone);
+	void set_hip_bone(BoneId p_bone);
+	void set_foot_left_bone(BoneId p_bone);
+	void set_foot_right_bone(BoneId p_bone);
 
 	int64_t get_hip_bone();
 	int64_t get_head_bone();
@@ -126,12 +126,12 @@ public:
 	String get_foot_left_bone_name();
 	String get_foot_right_bone_name();
 
-	void set_head_target_path(NodePath bone);
-	void set_hand_left_target_path(NodePath bone);
-	void set_hand_right_target_path(NodePath bone);
-	void set_hip_target_path(NodePath bone);
-	void set_foot_left_target_path(NodePath bone);
-	void set_foot_right_target_path(NodePath bone);
+	void set_head_target_path(NodePath p_path);
+	void set_hand_left_target_path(NodePath p_path);
+	void set_hand_right_target_path(NodePath p_path);
+	void set_hip_target_path(NodePath p_path);
+	void set_foot_left_target_path(NodePath p_path);
+	void set_foot_right_target_path(NodePath p_path);
 	NodePath get_head_target_path();
 	NodePath get_hand_left_target_path();
 	NodePath get_hand_right_target_path();
@@ -162,24 +162,18 @@ private:
 	Skeleton *skeleton = nullptr;
 
 	//IK Targets
-	NodePath headTargetNode;
-	NodePath handLeftTargetNode;
-	NodePath handRightTargetNode;
-	NodePath hipTargetNode;
-	NodePath footLeftTargetNode;
-	NodePath footRightTargetNode;
-	Spatial *headTargetSpatial;
-	Spatial *handLeftTargetSpatial;
-	Spatial *handRightTargetSpatial;
-	Spatial *hipTargetSpatial;
-	Spatial *footLeftTargetSpatial;
-	Spatial *footRightTargetSpatial;
-	Transform headTarget;
-	Transform handLeftTarget;
-	Transform handRightTarget;
-	Transform hipTarget;
-	Transform footLeftTarget;
-	Transform footRightTarget;
+	NodePath head_target_path;
+	NodePath hand_left_target_path;
+	NodePath hand_right_target_path;
+	NodePath hip_target_path;
+	NodePath foot_left_target_path;
+	NodePath foot_right_target_path;
+	Spatial *head_target_spatial;
+	Spatial *hand_left_target_spatial;
+	Spatial *hand_right_target_spatial;
+	Spatial *hip_target_spatial;
+	Spatial *foot_left_target_spatial;
+	Spatial *foot_right_target_spatial;
 
 	//IK ADJUSTMENTS --------------------
 	Posture posture;

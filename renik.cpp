@@ -20,18 +20,18 @@ void RenIK::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_foot_right_bone_by_name", "foot_right_bone_name"), &RenIK::set_foot_right_bone_by_name);
 	ClassDB::bind_method(D_METHOD("get_foot_right_bone_name"), &RenIK::get_foot_right_bone_name);
 
-	// ClassDB::bind_method(D_METHOD("set_head_target_path", "head_target_path"), &RenIK::set_head_target_path);
-	// ClassDB::bind_method(D_METHOD("get_head_target_path"), &RenIK::get_head_target_path);
-	// ClassDB::bind_method(D_METHOD("set_hand_left_target_path", "hand_left_target_path"), &RenIK::set_hand_left_target_path);
-	// ClassDB::bind_method(D_METHOD("get_hand_left_target_path"), &RenIK::get_hand_left_target_path);
-	// ClassDB::bind_method(D_METHOD("set_hand_right_target_path", "hand_right_target_path"), &RenIK::set_hand_right_target_path);
-	// ClassDB::bind_method(D_METHOD("get_hand_right_target_path"), &RenIK::get_hand_right_target_path);
-	// ClassDB::bind_method(D_METHOD("set_hip_target_path", "hip_target_path"), &RenIK::set_hip_target_path);
-	// ClassDB::bind_method(D_METHOD("get_hip_target_path"), &RenIK::get_hip_target_path);
-	// ClassDB::bind_method(D_METHOD("set_foot_left_target_path", "foot_left_target_path"), &RenIK::set_foot_left_target_path);
-	// ClassDB::bind_method(D_METHOD("get_foot_left_target_path"), &RenIK::get_foot_left_target_path);
-	// ClassDB::bind_method(D_METHOD("set_foot_right_target_path", "foot_right_target_path"), &RenIK::set_foot_right_target_path);
-	// ClassDB::bind_method(D_METHOD("get_foot_right_target_path"), &RenIK::get_foot_right_target_path);
+	ClassDB::bind_method(D_METHOD("set_head_target_path", "head_target_path"), &RenIK::set_head_target_path);
+	ClassDB::bind_method(D_METHOD("get_head_target_path"), &RenIK::get_head_target_path);
+	ClassDB::bind_method(D_METHOD("set_hand_left_target_path", "hand_left_target_path"), &RenIK::set_hand_left_target_path);
+	ClassDB::bind_method(D_METHOD("get_hand_left_target_path"), &RenIK::get_hand_left_target_path);
+	ClassDB::bind_method(D_METHOD("set_hand_right_target_path", "hand_right_target_path"), &RenIK::set_hand_right_target_path);
+	ClassDB::bind_method(D_METHOD("get_hand_right_target_path"), &RenIK::get_hand_right_target_path);
+	ClassDB::bind_method(D_METHOD("set_hip_target_path", "hip_target_path"), &RenIK::set_hip_target_path);
+	ClassDB::bind_method(D_METHOD("get_hip_target_path"), &RenIK::get_hip_target_path);
+	ClassDB::bind_method(D_METHOD("set_foot_left_target_path", "foot_left_target_path"), &RenIK::set_foot_left_target_path);
+	ClassDB::bind_method(D_METHOD("get_foot_left_target_path"), &RenIK::get_foot_left_target_path);
+	ClassDB::bind_method(D_METHOD("set_foot_right_target_path", "foot_right_target_path"), &RenIK::set_foot_right_target_path);
+	ClassDB::bind_method(D_METHOD("get_foot_right_target_path"), &RenIK::get_foot_right_target_path);
 
 	ADD_GROUP("Armature", "armature_");
 	ADD_PROPERTY(PropertyInfo(Variant::NODE_PATH, "skeleton_path"), "set_skeleton_path", "get_skeleton_path");
@@ -43,56 +43,18 @@ void RenIK::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::STRING, "foot_left_bone_name"), "set_foot_left_bone_by_name", "get_foot_left_bone_name");
 	ADD_PROPERTY(PropertyInfo(Variant::STRING, "foot_right_bone_name"), "set_foot_right_bone_by_name", "get_foot_right_bone_name");
 
-	// ADD_PROPERTY(PropertyInfo(Variant::NODE_PATH, "head_target_path"), "set_head_target_path", "get_head_target_path");
-	// ADD_PROPERTY(PropertyInfo(Variant::NODE_PATH, "hand_left_target_path"), "set_hand_left_target_path", "get_hand_left_target_path");
-	// ADD_PROPERTY(PropertyInfo(Variant::NODE_PATH, "hand_right_target_path"), "set_hand_right_target_path", "get_hand_right_target_path");
-	// ADD_PROPERTY(PropertyInfo(Variant::NODE_PATH, "hip_target_path"), "set_hip_target_path", "get_hip_target_path");
-	// ADD_PROPERTY(PropertyInfo(Variant::NODE_PATH, "foot_left_target_path"), "set_foot_left_target_path", "get_foot_left_target_path");
-	// ADD_PROPERTY(PropertyInfo(Variant::NODE_PATH, "foot_right_target_path"), "set_foot_right_target_path", "get_foot_right_target_path");
+	ADD_PROPERTY(PropertyInfo(Variant::NODE_PATH, "head_target_path"), "set_head_target_path", "get_head_target_path");
+	ADD_PROPERTY(PropertyInfo(Variant::NODE_PATH, "hand_left_target_path"), "set_hand_left_target_path", "get_hand_left_target_path");
+	ADD_PROPERTY(PropertyInfo(Variant::NODE_PATH, "hand_right_target_path"), "set_hand_right_target_path", "get_hand_right_target_path");
+	ADD_PROPERTY(PropertyInfo(Variant::NODE_PATH, "hip_target_path"), "set_hip_target_path", "get_hip_target_path");
+	ADD_PROPERTY(PropertyInfo(Variant::NODE_PATH, "foot_left_target_path"), "set_foot_left_target_path", "get_foot_left_target_path");
+	ADD_PROPERTY(PropertyInfo(Variant::NODE_PATH, "foot_right_target_path"), "set_foot_right_target_path", "get_foot_right_target_path");
 
 	ADD_GROUP("Body IK", "body_ik_");
 	ADD_GROUP("Arm IK", "arm_ik_");
 	ADD_GROUP("Leg IK", "leg_ik_");
 	ADD_GROUP("Hip Placement", "hip_placement_");
 	ADD_GROUP("Foot Placement", "foot_placement_");
-	// register_property<RenIK, float>("Floor Height", &RenIK::floorHeight, 0.0);
-	// register_property<RenIK, float>("Dangle Looseness", &RenIK::relaxAmount, 30.0);
-	// register_property<RenIK, float>("Crouch Bend Factor", &RenIK::crouchBendFactor, 50.0);
-	// register_property<RenIK, float>("Hunch Factor", &RenIK::hunchFactor, 0.0);
-	// register_property<RenIK, float>("Shoulder Flex Multiplier", &RenIK::shoulderFlex, 10.0);
-	// register_property<RenIK, float>("Max Leg Stretch", &RenIK::legStretch, 0.1);
-	// register_property<RenIK, float>("Max Arm Stretch", &RenIK::armStretch, 0.1);
-
-	// register_property<RenIK, float>("Elbow Angle Offset", &RenIK::elbowAngleOffset, -90);
-	// register_property<RenIK, float>("Elbow Rest Offset", &RenIK::elbowRestOffset, -45.0);
-	// register_property<RenIK, float>("Shoulder Twisting", &RenIK::shoulderTwist, 50);
-	// register_property<RenIK, float>("Wrist Twisting", &RenIK::wristTwist, 66.666);
-	// register_property<RenIK, Vector3>("Elbow Pole Offset", &RenIK::elbowPoleOffset, Vector3(0, 0, -60));
-	// register_property<RenIK, Vector3>("Hand Position Elbow Influence", &RenIK::elbowPositionBias, Vector3(-100, 0, -50.0));
-	// register_property<RenIK, float>("Hand Rotation Elbow Influence", &RenIK::elbowRotationBias, 50.0);
-	// register_property<RenIK, float>("Knee Angle Offset", &RenIK::kneeAngleOffset, 180.0);
-	// register_property<RenIK, float>("Knee Rest Offset", &RenIK::kneeRestOffset, 0.0);
-	// register_property<RenIK, float>("Hip Twisting", &RenIK::hipTwist, 0);
-	// register_property<RenIK, float>("Ankle Twisting", &RenIK::ankleTwist, 20);
-	// register_property<RenIK, Vector3>("Knee Pole Offset", &RenIK::kneePoleOffset, Vector3(-30, -20, 0));
-	// register_property<RenIK, Vector3>("Foot Position Knee Influence", &RenIK::kneePositionBias, Vector3(0, 0, 30));
-	// register_property<RenIK, float>("Foot Rotation Knee Influence", &RenIK::kneeRotationBias, 10.0);
-
-	// register_property<RenIK, Vector2>("Spine Curve Axis", &RenIK::curveAxis, Vector2(-1, 0));
-	// register_property<RenIK, float>("Hip Turn Speed", &RenIK::hipTurnSpeed, 5.0);
-	// register_property<RenIK, float>("Spine Twist", &RenIK::spineTwist, 1.0);
-	// register_property<RenIK, float>("Spine Twist Offset", &RenIK::spineTwistOffset, 0);
-
-	// register_property<RenIK, float>("Max Stair Height", &RenIK::rayCastHeight, 0.5);
-
-	// register_property<RenIK, bool>("Enable Head Tracker", &RenIK::headTrackerEnabled, false);
-	// register_property<RenIK, bool>("Enable Left Hand Tracker", &RenIK::leftHandTrackerEnabled, false);
-	// register_property<RenIK, bool>("Enable Right Hand Tracker", &RenIK::rightHandTrackerEnabled, false);
-	// register_property<RenIK, bool>("Enable Hip Tracker", &RenIK::hipTrackerEnabled, true);
-	// register_property<RenIK, bool>("Enable Left Foot Tracker", &RenIK::leftFootTrackerEnabled, true);
-	// register_property<RenIK, bool>("Enable Right Foot Tracker", &RenIK::rightFootTrackerEnabled, true);
-
-	// register_property<RenIK, bool>("Manual Update", &RenIK::manualUpdate, false);
 
 	ClassDB::bind_method(D_METHOD("update_ik"), &RenIK::update_ik);
 	ClassDB::bind_method(D_METHOD("update_placement"), &RenIK::update_placement);
@@ -114,11 +76,16 @@ void RenIK::_validate_property(PropertyInfo &property) const {
 			property.hint = PROPERTY_HINT_NONE;
 			property.hint_string = "";
 		}
+	} else if (property.name == "skeleton_path") {
+		property.hint = PROPERTY_HINT_NODE_PATH_VALID_TYPES;
+		property.hint_string = "Skeleton";
+	} else if (property.name == "head_target_path" || property.name == "hip_target_path" || property.name == "hand_left_target_path" || property.name == "hand_right_target_path" || property.name == "foot_left_target_path" || property.name == "foot_right_target_path") {
+		property.hint = PROPERTY_HINT_NODE_PATH_VALID_TYPES;
+		property.hint_string = "Spatial";
 	}
 }
 
 void RenIK::_notification(int p_what) {
-
 	switch (p_what) {
 		case NOTIFICATION_ENTER_TREE: {
 			Node *parent = get_parent();
@@ -233,96 +200,100 @@ Vector<BoneId> RenIK::calculate_bone_chain(BoneId root, BoneId leaf) {
 			chain.clear();
 			chain.push_back(leaf);
 		} else {
-			chain.push_back(root);
+			chain.invert();
+			int first = chain[0];
+			int last = chain[chain.size() - 1];
 		}
 	}
-	chain.invert();
 	return chain;
 }
 
 NodePath RenIK::get_skeleton_path() {
 	return skeleton_path;
 }
-void RenIK::set_skeleton_path(NodePath new_skeleton_path) {
-	skeleton_path = new_skeleton_path;
-	Node *skeletonNode = get_node(skeleton_path);
-	skeleton = Object::cast_to<Skeleton>(skeletonNode);
+void RenIK::set_skeleton_path(NodePath p_path) {
+	Skeleton *new_node = Object::cast_to<Skeleton>(get_node(p_path));
+	if (new_node || p_path.is_empty()) {
+		skeleton = new_node;
+		skeleton_path = p_path;
+	}
 }
 
-void RenIK::set_head_bone_by_name(String bone) {
-	head_bone_name = bone;
+void RenIK::set_head_bone_by_name(String p_bone) {
+	head_bone_name = p_bone;
 	if (skeleton != nullptr) {
-		BoneId id = skeleton->find_bone(bone);
+		BoneId id = skeleton->find_bone(p_bone);
 		if (id >= 0) {
 			set_head_bone(id);
 		}
 	}
 }
-void RenIK::set_hand_left_bone_by_name(String bone) {
-	hand_left_bone_name = bone;
+void RenIK::set_hand_left_bone_by_name(String p_bone) {
+	hand_left_bone_name = p_bone;
 	if (skeleton != nullptr) {
-		BoneId id = skeleton->find_bone(bone);
+		BoneId id = skeleton->find_bone(p_bone);
 		if (id >= 0) {
 			set_hand_left_bone(id);
 		}
 	}
 }
-void RenIK::set_hand_right_bone_by_name(String bone) {
-	hand_right_bone_name = bone;
+void RenIK::set_hand_right_bone_by_name(String p_bone) {
+	hand_right_bone_name = p_bone;
 	if (skeleton != nullptr) {
-		BoneId id = skeleton->find_bone(bone);
+		BoneId id = skeleton->find_bone(p_bone);
 		if (id >= 0) {
 			set_hand_right_bone(id);
 		}
 	}
 }
-void RenIK::set_hip_bone_by_name(String bone) {
-	hip_bone_name = bone;
+void RenIK::set_hip_bone_by_name(String p_bone) {
+	hip_bone_name = p_bone;
 	if (skeleton != nullptr) {
-		BoneId id = skeleton->find_bone(bone);
+		BoneId id = skeleton->find_bone(p_bone);
 		if (id >= 0) {
 			set_hip_bone(id);
 		}
 	}
 }
-void RenIK::set_foot_left_bone_by_name(String bone) {
-	foot_left_bone_name = bone;
+void RenIK::set_foot_left_bone_by_name(String p_bone) {
+	foot_left_bone_name = p_bone;
 	if (skeleton != nullptr) {
-		BoneId id = skeleton->find_bone(bone);
+		BoneId id = skeleton->find_bone(p_bone);
 		if (id >= 0) {
 			set_foot_left_bone(id);
 		}
 	}
 }
-void RenIK::set_foot_right_bone_by_name(String bone) {
-	foot_right_bone_name = bone;
+void RenIK::set_foot_right_bone_by_name(String p_bone) {
+	foot_right_bone_name = p_bone;
 	if (skeleton != nullptr) {
-		BoneId id = skeleton->find_bone(bone);
+		BoneId id = skeleton->find_bone(p_bone);
 		if (id >= 0) {
 			set_foot_right_bone(id);
 		}
 	}
 }
 
-void RenIK::set_head_bone(BoneId bone) {
-	head = bone;
+void RenIK::set_head_bone(BoneId p_bone) {
+	head = p_bone;
 	spine_chain.bones = calculate_bone_chain(hip, head);
 }
-void RenIK::set_hand_left_bone(BoneId bone) {
-	limb_arm_left.leaf = bone;
+void RenIK::set_hand_left_bone(BoneId p_bone) {
+	limb_arm_left.leaf = p_bone;
 }
-void RenIK::set_hand_right_bone(BoneId bone) {
-	limb_arm_right.leaf = bone;
+void RenIK::set_hand_right_bone(BoneId p_bone) {
+	limb_arm_right.leaf = p_bone;
 }
-void RenIK::set_hip_bone(BoneId bone) {
-	hip = bone;
+void RenIK::set_hip_bone(BoneId p_bone) {
+	hip = p_bone;
 	spine_chain.bones = calculate_bone_chain(hip, head);
+	int asdf = spine_chain.bones.size();
 }
-void RenIK::set_foot_left_bone(BoneId bone) {
-	limb_leg_left.leaf = bone;
+void RenIK::set_foot_left_bone(BoneId p_bone) {
+	limb_leg_left.leaf = p_bone;
 }
-void RenIK::set_foot_right_bone(BoneId bone) {
-	limb_leg_right.leaf = bone;
+void RenIK::set_foot_right_bone(BoneId p_bone) {
+	limb_leg_right.leaf = p_bone;
 }
 
 int64_t RenIK::get_hip_bone() {
@@ -361,4 +332,75 @@ String RenIK::get_foot_left_bone_name() {
 }
 String RenIK::get_foot_right_bone_name() {
 	return foot_right_bone_name;
+}
+
+NodePath RenIK::get_head_target_path() {
+	return head_target_path;
+}
+void RenIK::set_head_target_path(NodePath p_path) {
+	Spatial *new_node = Object::cast_to<Spatial>(get_node(p_path));
+	if (new_node || p_path.is_empty()) {
+		head_target_spatial = new_node;
+		head_target_path = p_path;
+	}
+}
+
+NodePath RenIK::get_hand_left_target_path() {
+	return hand_left_target_path;
+}
+
+void RenIK::set_hand_left_target_path(NodePath p_path) {
+	Spatial *new_node = Object::cast_to<Spatial>(get_node(p_path));
+	if (new_node || p_path.is_empty()) {
+		hand_left_target_spatial = new_node;
+		hand_left_target_path = p_path;
+	}
+}
+
+NodePath RenIK::get_hand_right_target_path() {
+	return hand_right_target_path;
+}
+
+void RenIK::set_hand_right_target_path(NodePath p_path) {
+	Spatial *new_node = Object::cast_to<Spatial>(get_node(p_path));
+	if (new_node || p_path.is_empty()) {
+		hand_right_target_spatial = new_node;
+		hand_right_target_path = p_path;
+	}
+}
+
+NodePath RenIK::get_hip_target_path() {
+	return hip_target_path;
+}
+
+void RenIK::set_hip_target_path(NodePath p_path) {
+	Spatial *new_node = Object::cast_to<Spatial>(get_node(p_path));
+	if (new_node || p_path.is_empty()) {
+		hip_target_spatial = new_node;
+		hip_target_path = p_path;
+	}
+}
+
+NodePath RenIK::get_foot_left_target_path() {
+	return foot_left_target_path;
+}
+
+void RenIK::set_foot_left_target_path(NodePath p_path) {
+	Spatial *new_node = Object::cast_to<Spatial>(get_node(p_path));
+	if (new_node || p_path.is_empty()) {
+		foot_left_target_spatial = new_node;
+		foot_left_target_path = p_path;
+	}
+}
+
+NodePath RenIK::get_foot_right_target_path() {
+	return foot_right_target_path;
+}
+
+void RenIK::set_foot_right_target_path(NodePath p_path) {
+	Spatial *new_node = Object::cast_to<Spatial>(get_node(p_path));
+	if (new_node || p_path.is_empty()) {
+		foot_right_target_spatial = new_node;
+		foot_right_target_path = p_path;
+	}
 }
