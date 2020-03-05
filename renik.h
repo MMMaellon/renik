@@ -114,13 +114,15 @@ public:
 	void set_arm_upper_limb_twist(float ratio);
 	float get_arm_lower_limb_twist();
 	void set_arm_lower_limb_twist(float ratio);
+	float get_arm_twist_inflection_point_offset();
+	void set_arm_twist_inflection_point_offset(float degrees);
 
 	Vector3 get_arm_pole_offset();
 	void set_arm_pole_offset(Vector3 euler);
 	Vector3 get_arm_target_position_influence();
 	void set_arm_target_position_influence(Vector3 xyz);
-	float get_arm_target_direction_influence();
-	void set_arm_target_direction_influence(float influence);
+	float get_arm_target_rotation_influence();
+	void set_arm_target_rotation_influence(float influence);
 	float get_arm_target_twist_influence();
 	void set_arm_target_twist_influence(float influence);
 
@@ -132,13 +134,15 @@ public:
 	void set_leg_upper_limb_twist(float ratio);
 	float get_leg_lower_limb_twist();
 	void set_leg_lower_limb_twist(float ratio);
+	float get_leg_twist_inflection_point_offset();
+	void set_leg_twist_inflection_point_offset(float degrees);
 
 	Vector3 get_leg_pole_offset();
 	void set_leg_pole_offset(Vector3 euler);
 	Vector3 get_leg_target_position_influence();
 	void set_leg_target_position_influence(Vector3 xyz);
-	float get_leg_target_direction_influence();
-	void set_leg_target_direction_influence(float influence);
+	float get_leg_target_rotation_influence();
+	void set_leg_target_rotation_influence(float influence);
 	float get_leg_target_twist_influence();
 	void set_leg_target_twist_influence(float influence);
 

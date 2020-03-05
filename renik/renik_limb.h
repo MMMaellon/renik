@@ -27,13 +27,14 @@ public:
 	float rest_roll_offset; //Rolls the entire limb so it bends a certain direction at rest
 	float upper_limb_twist; //How much the upper limb follows the lower limb
 	float lower_limb_twist; //How much the lower limb follows the leaf limb
+	float twist_inflection_point_offset; //When the limb snaps from twisting in the positive direction to twisting in the negative direction
 
 	Quat pole_offset; /*ADVANCED - Moving the limb 180 degrees from rest tends to be a bit unpredictable
 		as there is a pole in the forward vector sphere at that spot.
 		This offsets the rest position so that the pole is in a place where the limb is unlikely to go*/
 
 	Vector3 target_position_influence; //ADVANCED - How much each of the leaf's axis of translation from rest affects the ik
-	float target_direction_influence; //ADVANCED - How much the direction the leaf points in affects the ik
+	float target_rotation_influence; //ADVANCED - How much the rotation the leaf points in affects the ik
 };
 
 #endif
