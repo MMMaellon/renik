@@ -1,5 +1,6 @@
 Import('env')
 
 env.add_source_files(env.modules_sources, "*.cpp") # Add all cpp files to the build
+env.add_source_files(env.modules_sources, "renik/*.cpp")
 if(env['target'] == 'debug'):
     env.add_source_files(env.modules_sources, "renTest/renTest.cpp")

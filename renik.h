@@ -1,6 +1,10 @@
 #ifndef RENIK_H
 #define RENIK_H
 
+#include "renik/renik_chain.h"
+#include "renik/renik_limb.h"
+#include <core/engine.h>
+#include <core/variant.h>
 #include <scene/3d/skeleton.h>
 #include <scene/main/node.h>
 #include <memory>
@@ -10,77 +14,32 @@ class RenIK : public Node {
 	GDCLASS(RenIK, Node);
 
 public:
-	struct TrigLimb : public Reference {
-		GDCLASS(TrigLimb, Reference);
+	struct RenIKConfig : public Reference {
+		GDCLASS(RenIKConfig, Reference);
 
 	public:
-		Skeleton skeleton;
-		BoneId leaf = -1;
-
-		float angle_offset; //Defines which way is bending forward and which way is backward
-		float rest_roll_offset; //Rolls the entire limb so it bends a certain direction at rest
-		float upper_limb_twist; //How much the upper limb follows the lower limb
-		float lower_limb_twist; //How much the lower limb follows the leaf limb
-
-		Vector3 pole_offset; /*ADVANCED - Moving the limb 180 degrees from rest tends to be a bit unpredictable
-		as there is a pole in the forward vector sphere at that spot.
-		This offsets the rest position so that the pole is in a place where the limb is unlikely to go*/
-
-		Vector3 target_position_influence; //ADVANCED - How much each of the leaf's axis of translation from rest affects the ik
-		float target_twist_influence; //ADVANCED - How much the leaf's rotation affects the ik
-		float target_flex_influence; //ADVANCED - How much the leaf's rotation affects the ik
-	};
-
-	struct FABRIKChain : public Reference {
-		GDCLASS(FABRIKChain, Reference);
-
-	public:
-		Skeleton skeleton;
-		Vector<BoneId> bones;
-		float twist_influence;
-		float twist_start;
-	};
-
-	struct Posture : public Reference {
-		GDCLASS(Posture, Reference);
-
-	public:
-		Transform head;
-		Transform hip;
-		Transform hand_left;
-		Transform hand_right;
-		Transform foot_left;
-		Transform foot_right;
-		Transform skeleton;
-		//Body Adjustments
-		float spineCurve; //To prevent spines from bending the wrong way, we precurve it before solving the IK. This controls how much to precurve it
-		float spineCurveAngle; //The angle to precurve it
-		float spineTwist; //How much the spine tries to twist to follow the head when the hips are facing a differen direction
-		float spineTwistOffset; //Where along the spine the twisting starts
-
 		//Hip Placement Adjustments
-		float crouchAmount; //Crouching means bending over at the hip while keeping the spine straight
-		float hunchAmount; //Hunching means bending over by arching the spine
-		float hipTurnSpeed; //How fast the hips turn to follow the head
-		float hipTurnLimit; //How far the hips are allowed to stray from the direction the head is facing
+		float crouch_amount; //Crouching means bending over at the hip while keeping the spine straight
+		float hunch_amount; //Hunching means bending over by arching the spine
+		float hip_turn_speed; //How fast the hips turn to follow the head
+		float hip_turn_limit; //How far the hips are allowed to stray from the direction the head is facing
 
 		//Foot Placement Adjustments - Only takes effect when there are no foot targets
-		float stepHeight;
-		float stepSpeed;
-		float stepAnticipation;
-		float footAngle;
-		float footLooseness;
-		float footDangleHeight;
-		float distanceThreshold;
-		float twistThreshold;
-		float walkThreshold;
-		float runThreshold;
+		float step_height;
+		float step_speed;
+		float step_anticipation;
+		float foot_angle;
+		float foot_looseness;
+		float foot_dangle_height;
+		float distance_threshold;
+		float twist_threshold;
+		float walk_threshold;
+		float run_threshold;
 	};
 
 	RenIK();
 
-	void validate_settings();
-	void default_settings(); // our initializer called by Godot
+	void _enter_tree();
 
 	virtual void _validate_property(PropertyInfo &property) const;
 	void _notification(int p_what);
@@ -89,11 +48,18 @@ public:
 	void update_ik(float influence);
 	void update_placement(float delta);
 
+	void apply_ik_map(Map<BoneId, Quat> ikMap);
+	void apply_ik_map(Map<BoneId, Basis> ikMap);
 	void perform_torso_ik(float influence = 1);
-	void perform_left_hand_ik(float influence = 1);
-	void perform_right_hand_ik(float influence = 1);
-	void perform_left_foot_ik(float influence = 1);
-	void perform_right_foot_ik(float influence = 1);
+	void perform_hand_left_ik(float influence = 1);
+	void perform_hand_right_ik(float influence = 1);
+	void perform_foot_left_ik(float influence = 1);
+	void perform_foot_right_ik(float influence = 1);
+	void reset_chain(RenIKChain chain);
+	void reset_limb(RenIKLimb limb);
+
+	bool get_live_preview();
+	void set_live_preview(bool p_enable);
 
 	NodePath get_skeleton_path();
 	void set_skeleton_path(NodePath p_path);
@@ -139,14 +105,56 @@ public:
 	NodePath get_foot_left_target_path();
 	NodePath get_foot_right_target_path();
 
-	static Map<BoneId, Transform> solve_trig_ik(TrigLimb limb, Transform global_target);
+	//IK Settings
+	float get_arm_angle_offset();
+	void set_arm_angle_offset(float degrees);
+	float get_arm_rest_roll_offset();
+	void set_arm_rest_roll_offset(float degrees);
+	float get_arm_upper_limb_twist();
+	void set_arm_upper_limb_twist(float ratio);
+	float get_arm_lower_limb_twist();
+	void set_arm_lower_limb_twist(float ratio);
 
-	static Map<BoneId, Transform> solve_isfabrik(FABRIKChain chain, Transform target, float threshold, int loopLimit);
+	Vector3 get_arm_pole_offset();
+	void set_arm_pole_offset(Vector3 euler);
+	Vector3 get_arm_target_position_influence();
+	void set_arm_target_position_influence(Vector3 xyz);
+	float get_arm_target_direction_influence();
+	void set_arm_target_direction_influence(float influence);
+	float get_arm_target_twist_influence();
+	void set_arm_target_twist_influence(float influence);
 
-	static Map<BoneId, Transform> solve_fabrik(FABRIKChain chain, Transform target, float threshold, int loopLimit);
+	float get_leg_angle_offset();
+	void set_leg_angle_offset(float degrees);
+	float get_leg_rest_roll_offset();
+	void set_leg_rest_roll_offset(float degrees);
+	float get_leg_upper_limb_twist();
+	void set_leg_upper_limb_twist(float ratio);
+	float get_leg_lower_limb_twist();
+	void set_leg_lower_limb_twist(float ratio);
 
-	static Transform solve_hip_placement(Transform head, Transform hip, float floor_dist, float max_torso_height);
-	static Map<int, Transform> solve_foot_placement(Map<int, Transform> trackers);
+	Vector3 get_leg_pole_offset();
+	void set_leg_pole_offset(Vector3 euler);
+	Vector3 get_leg_target_position_influence();
+	void set_leg_target_position_influence(Vector3 xyz);
+	float get_leg_target_direction_influence();
+	void set_leg_target_direction_influence(float influence);
+	float get_leg_target_twist_influence();
+	void set_leg_target_twist_influence(float influence);
+
+	static Quat align_vectors(Vector3 a, Vector3 b, float influence = 1);
+
+	static std::pair<float, float> trig_angles(Vector3 const &length1, Vector3 const &length2, Vector3 const &length3);
+	static Map<BoneId, Quat> solve_trig_ik(RenIKLimb limb, Transform limb_parent_transform, Transform target);
+
+	static Map<BoneId, Basis> solve_trig_ik_redux(RenIKLimb limb, Transform limb_parent_transform, Transform target);
+
+	static Map<BoneId, Quat> solve_isfabrik(RenIKChain chain, Transform chain_parent_transform, Transform target, float threshold, int loopLimit);
+
+	static Map<BoneId, Quat> solve_fabrik(RenIKChain chain, Transform chain_parent_transform, Transform target, float threshold, int loopLimit);
+
+	void solve_hip_placement(float delta);
+	void solve_foot_placement(float delta);
 
 	void hip_place(float delta);
 	void foot_place(float delta);
@@ -157,6 +165,7 @@ public:
 
 private:
 	//Setup -------------------------
+	bool live_preview = false;
 	//The Skeleton
 	NodePath skeleton_path;
 	Skeleton *skeleton = nullptr;
@@ -168,15 +177,15 @@ private:
 	NodePath hip_target_path;
 	NodePath foot_left_target_path;
 	NodePath foot_right_target_path;
-	Spatial *head_target_spatial;
-	Spatial *hand_left_target_spatial;
-	Spatial *hand_right_target_spatial;
-	Spatial *hip_target_spatial;
-	Spatial *foot_left_target_spatial;
-	Spatial *foot_right_target_spatial;
+	Spatial *head_target_spatial = nullptr;
+	Spatial *hand_left_target_spatial = nullptr;
+	Spatial *hand_right_target_spatial = nullptr;
+	Spatial *hip_target_spatial = nullptr;
+	Spatial *foot_left_target_spatial = nullptr;
+	Spatial *foot_right_target_spatial = nullptr;
 
 	//IK ADJUSTMENTS --------------------
-	Posture posture;
+	RenIKConfig config;
 	String head_bone_name;
 	String hip_bone_name;
 	String hand_left_bone_name;
@@ -187,20 +196,22 @@ private:
 	BoneId hip = -1;
 	BoneId head = -1;
 
-	FABRIKChain spine_chain;
-	TrigLimb limb_arm_left;
-	TrigLimb limb_arm_right;
-	TrigLimb limb_leg_left;
-	TrigLimb limb_leg_right;
+	RenIKChain spine_chain;
+	RenIKLimb limb_arm_left;
+	RenIKLimb limb_arm_right;
+	RenIKLimb limb_leg_left;
+	RenIKLimb limb_leg_right;
 
 	//General Settings ------------------
-	bool manualUpdate;
-	bool headTrackerEnabled;
-	bool leftHandTrackerEnabled;
-	bool rightHandTrackerEnabled;
-	bool hipTrackerEnabled;
-	bool leftFootTrackerEnabled;
-	bool rightFootTrackerEnabled;
+	bool manual_update = false;
+	bool hip_placement = true;
+	bool foot_placement = true;
+	bool headTrackerEnabled = true;
+	bool leftHandTrackerEnabled = true;
+	bool rightHandTrackerEnabled = true;
+	bool hipTrackerEnabled = true;
+	bool leftFootTrackerEnabled = true;
+	bool rightFootTrackerEnabled = true;
 
 	// //Internal Variables --------------------
 	// //IK Cache
@@ -247,10 +258,10 @@ private:
 
 	static float smoothCurve(float number, float modifier = 0.5);
 	static float sinusoidalInterpolation(float number);
-	static Vector3 vectorRejection(Vector3 v, Vector3 normal);
-	static void crossDot(Vector3 &cross, float &dot, Vector3 srcVector1, Vector3 srcVector2);
-	static float safeACOS(float f);
-	static float safeASIN(float f);
+	static Vector3 vector_rejection(Vector3 v, Vector3 normal);
+	static float safe_acos(float f);
+	static float safe_asin(float f);
+	static Vector3 get_perpendicular_vector(Vector3 v);
 
 	//for SIFABRIK
 	static void solveFABRIKPoints(std::vector<RenIK::BonePoint> &bonePoints, Vector3 rootPoint, Vector3 goal, float threshold, int loopLimit);

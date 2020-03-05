@@ -17,6 +17,8 @@ public:
 	RenIKTest();
 
 	static void test();
+	static void assert(bool assertion);
+	static void assert(float value1, float value2);
 };
 
 #endif
