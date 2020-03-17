@@ -14,10 +14,12 @@ public:
 	BoneId get_start_bone();
 	BoneId get_end_bone();
 	bool is_valid();
-	float twist_influence; //How much the chain tries to twist to follow the end when the start is facing a different direction
-	float twist_start; //Where along the chain the twisting starts
-	float spineCurve; //To prevent chains from bending the wrong way, we precurve it before solving the IK. This controls how much to precurve it
-	float spineCurveAngle; //This defines which way to precurve it
+	float twist_influence = 0; //How much the chain tries to twist to follow the end when the start is facing a different direction
+	float twist_start = 0; //Where along the chain the twisting starts
+	float chain_curve = 0; //To prevent chains from bending the wrong way, we precurve it before solving the IK. This controls how much to precurve it
+	float chain_curve_angle = 0; //This defines which way to precurve it
+	float start_influence = 0; //how much the start bone is influenced by the root rotation
+	float end_influence = 0; //how much the end bone is influenced by the goal rotation
 };
 
 #endif

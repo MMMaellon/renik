@@ -1,5 +1,6 @@
 #ifndef RENIK_H
 #define RENIK_H
+#ifndef _3D_DISABLED
 
 #include "renik/renik_chain.h"
 #include "renik/renik_limb.h"
@@ -23,23 +24,74 @@ public:
 		float hunch_amount; //Hunching means bending over by arching the spine
 		float hip_turn_speed; //How fast the hips turn to follow the head
 		float hip_turn_limit; //How far the hips are allowed to stray from the direction the head is facing
+		float hip_follow_head_influence;
 
 		//Foot Placement Adjustments - Only takes effect when there are no foot targets
+		//These are values when at the slowest walk speed
+		bool calculate_speed;
+		float floor_offset;
+		float raycast_allowance; //how far past the max length of the limb we'll still consider close enough
+		float contact_length;
+		float followthru_angle; //local to the LOOP y is up, x is forward
+		float buildup_angle;
+		float loop_ratio; //ratio of buildup / followthru
 		float step_height;
-		float step_speed;
-		float step_anticipation;
-		float foot_angle;
-		float foot_looseness;
-		float foot_dangle_height;
-		float distance_threshold;
-		float twist_threshold;
-		float walk_threshold;
-		float run_threshold;
+		float min_threshold;
+		float max_threshold; //when all scaling stops and the legs just move faster
+		float raycast_threshold;
+		float balance_threshold;
+		float center_of_balance_position; //distance between hips and head that we'll call the center of balance. Usually at 25%, near the belly button
+
+		float dangle_height;
+		float dangle_stiffness;
+
+		//Everything scales logarithmically
+		float contact_scale;
+		float height_scale;
+		float loop_scale;
+		float time_scale;
+		RenIKConfig() {
+			crouch_amount = 0;
+			hunch_amount = 0;
+			hip_turn_speed = 0;
+			hip_turn_limit = 0;
+			hip_follow_head_influence = 0;
+			calculate_speed = false;
+			floor_offset = 0;
+			raycast_allowance = 0;
+			contact_length = 0;
+			followthru_angle = 0;
+			buildup_angle = 0;
+			loop_ratio = 0;
+			step_height = 0;
+			min_threshold = 0;
+			max_threshold = 0;
+			raycast_threshold = 0;
+			balance_threshold = 0;
+			center_of_balance_position = 0;
+			dangle_height = 0;
+			dangle_stiffness = 0;
+			contact_scale = 0;
+			height_scale = 0;
+			loop_scale = 0;
+			time_scale = 0;
+		}
+	};
+
+	struct FeetTransforms : public Reference {
+		GDCLASS(FeetTransforms, Reference);
+
+	public:
+		Transform leftFoot;
+		Transform rightFoot;
+		FeetTransforms() :
+				leftFoot(),
+				rightFoot() {}
 	};
 
 	RenIK();
 
-	void _enter_tree();
+	void _initialize();
 
 	virtual void _validate_property(PropertyInfo &property) const;
 	void _notification(int p_what);
@@ -63,6 +115,7 @@ public:
 
 	NodePath get_skeleton_path();
 	void set_skeleton_path(NodePath p_path);
+	void set_skeleton(Node *p_path);
 
 	void set_head_bone_by_name(String p_bone);
 	void set_hand_left_bone_by_name(String p_bone);
@@ -106,10 +159,14 @@ public:
 	NodePath get_foot_right_target_path();
 
 	//IK Settings
-	float get_arm_angle_offset();
-	void set_arm_angle_offset(float degrees);
-	float get_arm_rest_roll_offset();
-	void set_arm_rest_roll_offset(float degrees);
+	float get_arm_twist();
+	void set_arm_twist(float degrees);
+	float get_arm_upper_twist_offset();
+	void set_arm_upper_twist_offset(float degrees);
+	float get_arm_lower_twist_offset();
+	void set_arm_lower_twist_offset(float degrees);
+	float get_arm_roll_offset();
+	void set_arm_roll_offset(float degrees);
 	float get_arm_upper_limb_twist();
 	void set_arm_upper_limb_twist(float ratio);
 	float get_arm_lower_limb_twist();
@@ -126,10 +183,14 @@ public:
 	float get_arm_target_twist_influence();
 	void set_arm_target_twist_influence(float influence);
 
-	float get_leg_angle_offset();
-	void set_leg_angle_offset(float degrees);
-	float get_leg_rest_roll_offset();
-	void set_leg_rest_roll_offset(float degrees);
+	float get_leg_twist();
+	void set_leg_twist(float degrees);
+	float get_leg_upper_twist_offset();
+	void set_leg_upper_twist_offset(float degrees);
+	float get_leg_lower_twist_offset();
+	void set_leg_lower_twist_offset(float degrees);
+	float get_leg_roll_offset();
+	void set_leg_roll_offset(float degrees);
 	float get_leg_upper_limb_twist();
 	void set_leg_upper_limb_twist(float ratio);
 	float get_leg_lower_limb_twist();
@@ -146,6 +207,22 @@ public:
 	float get_leg_target_twist_influence();
 	void set_leg_target_twist_influence(float influence);
 
+	float get_neck_bending();
+	void set_neck_bending(float influence);
+	float get_spine_curve();
+	void set_spine_curve(float influence);
+	float get_spine_curve_offset();
+	void set_spine_curve_offset(float degrees);
+	float get_crouch_amount();
+	void set_crouch_amount(float influence);
+	float get_hunch_amount();
+	void set_hunch_amount(float influence);
+	float get_follow_head_influence();
+	void set_follow_head_influence(float influence);
+
+	bool get_use_editor_speed();
+	void set_use_editor_speed(bool enable);
+
 	static Quat align_vectors(Vector3 a, Vector3 b, float influence = 1);
 
 	static std::pair<float, float> trig_angles(Vector3 const &length1, Vector3 const &length2, Vector3 const &length3);
@@ -157,11 +234,8 @@ public:
 
 	static Map<BoneId, Quat> solve_fabrik(RenIKChain chain, Transform chain_parent_transform, Transform target, float threshold, int loopLimit);
 
-	void solve_hip_placement(float delta);
-	void solve_foot_placement(float delta);
-
-	void hip_place(float delta);
-	void foot_place(float delta);
+	void hip_place(float delta, RenIKConfig config);
+	void foot_place(float delta, RenIKConfig config);
 	//All used in leg trace
 	void set_falling(bool falling);
 	void set_manual_update(bool update_manually);
@@ -171,7 +245,7 @@ private:
 	//Setup -------------------------
 	bool live_preview = false;
 	//The Skeleton
-	NodePath skeleton_path;
+	NodePath skeleton_path = NodePath("..");
 	Skeleton *skeleton = nullptr;
 
 	//IK Targets
@@ -240,10 +314,19 @@ private:
 	// Transform tPoseFootLeft;
 	// Transform tPoseFootRight;
 
+	int walk_state = 0; //0 is stand state, 1 is step state, -1 is jump state
+	float ground_speed = 0;
+	Transform placedHip; //relative to skeleton
+	Transform placedLeft; //relative to world
+	Transform placedRight; //relative to world
+
+	//cache
+	float hip_height = 0;
+
 	Vector<BoneId> calculate_bone_chain(BoneId root, BoneId leaf);
 
 	//SIFABRIK
-	float spineLength;
+	float spineLength = 0;
 	struct BonePoint {
 		BonePoint(float l, Transform t, Vector3 p) {
 			length = l;
@@ -255,7 +338,7 @@ private:
 			transform = Transform();
 			point = Vector3();
 		}
-		float length;
+		float length = 0;
 		Transform transform; //local
 		Vector3 point; //global
 	};
@@ -272,4 +355,5 @@ private:
 	static Vector3 fitPointToLine(Vector3 point, Vector3 goal, float length);
 };
 
+#endif
 #endif

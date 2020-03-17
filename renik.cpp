@@ -1,4 +1,5 @@
 #include "renik.h"
+#ifndef _3D_DISABLED
 
 #define RENIK_PROPERTY_STRING_SKELETON_PATH "armature_skeleton_path"
 
@@ -16,13 +17,18 @@
 #define RENIK_PROPERTY_STRING_FOOT_LEFT_TARGET_PATH "armature_left_foot_target"
 #define RENIK_PROPERTY_STRING_FOOT_RIGHT_TARGET_PATH "armature_right_foot_target"
 
-RenIK::RenIK(){};
+RenIK::RenIK() :
+		limb_arm_left(0, 0, 0, 0, 0.25, 0.25, Math::deg2rad(20.0), 0.5, Vector3(0, 0, Math::deg2rad(-60.0)), Vector3()),
+		limb_arm_right(0, 0, 0, 0, 0.25, 0.25, Math::deg2rad(-20.0), 0.5, Vector3(0, 0, Math::deg2rad(60.0)), Vector3()),
+		limb_leg_left(-Math_PI, Math_PI, Math_PI, Math_PI, 0.25, 0.25, 0, 0.5, Vector3(0, Math_PI, Math_PI), Vector3()),
+		limb_leg_right(-Math_PI, -Math_PI, -Math_PI, -Math_PI, 0.25, 0.25, 0, 0.5, Vector3(0, -Math_PI, -Math_PI), Vector3()){};
 
 void RenIK::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_live_preview", "p_enable"), &RenIK::set_live_preview);
 	ClassDB::bind_method(D_METHOD("get_live_preview"), &RenIK::get_live_preview);
 
 	ClassDB::bind_method(D_METHOD("set_skeleton_path", "p_path"), &RenIK::set_skeleton_path);
+	ClassDB::bind_method(D_METHOD("set_skeleton_", "p_node"), &RenIK::set_skeleton);
 	ClassDB::bind_method(D_METHOD("get_skeleton_path"), &RenIK::get_skeleton_path);
 
 	ClassDB::bind_method(D_METHOD("set_head_bone_by_name", "p_bone"), &RenIK::set_head_bone_by_name);
@@ -51,10 +57,14 @@ void RenIK::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_foot_right_target_path", "p_path"), &RenIK::set_foot_right_target_path);
 	ClassDB::bind_method(D_METHOD("get_foot_right_target_path"), &RenIK::get_foot_right_target_path);
 
-	ClassDB::bind_method(D_METHOD("get_arm_angle_offset"), &RenIK::get_arm_angle_offset);
-	ClassDB::bind_method(D_METHOD("set_arm_angle_offset", "degrees"), &RenIK::set_arm_angle_offset);
-	ClassDB::bind_method(D_METHOD("get_arm_rest_roll_offset"), &RenIK::get_arm_rest_roll_offset);
-	ClassDB::bind_method(D_METHOD("set_arm_rest_roll_offset", "degrees"), &RenIK::set_arm_rest_roll_offset);
+	ClassDB::bind_method(D_METHOD("get_arm_twist"), &RenIK::get_arm_twist);
+	ClassDB::bind_method(D_METHOD("set_arm_twist", "degrees"), &RenIK::set_arm_twist);
+	ClassDB::bind_method(D_METHOD("get_arm_upper_twist_offset"), &RenIK::get_arm_upper_twist_offset);
+	ClassDB::bind_method(D_METHOD("set_arm_upper_twist_offset", "degrees"), &RenIK::set_arm_upper_twist_offset);
+	ClassDB::bind_method(D_METHOD("get_arm_lower_twist_offset"), &RenIK::get_arm_lower_twist_offset);
+	ClassDB::bind_method(D_METHOD("set_arm_lower_twist_offset", "degrees"), &RenIK::set_arm_lower_twist_offset);
+	ClassDB::bind_method(D_METHOD("get_arm_roll_offset"), &RenIK::get_arm_roll_offset);
+	ClassDB::bind_method(D_METHOD("set_arm_roll_offset", "degrees"), &RenIK::set_arm_roll_offset);
 	ClassDB::bind_method(D_METHOD("get_arm_upper_limb_twist"), &RenIK::get_arm_upper_limb_twist);
 	ClassDB::bind_method(D_METHOD("set_arm_upper_limb_twist", "ratio"), &RenIK::set_arm_upper_limb_twist);
 	ClassDB::bind_method(D_METHOD("get_arm_lower_limb_twist"), &RenIK::get_arm_lower_limb_twist);
@@ -69,10 +79,14 @@ void RenIK::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_arm_target_rotation_influence"), &RenIK::get_arm_target_rotation_influence);
 	ClassDB::bind_method(D_METHOD("set_arm_target_rotation_influence", "influence"), &RenIK::set_arm_target_rotation_influence);
 
-	ClassDB::bind_method(D_METHOD("get_leg_angle_offset"), &RenIK::get_leg_angle_offset);
-	ClassDB::bind_method(D_METHOD("set_leg_angle_offset", "degrees"), &RenIK::set_leg_angle_offset);
-	ClassDB::bind_method(D_METHOD("get_leg_rest_roll_offset"), &RenIK::get_leg_rest_roll_offset);
-	ClassDB::bind_method(D_METHOD("set_leg_rest_roll_offset", "degrees"), &RenIK::set_leg_rest_roll_offset);
+	ClassDB::bind_method(D_METHOD("get_leg_twist"), &RenIK::get_leg_twist);
+	ClassDB::bind_method(D_METHOD("set_leg_twist", "degrees"), &RenIK::set_leg_twist);
+	ClassDB::bind_method(D_METHOD("get_leg_upper_twist_offset"), &RenIK::get_leg_upper_twist_offset);
+	ClassDB::bind_method(D_METHOD("set_leg_upper_twist_offset", "degrees"), &RenIK::set_leg_upper_twist_offset);
+	ClassDB::bind_method(D_METHOD("get_leg_lower_twist_offset"), &RenIK::get_leg_lower_twist_offset);
+	ClassDB::bind_method(D_METHOD("set_leg_lower_twist_offset", "degrees"), &RenIK::set_leg_lower_twist_offset);
+	ClassDB::bind_method(D_METHOD("get_leg_roll_offset"), &RenIK::get_leg_roll_offset);
+	ClassDB::bind_method(D_METHOD("set_leg_roll_offset", "degrees"), &RenIK::set_leg_roll_offset);
 	ClassDB::bind_method(D_METHOD("get_leg_upper_limb_twist"), &RenIK::get_leg_upper_limb_twist);
 	ClassDB::bind_method(D_METHOD("set_leg_upper_limb_twist", "ratio"), &RenIK::set_leg_upper_limb_twist);
 	ClassDB::bind_method(D_METHOD("get_leg_lower_limb_twist"), &RenIK::get_leg_lower_limb_twist);
@@ -107,51 +121,58 @@ void RenIK::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::NODE_PATH, RENIK_PROPERTY_STRING_FOOT_RIGHT_TARGET_PATH, PROPERTY_HINT_NODE_PATH_VALID_TYPES, "Spatial"), "set_foot_right_target_path", "get_foot_right_target_path");
 
 	ADD_GROUP("Arm IK Settings", "arm_");
-	ADD_PROPERTY(PropertyInfo(Variant::REAL, "arm_angle_offset", PROPERTY_HINT_RANGE, "-360,360,0.1"), "set_arm_angle_offset", "get_arm_angle_offset");
-	ADD_PROPERTY(PropertyInfo(Variant::REAL, "arm_rest_roll_offset", PROPERTY_HINT_RANGE, "-360,360,0.1"), "set_arm_rest_roll_offset", "get_arm_rest_roll_offset");
-	ADD_PROPERTY(PropertyInfo(Variant::REAL, "arm_upper_limb_twist", PROPERTY_HINT_RANGE, "0,100,0.1"), "set_arm_upper_limb_twist", "get_arm_upper_limb_twist");
-	ADD_PROPERTY(PropertyInfo(Variant::REAL, "arm_lower_limb_twist", PROPERTY_HINT_RANGE, "0,100,0.1"), "set_arm_lower_limb_twist", "get_arm_lower_limb_twist");
-	ADD_PROPERTY(PropertyInfo(Variant::REAL, "arm_twist_inflection_point_offset", PROPERTY_HINT_RANGE, "-360,360,0.1"), "set_arm_twist_inflection_point_offset", "get_arm_twist_inflection_point_offset");
+	ADD_PROPERTY(PropertyInfo(Variant::REAL, "arm_elbow_direction_offset", PROPERTY_HINT_RANGE, "-360,360,0.1"), "set_arm_roll_offset", "get_arm_roll_offset");
+	ADD_PROPERTY(PropertyInfo(Variant::REAL, "arm_twist", PROPERTY_HINT_RANGE, "-360,360,0.1"), "set_arm_twist", "get_arm_twist");
+	ADD_PROPERTY(PropertyInfo(Variant::REAL, "arm_upper_arm_twisting", PROPERTY_HINT_RANGE, "0,100,0.1"), "set_arm_upper_limb_twist", "get_arm_upper_limb_twist");
+	ADD_PROPERTY(PropertyInfo(Variant::REAL, "arm_upper_arm_twist_offset", PROPERTY_HINT_RANGE, "-360,360,0.1"), "set_arm_upper_twist_offset", "get_arm_upper_twist_offset");
+	ADD_PROPERTY(PropertyInfo(Variant::REAL, "arm_forearm_twisting", PROPERTY_HINT_RANGE, "0,100,0.1"), "set_arm_lower_limb_twist", "get_arm_lower_limb_twist");
+	ADD_PROPERTY(PropertyInfo(Variant::REAL, "arm_forearm_twist_offset", PROPERTY_HINT_RANGE, "-360,360,0.1"), "set_arm_lower_twist_offset", "get_arm_lower_twist_offset");
+	ADD_PROPERTY(PropertyInfo(Variant::REAL, "arm_twist_inflection_point", PROPERTY_HINT_RANGE, "-360,360,0.1"), "set_arm_twist_inflection_point_offset", "get_arm_twist_inflection_point_offset");
 
-	ADD_PROPERTY_DEFAULT("arm_angle_offset", Variant(0));
-	ADD_PROPERTY_DEFAULT("arm_rest_roll_offset", Variant(0));
-	ADD_PROPERTY_DEFAULT("arm_upper_limb_twist", Variant(25));
-	ADD_PROPERTY_DEFAULT("arm_lower_limb_twist", Variant(25));
-	ADD_PROPERTY_DEFAULT("arm_twist_inflection_point_offset", Variant(90));
+	// ADD_PROPERTY_DEFAULT("arm_elbow_direction_offset", Variant(0));
+	// ADD_PROPERTY_DEFAULT("arm_upper_arm_twisting", Variant(25));
+	// ADD_PROPERTY_DEFAULT("arm_upper_arm_twist_offset", Variant(0));
+	// ADD_PROPERTY_DEFAULT("arm_forearm_twisting", Variant(25));
+	// ADD_PROPERTY_DEFAULT("arm_forearm_twist_offset", Variant(0));
+	// ADD_PROPERTY_DEFAULT("arm_twist_inflection_point", Variant(90));
 
 	ADD_GROUP("Arm IK Settings (Advanced)", "arm_");
 	ADD_PROPERTY(PropertyInfo(Variant::VECTOR3, "arm_pole_offset"), "set_arm_pole_offset", "get_arm_pole_offset");
 	ADD_PROPERTY(PropertyInfo(Variant::VECTOR3, "arm_target_position_influence"), "set_arm_target_position_influence", "get_arm_target_position_influence");
 	ADD_PROPERTY(PropertyInfo(Variant::REAL, "arm_target_rotation_influence", PROPERTY_HINT_RANGE, "0,100,0.1"), "set_arm_target_rotation_influence", "get_arm_target_rotation_influence");
 
-	ADD_PROPERTY_DEFAULT("arm_pole_offset", Variant(Vector3(0, 0, -60)));
-	ADD_PROPERTY_DEFAULT("arm_target_position_influence", Variant(Vector3(0, 0, 0)));
-	ADD_PROPERTY_DEFAULT("arm_target_rotation_influence", Variant(25));
+	// ADD_PROPERTY_DEFAULT("arm_pole_offset", Variant(Vector3(0, 0, -60)));
+	// ADD_PROPERTY_DEFAULT("arm_target_position_influence", Variant(Vector3(0, 0, 0)));
+	// ADD_PROPERTY_DEFAULT("arm_target_rotation_influence", Variant(25));
 
 	ADD_GROUP("Leg IK Settings", "leg_");
-	ADD_PROPERTY(PropertyInfo(Variant::REAL, "leg_angle_offset", PROPERTY_HINT_RANGE, "-360,360,0.1"), "set_leg_angle_offset", "get_leg_angle_offset");
-	ADD_PROPERTY(PropertyInfo(Variant::REAL, "leg_rest_roll_offset", PROPERTY_HINT_RANGE, "-360,360,0.1"), "set_leg_rest_roll_offset", "get_leg_rest_roll_offset");
-	ADD_PROPERTY(PropertyInfo(Variant::REAL, "leg_upper_limb_twist", PROPERTY_HINT_RANGE, "0,100,0.1"), "set_leg_upper_limb_twist", "get_leg_upper_limb_twist");
-	ADD_PROPERTY(PropertyInfo(Variant::REAL, "leg_lower_limb_twist", PROPERTY_HINT_RANGE, "0,100,0.1"), "set_leg_lower_limb_twist", "get_leg_lower_limb_twist");
-	ADD_PROPERTY(PropertyInfo(Variant::REAL, "leg_twist_inflection_point_offset", PROPERTY_HINT_RANGE, "-360,360,0.1"), "set_leg_twist_inflection_point_offset", "get_leg_twist_inflection_point_offset");
+	ADD_PROPERTY(PropertyInfo(Variant::REAL, "leg_knee_direction_offset", PROPERTY_HINT_RANGE, "-360,360,0.1"), "set_leg_roll_offset", "get_leg_roll_offset");
+	ADD_PROPERTY(PropertyInfo(Variant::REAL, "leg_twist", PROPERTY_HINT_RANGE, "-360,360,0.1"), "set_leg_twist", "get_leg_twist");
+	ADD_PROPERTY(PropertyInfo(Variant::REAL, "leg_thigh_twisting", PROPERTY_HINT_RANGE, "0,100,0.1"), "set_leg_upper_limb_twist", "get_leg_upper_limb_twist");
+	ADD_PROPERTY(PropertyInfo(Variant::REAL, "leg_thigh_twist_offset", PROPERTY_HINT_RANGE, "-360,360,0.1"), "set_leg_upper_twist_offset", "get_leg_upper_twist_offset");
+	ADD_PROPERTY(PropertyInfo(Variant::REAL, "leg_lower_leg_twisting", PROPERTY_HINT_RANGE, "0,100,0.1"), "set_leg_lower_limb_twist", "get_leg_lower_limb_twist");
+	ADD_PROPERTY(PropertyInfo(Variant::REAL, "leg_lower_leg_twist_offset", PROPERTY_HINT_RANGE, "-360,360,0.1"), "set_leg_lower_twist_offset", "get_leg_lower_twist_offset");
+	ADD_PROPERTY(PropertyInfo(Variant::REAL, "leg_twist_inflection_point", PROPERTY_HINT_RANGE, "-360,360,0.1"), "set_leg_twist_inflection_point_offset", "get_leg_twist_inflection_point_offset");
 
-	ADD_PROPERTY_DEFAULT("leg_angle_offset", 0);
-	ADD_PROPERTY_DEFAULT("leg_rest_roll_offset", 0);
-	ADD_PROPERTY_DEFAULT("leg_upper_limb_twist", 25);
-	ADD_PROPERTY_DEFAULT("leg_lower_limb_twist", 25);
-	ADD_PROPERTY_DEFAULT("leg_twist_inflection_point_offset", 0);
+	// ADD_PROPERTY_DEFAULT("leg_knee_direction_offset", 0);
+	// ADD_PROPERTY_DEFAULT("leg_thigh_twisting", 25);
+	// ADD_PROPERTY_DEFAULT("leg_thigh_twist_offset", 0);
+	// ADD_PROPERTY_DEFAULT("leg_lower_leg_twisting", 25);
+	// ADD_PROPERTY_DEFAULT("leg_lower_leg_twist_offset", 0);
+	// ADD_PROPERTY_DEFAULT("leg_twist_inflection_point", 0);
 
 	ADD_GROUP("Leg IK Settings (Advanced)", "leg_");
 	ADD_PROPERTY(PropertyInfo(Variant::VECTOR3, "leg_pole_offset"), "set_leg_pole_offset", "get_leg_pole_offset");
 	ADD_PROPERTY(PropertyInfo(Variant::VECTOR3, "leg_target_position_influence"), "set_leg_target_position_influence", "get_leg_target_position_influence");
 	ADD_PROPERTY(PropertyInfo(Variant::REAL, "leg_target_rotation_influence", PROPERTY_HINT_RANGE, "0,100,0.1"), "set_leg_target_rotation_influence", "get_leg_target_rotation_influence");
 
-	ADD_PROPERTY_DEFAULT("leg_pole_offset", Variant(Vector3(0, 0, 0)));
-	ADD_PROPERTY_DEFAULT("leg_target_position_influence", Variant(Vector3(0, 0, 0)));
-	ADD_PROPERTY_DEFAULT("leg_target_rotation_influence", Variant(25));
+	// ADD_PROPERTY_DEFAULT("leg_pole_offset", Variant(Vector3(0, 0, 0)));
+	// ADD_PROPERTY_DEFAULT("leg_target_position_influence", Variant(Vector3(0, 0, 0)));
+	// ADD_PROPERTY_DEFAULT("leg_target_rotation_influence", Variant(25));
 
-	// ADD_GROUP("Hip Placement", "hip_placement_");
-	// ADD_GROUP("Foot Placement", "foot_placement_");
+	ADD_GROUP("Torso IK Settings", "torso_");
+
+	ADD_GROUP("Walk Settings (Advanced)", "walk_");
 
 	ClassDB::bind_method(D_METHOD("update_ik"), &RenIK::update_ik);
 	ClassDB::bind_method(D_METHOD("update_placement"), &RenIK::update_placement);
@@ -177,8 +198,8 @@ void RenIK::_validate_property(PropertyInfo &property) const {
 
 void RenIK::_notification(int p_what) {
 	switch (p_what) {
-		case NOTIFICATION_ENTER_TREE:
-			_enter_tree();
+		case NOTIFICATION_READY:
+			_initialize();
 			break;
 		case NOTIFICATION_INTERNAL_PROCESS:
 			if (!Engine::get_singleton()->is_editor_hint() || live_preview) {
@@ -197,11 +218,11 @@ void RenIK::_notification(int p_what) {
 	}
 }
 
-void RenIK::_enter_tree() {
+void RenIK::_initialize() {
 	//set the skeleton to the parent if we can
 	Node *parent = get_parent();
 	if (skeleton_path.is_empty() && parent) {
-		set_skeleton_path(parent->get_path());
+		set_skeleton(parent);
 	} else {
 		set_skeleton_path(get_skeleton_path());
 	}
@@ -211,7 +232,7 @@ void RenIK::_enter_tree() {
 	set_hand_right_target_path(get_hand_right_target_path());
 	set_foot_left_target_path(get_foot_left_target_path());
 	set_foot_right_target_path(get_foot_right_target_path());
-	set_process_priority(0); //makes sure that ik is done last after all physics and movement have taken place
+	set_process_priority(1); //makes sure that ik is done last after all physics and movement have taken place
 	set_process_internal(true);
 	set_physics_process_internal(true);
 }
@@ -225,8 +246,11 @@ void RenIK::update_ik(float influence) {
 }
 
 void RenIK::update_placement(float delta) {
-	hip_place(delta);
-	foot_place(delta);
+	//TODO raytrace for floor here
+	//in the meantime, let's assume we're standing on the floor (aka its 0 away)
+
+	hip_place(delta, config);
+	foot_place(delta, config);
 }
 
 void RenIK::apply_ik_map(Map<BoneId, Quat> ikMap) {
@@ -252,6 +276,18 @@ void RenIK::apply_ik_map(Map<BoneId, Basis> ikMap) {
 void RenIK::perform_torso_ik(float influence) {
 }
 
+void fake_redux() {
+	// RenIKLimb fakelimb;
+	// fakelimb.upper_id = 1;
+	// fakelimb.lower_id = 2;
+	// fakelimb.leaf_id = 3;
+	// Transform yPositive = Transform(Basis(), Vector3(0, 1, 0));
+	// fakelimb.upper = yPositive;
+	// fakelimb.lower = yPositive;
+	// fakelimb.leaf = yPositive;
+	// RenIK::solve_trig_ik_redux(fakelimb, Transform(), Transform(Basis(), Vector3(1, 1, 1)));
+}
+
 void RenIK::perform_hand_left_ik(float influence) {
 	if (hand_left_target_spatial && skeleton && limb_arm_left.is_valid()) {
 		Transform root = skeleton->get_global_transform();
@@ -260,6 +296,8 @@ void RenIK::perform_hand_left_ik(float influence) {
 			root = root * skeleton->get_bone_global_pose(rootBone);
 		}
 		apply_ik_map(solve_trig_ik_redux(limb_arm_left, root, hand_left_target_spatial->get_global_transform()));
+	} else {
+		fake_redux();
 	}
 }
 
@@ -271,28 +309,52 @@ void RenIK::perform_hand_right_ik(float influence) {
 			root = root * skeleton->get_bone_global_pose(rootBone);
 		}
 		apply_ik_map(solve_trig_ik_redux(limb_arm_right, root, hand_right_target_spatial->get_global_transform()));
+	} else {
+		fake_redux();
 	}
 }
 
 void RenIK::perform_foot_left_ik(float influence) {
-	if (foot_left_target_spatial && skeleton && limb_leg_left.is_valid()) {
-		Transform root = skeleton->get_global_transform();
-		BoneId rootBone = skeleton->get_bone_parent(limb_leg_left.get_upper_bone());
-		if (rootBone >= 0) {
-			root = root * skeleton->get_bone_global_pose(rootBone);
+	if (skeleton && limb_leg_left.is_valid()) {
+		if (foot_left_target_spatial) {
+			Transform root = skeleton->get_global_transform();
+			BoneId rootBone = skeleton->get_bone_parent(limb_leg_left.get_upper_bone());
+			if (rootBone >= 0) {
+				root = root * skeleton->get_bone_global_pose(rootBone);
+			}
+			apply_ik_map(solve_trig_ik_redux(limb_leg_left, root, foot_left_target_spatial->get_global_transform()));
+		} else if (foot_placement) {
+			Transform root = skeleton->get_global_transform();
+			BoneId rootBone = skeleton->get_bone_parent(limb_leg_left.get_upper_bone());
+			if (rootBone >= 0) {
+				root = root * skeleton->get_bone_global_pose(rootBone);
+			}
+			apply_ik_map(solve_trig_ik_redux(limb_leg_left, root, placedLeft));
 		}
-		apply_ik_map(solve_trig_ik_redux(limb_leg_left, root, foot_left_target_spatial->get_global_transform()));
+	} else {
+		fake_redux();
 	}
 }
 
 void RenIK::perform_foot_right_ik(float influence) {
-	if (foot_right_target_spatial && skeleton && limb_leg_right.is_valid()) {
-		Transform root = skeleton->get_global_transform();
-		BoneId rootBone = skeleton->get_bone_parent(limb_leg_right.get_upper_bone());
-		if (rootBone >= 0) {
-			root = root * skeleton->get_bone_global_pose(rootBone);
+	if (skeleton && limb_leg_right.is_valid()) {
+		if (foot_right_target_spatial) {
+			Transform root = skeleton->get_global_transform();
+			BoneId rootBone = skeleton->get_bone_parent(limb_leg_right.get_upper_bone());
+			if (rootBone >= 0) {
+				root = root * skeleton->get_bone_global_pose(rootBone);
+			}
+			apply_ik_map(solve_trig_ik_redux(limb_leg_right, root, foot_right_target_spatial->get_global_transform()));
+		} else if (foot_placement) {
+			Transform root = skeleton->get_global_transform();
+			BoneId rootBone = skeleton->get_bone_parent(limb_leg_right.get_upper_bone());
+			if (rootBone >= 0) {
+				root = root * skeleton->get_bone_global_pose(rootBone);
+			}
+			apply_ik_map(solve_trig_ik_redux(limb_leg_right, root, placedRight));
 		}
-		apply_ik_map(solve_trig_ik_redux(limb_leg_right, root, foot_right_target_spatial->get_global_transform()));
+	} else {
+		fake_redux();
 	}
 }
 
@@ -317,10 +379,10 @@ void RenIK::reset_limb(RenIKLimb limb) {
 	}
 }
 
-void RenIK::hip_place(float delta) {
+void RenIK::hip_place(float delta, RenIKConfig config) {
 }
 
-void RenIK::foot_place(float delta) {
+void RenIK::foot_place(float delta, RenIKConfig config) {
 }
 
 //IK SOLVING
@@ -470,6 +532,11 @@ std::pair<float, float> RenIK::trig_angles(Vector3 const &side1, Vector3 const &
 	return std::make_pair(angle1, angle2);
 }
 
+//random helper function
+float RenIK::smoothCurve(float number, float modifier) {
+	return number / (abs(number) + modifier);
+}
+
 Map<BoneId, Basis> RenIK::solve_trig_ik_redux(RenIKLimb limb, Transform root, Transform target) {
 	Map<BoneId, Basis> map;
 	if (limb.is_valid()) {
@@ -495,7 +562,7 @@ Map<BoneId, Basis> RenIK::solve_trig_ik_redux(RenIKLimb limb, Transform root, Tr
 		Vector3 leafRestVector = limb.get_upper().get_basis().xform(limb.get_lower().xform(limb.get_leaf().get_origin()));
 		float positionalOffset = limb.target_position_influence.dot(targetVector - leafRestVector);
 		Vector3 normalizedTargetVector = targetVector.normalized();
-		jointAxis.rotate(normalizedTargetVector, positionalOffset);
+		jointAxis.rotate(normalizedTargetVector, positionalOffset + limb.roll_offset);
 
 		//Leaf Rotations... here we go...
 		//Let's always try to avoid having the leaf intersect the lowerlimb
@@ -508,13 +575,24 @@ Map<BoneId, Basis> RenIK::solve_trig_ik_redux(RenIKLimb limb, Transform root, Tr
 		//We scale the amount we rotate with the rotation influence setting and the angle between the leaf and lower vector so if the arm is mostly straight, we rotate less
 		Vector3 leafRejection = vector_rejection(localLeafVector, normalizedTargetVector);
 		Vector3 lowerRejection = vector_rejection(localLowerVector, normalizedTargetVector);
-		jointAxis = align_vectors(lowerRejection, leafRejection, (localLeafVector.angle_to(localLowerVector) / Math_PI) * limb.target_rotation_influence).xform(jointAxis);
+		float jointRollAmount = (leafRejection.angle_to(lowerRejection)) * limb.target_rotation_influence;
+		// jointRollAmount *= smoothCurve(1 - (2 * abs(localLeafVector.dot(normalizedTargetVector))), 0.001);
+		jointRollAmount *= abs(localLeafVector.cross(localLowerVector).dot(normalizedTargetVector));
+		if (leafRejection.cross(lowerRejection).dot(normalizedTargetVector) > 0) {
+			jointRollAmount *= -1;
+		}
+		jointAxis.rotate(normalizedTargetVector, jointRollAmount);
+		// jointAxis = align_vectors(lowerRejection, leafRejection, jointRollAmount).xform(jointAxis);
+
+		//Offsets
+		//jointAxis.rotate(normalizedTargetVector, limb.roll_offset);
 
 		//Add a little twist
 		//We align the leaf's y axis with the lower limb's y-axis and see how far off the z-axis is from the joint axis to calculate the twist.
-		Vector3 leafZ = align_vectors(localLeafVector, localLowerVector).xform(localTarget.get_basis().xform(Vector3(0, 0, 1)));
-		float twistAngle = leafZ.angle_to(jointAxis);
+
+		Vector3 leafZ = align_vectors(localLeafVector.rotated(normalizedTargetVector, jointRollAmount), localLowerVector.rotated(normalizedTargetVector, jointRollAmount)).xform(localTarget.get_basis().xform(Vector3(0, 0, 1)));
 		Vector3 lowerX = jointAxis.cross(localLowerVector);
+		float twistAngle = leafZ.angle_to(jointAxis) + limb.twist;
 		if (leafZ.dot(lowerX) > 0) {
 			twistAngle *= -1;
 		}
@@ -523,8 +601,10 @@ Map<BoneId, Basis> RenIK::solve_trig_ik_redux(RenIKLimb limb, Transform root, Tr
 		}
 
 		float lowerTwist = twistAngle * limb.lower_limb_twist;
+		float upperTwist = lowerTwist * limb.upper_limb_twist + limb.upper_twist_offset;
+		lowerTwist += limb.lower_twist_offset;
 
-		float upperTwist = lowerTwist * limb.upper_limb_twist;
+		jointAxis.rotate(normalizedTargetVector, twistAngle * limb.target_rotation_influence);
 
 		//Rebuild the rotations
 		Vector3 upperJointVector = normalizedTargetVector.rotated(jointAxis, angles.first);
@@ -615,6 +695,18 @@ void RenIK::set_skeleton_path(NodePath p_path) {
 		set_foot_right_bone_by_name(get_foot_right_bone_name());
 	}
 }
+void RenIK::set_skeleton(Node *p_node) {
+	skeleton_path = p_node->get_path();
+	Skeleton *skeleton = Object::cast_to<Skeleton>(p_node);
+	if (skeleton != nullptr) {
+		set_head_bone_by_name(get_head_bone_name());
+		set_hip_bone_by_name(get_hip_bone_name());
+		set_hand_left_bone_by_name(get_hand_left_bone_name());
+		set_hand_right_bone_by_name(get_hand_right_bone_name());
+		set_foot_left_bone_by_name(get_foot_left_bone_name());
+		set_foot_right_bone_by_name(get_foot_right_bone_name());
+	}
+}
 
 void RenIK::set_head_bone_by_name(String p_bone) {
 	head_bone_name = p_bone;
@@ -684,6 +776,9 @@ void RenIK::set_hand_right_bone(BoneId p_bone) {
 void RenIK::set_hip_bone(BoneId p_bone) {
 	hip = p_bone;
 	spine_chain.set_chain(skeleton, p_bone, spine_chain.get_end_bone());
+	if (skeleton) {
+		hip_height = skeleton->get_bone_rest(hip).get_origin()[1]; //y component of the hip origin
+	}
 }
 void RenIK::set_foot_left_bone(BoneId p_bone) {
 	limb_leg_left.set_leaf(skeleton, p_bone);
@@ -813,19 +908,33 @@ void RenIK::set_foot_right_target_path(NodePath p_path) {
 	}
 }
 
-float RenIK::get_arm_angle_offset() {
-	return Math::rad2deg(limb_arm_left.angle_offset);
+float RenIK::get_arm_twist() {
+	return Math::rad2deg(limb_arm_left.twist);
 }
-void RenIK::set_arm_angle_offset(float degrees) {
-	limb_arm_left.angle_offset = Math::deg2rad(degrees);
-	limb_arm_right.angle_offset = Math::deg2rad(degrees);
+void RenIK::set_arm_twist(float degrees) {
+	limb_arm_left.twist = Math::deg2rad(degrees);
+	limb_arm_right.twist = Math::deg2rad(degrees);
 }
-float RenIK::get_arm_rest_roll_offset() {
-	return Math::rad2deg(limb_arm_left.rest_roll_offset);
+float RenIK::get_arm_upper_twist_offset() {
+	return Math::rad2deg(limb_arm_left.upper_twist_offset);
 }
-void RenIK::set_arm_rest_roll_offset(float degrees) {
-	limb_arm_left.rest_roll_offset = Math::deg2rad(degrees);
-	limb_arm_right.rest_roll_offset = Math::deg2rad(degrees);
+void RenIK::set_arm_upper_twist_offset(float degrees) {
+	limb_arm_left.upper_twist_offset = Math::deg2rad(degrees);
+	limb_arm_right.upper_twist_offset = Math::deg2rad(-degrees);
+}
+float RenIK::get_arm_lower_twist_offset() {
+	return Math::rad2deg(limb_arm_left.lower_twist_offset);
+}
+void RenIK::set_arm_lower_twist_offset(float degrees) {
+	limb_arm_left.lower_twist_offset = Math::deg2rad(degrees);
+	limb_arm_right.lower_twist_offset = Math::deg2rad(-degrees);
+}
+float RenIK::get_arm_roll_offset() {
+	return Math::rad2deg(limb_arm_left.roll_offset);
+}
+void RenIK::set_arm_roll_offset(float degrees) {
+	limb_arm_left.roll_offset = Math::deg2rad(degrees);
+	limb_arm_right.roll_offset = Math::deg2rad(-degrees);
 }
 float RenIK::get_arm_upper_limb_twist() {
 	return limb_arm_left.upper_limb_twist * 100;
@@ -846,7 +955,7 @@ float RenIK::get_arm_twist_inflection_point_offset() {
 }
 void RenIK::set_arm_twist_inflection_point_offset(float degrees) {
 	limb_arm_left.twist_inflection_point_offset = Math::deg2rad(degrees);
-	limb_arm_right.twist_inflection_point_offset = Math::deg2rad(degrees);
+	limb_arm_right.twist_inflection_point_offset = Math::deg2rad(-degrees);
 }
 
 Vector3 RenIK::get_arm_pole_offset() {
@@ -856,14 +965,14 @@ Vector3 RenIK::get_arm_pole_offset() {
 void RenIK::set_arm_pole_offset(Vector3 euler) {
 	Quat q = Quat(Vector3(Math::deg2rad(euler[0]), Math::deg2rad(euler[1]), Math::deg2rad(euler[2])));
 	limb_arm_left.pole_offset = q;
-	limb_arm_right.pole_offset = q;
+	limb_arm_right.pole_offset = q.inverse();
 }
 Vector3 RenIK::get_arm_target_position_influence() {
 	return limb_arm_left.target_position_influence * 10.0;
 }
 void RenIK::set_arm_target_position_influence(Vector3 xyz) {
 	limb_arm_left.target_position_influence = xyz / 10.0;
-	limb_arm_right.target_position_influence = xyz / 10.0;
+	limb_arm_right.target_position_influence = xyz / -10.0;
 }
 float RenIK::get_arm_target_rotation_influence() {
 	return limb_arm_left.target_rotation_influence * 100.0;
@@ -873,19 +982,33 @@ void RenIK::set_arm_target_rotation_influence(float influence) {
 	limb_arm_right.target_rotation_influence = influence / 100.0;
 }
 
-float RenIK::get_leg_angle_offset() {
-	return Math::rad2deg(limb_leg_left.angle_offset);
+float RenIK::get_leg_twist() {
+	return Math::rad2deg(limb_leg_left.twist);
 }
-void RenIK::set_leg_angle_offset(float degrees) {
-	limb_leg_left.angle_offset = Math::deg2rad(degrees);
-	limb_leg_right.angle_offset = Math::deg2rad(degrees);
+void RenIK::set_leg_twist(float degrees) {
+	limb_leg_left.twist = Math::deg2rad(degrees);
+	limb_leg_right.twist = Math::deg2rad(degrees);
 }
-float RenIK::get_leg_rest_roll_offset() {
-	return Math::rad2deg(limb_leg_left.rest_roll_offset);
+float RenIK::get_leg_upper_twist_offset() {
+	return Math::rad2deg(limb_leg_left.upper_twist_offset);
 }
-void RenIK::set_leg_rest_roll_offset(float degrees) {
-	limb_leg_left.rest_roll_offset = Math::deg2rad(degrees);
-	limb_leg_right.rest_roll_offset = Math::deg2rad(degrees);
+void RenIK::set_leg_upper_twist_offset(float degrees) {
+	limb_leg_left.upper_twist_offset = Math::deg2rad(degrees);
+	limb_leg_right.upper_twist_offset = Math::deg2rad(-degrees);
+}
+float RenIK::get_leg_lower_twist_offset() {
+	return Math::rad2deg(limb_leg_left.lower_twist_offset);
+}
+void RenIK::set_leg_lower_twist_offset(float degrees) {
+	limb_leg_left.lower_twist_offset = Math::deg2rad(degrees);
+	limb_leg_right.lower_twist_offset = Math::deg2rad(-degrees);
+}
+float RenIK::get_leg_roll_offset() {
+	return Math::rad2deg(limb_leg_left.roll_offset);
+}
+void RenIK::set_leg_roll_offset(float degrees) {
+	limb_leg_left.roll_offset = Math::deg2rad(degrees);
+	limb_leg_right.roll_offset = Math::deg2rad(-degrees);
 }
 float RenIK::get_leg_upper_limb_twist() {
 	return limb_leg_left.upper_limb_twist * 100;
@@ -906,7 +1029,7 @@ float RenIK::get_leg_twist_inflection_point_offset() {
 }
 void RenIK::set_leg_twist_inflection_point_offset(float degrees) {
 	limb_leg_left.twist_inflection_point_offset = Math::deg2rad(degrees);
-	limb_leg_right.twist_inflection_point_offset = Math::deg2rad(degrees);
+	limb_leg_right.twist_inflection_point_offset = Math::deg2rad(-degrees);
 }
 
 Vector3 RenIK::get_leg_pole_offset() {
@@ -916,14 +1039,14 @@ Vector3 RenIK::get_leg_pole_offset() {
 void RenIK::set_leg_pole_offset(Vector3 euler) {
 	Quat q = Quat(Vector3(Math::deg2rad(euler[0]), Math::deg2rad(euler[1]), Math::deg2rad(euler[2])));
 	limb_leg_left.pole_offset = q;
-	limb_leg_right.pole_offset = q;
+	limb_leg_right.pole_offset = q.inverse();
 }
 Vector3 RenIK::get_leg_target_position_influence() {
 	return limb_leg_left.target_position_influence * 10.0;
 }
 void RenIK::set_leg_target_position_influence(Vector3 xyz) {
 	limb_leg_left.target_position_influence = xyz / 10.0;
-	limb_leg_right.target_position_influence = xyz / 10.0;
+	limb_leg_right.target_position_influence = xyz / -10.0;
 }
 float RenIK::get_leg_target_rotation_influence() {
 	return limb_leg_left.target_rotation_influence * 100.0;
@@ -932,3 +1055,5 @@ void RenIK::set_leg_target_rotation_influence(float influence) {
 	limb_leg_left.target_rotation_influence = influence / 100.0;
 	limb_leg_right.target_rotation_influence = influence / 100.0;
 }
+
+#endif // _3D_DISABLED
