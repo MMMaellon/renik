@@ -23,13 +23,13 @@ public:
 	Transform get_lower();
 	Transform get_leaf();
 
-	float twist;
 	float upper_twist_offset;
 	float lower_twist_offset;
 	float roll_offset; //Rolls the entire limb so the joint points in a different direction
 	float upper_limb_twist; //How much the upper limb follows the lower limb
 	float lower_limb_twist; //How much the lower limb follows the leaf limb
 	float twist_inflection_point_offset; //When the limb snaps from twisting in the positive direction to twisting in the negative direction
+	float twist_overflow; //How much past the inflection point we go before snapping
 
 	Quat pole_offset; /*ADVANCED - Moving the limb 180 degrees from rest tends to be a bit unpredictable
 		as there is a pole in the forward vector sphere at that spot.
@@ -38,23 +38,26 @@ public:
 	Vector3 target_position_influence; //ADVANCED - How much each of the leaf's axis of translation from rest affects the ik
 	float target_rotation_influence; //ADVANCED - How much the rotation the leaf points in affects the ik
 
+	//STATE: We're keeping a little bit of state now... kinda goes against the design, but it makes life easier so fuck it
+	int overflow_state = 0;// 0 means no twist overflow. -1 means underflow. 1 means overflow.
+
 	RenIKLimb() :
-			twist(0),
 			upper_twist_offset(0),
 			lower_twist_offset(0),
 			roll_offset(0),
 			upper_limb_twist(0),
 			lower_limb_twist(0),
 			twist_inflection_point_offset(0),
-			target_rotation_influence(0) {}
-	RenIKLimb(float p_twist, float p_upper_twist_offset, float p_lower_twist_offset, float p_roll_offset, float p_upper_limb_twist, float p_lower_limb_twist, float p_twist_inflection_point_offset, float p_target_rotation_influence, Vector3 p_pole_offset, Vector3 p_target_position_influence) :
-			twist(p_twist),
+			twist_overflow(0),
+	target_rotation_influence(0) {}
+	RenIKLimb(float p_upper_twist_offset, float p_lower_twist_offset, float p_roll_offset, float p_upper_limb_twist, float p_lower_limb_twist, float p_twist_inflection_point_offset, float p_twist_overflow, float p_target_rotation_influence, Vector3 p_pole_offset, Vector3 p_target_position_influence) :
 			upper_twist_offset(p_upper_twist_offset),
 			lower_twist_offset(p_lower_twist_offset),
 			roll_offset(p_roll_offset),
 			upper_limb_twist(p_upper_limb_twist),
 			lower_limb_twist(p_lower_limb_twist),
 			twist_inflection_point_offset(p_twist_inflection_point_offset),
+			twist_overflow(p_twist_overflow),
 			target_rotation_influence(p_target_rotation_influence),
 			pole_offset(p_pole_offset),
 			target_position_influence(p_target_position_influence) {}

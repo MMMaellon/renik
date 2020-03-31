@@ -159,8 +159,6 @@ public:
 	NodePath get_foot_right_target_path();
 
 	//IK Settings
-	float get_arm_twist();
-	void set_arm_twist(float degrees);
 	float get_arm_upper_twist_offset();
 	void set_arm_upper_twist_offset(float degrees);
 	float get_arm_lower_twist_offset();
@@ -173,6 +171,8 @@ public:
 	void set_arm_lower_limb_twist(float ratio);
 	float get_arm_twist_inflection_point_offset();
 	void set_arm_twist_inflection_point_offset(float degrees);
+	float get_arm_twist_overflow();
+	void set_arm_twist_overflow(float degrees);
 
 	Vector3 get_arm_pole_offset();
 	void set_arm_pole_offset(Vector3 euler);
@@ -183,8 +183,6 @@ public:
 	float get_arm_target_twist_influence();
 	void set_arm_target_twist_influence(float influence);
 
-	float get_leg_twist();
-	void set_leg_twist(float degrees);
 	float get_leg_upper_twist_offset();
 	void set_leg_upper_twist_offset(float degrees);
 	float get_leg_lower_twist_offset();
@@ -197,6 +195,8 @@ public:
 	void set_leg_lower_limb_twist(float ratio);
 	float get_leg_twist_inflection_point_offset();
 	void set_leg_twist_inflection_point_offset(float degrees);
+	float get_leg_twist_overflow();
+	void set_leg_twist_overflow(float degrees);
 
 	Vector3 get_leg_pole_offset();
 	void set_leg_pole_offset(Vector3 euler);
@@ -228,7 +228,7 @@ public:
 	static std::pair<float, float> trig_angles(Vector3 const &length1, Vector3 const &length2, Vector3 const &length3);
 	static Map<BoneId, Quat> solve_trig_ik(RenIKLimb limb, Transform limb_parent_transform, Transform target);
 
-	static Map<BoneId, Basis> solve_trig_ik_redux(RenIKLimb limb, Transform limb_parent_transform, Transform target);
+	static Map<BoneId, Basis> solve_trig_ik_redux(RenIKLimb &limb, Transform limb_parent_transform, Transform target);
 
 	static Map<BoneId, Quat> solve_isfabrik(RenIKChain chain, Transform chain_parent_transform, Transform target, float threshold, int loopLimit);
 
