@@ -5,21 +5,37 @@
 
 struct RenIKChain : public Reference {
 	GDCLASS(RenIKChain, Reference);
-	Vector<Transform> bones;
-	BoneId start_bone = -1;
-	BoneId end_bone = -1;
+
+	BoneId root_bone = -1;
+	BoneId leaf_bone = -1;
+
+	Vector<Joint> joints;
+	Vector<float> bone_lengths;
+	float total_length = 0;
+	Transform rest_start;
 
 public:
-	void set_chain(Skeleton *skeleton, BoneId p_start_bone, BoneId p_end_bone);
-	BoneId get_start_bone();
-	BoneId get_end_bone();
+	struct Joint {
+		Quat rotation;
+		BoneId id;
+		Vector3 relative_prev;
+		Vector3 relative_next;
+		float prev_distance = 0;
+		float next_distance = 0;
+
+		float root_influence = 0;
+		float leaf_influence = 0;
+		float twist_influence = 0;
+	};
+	void set_chain(Skeleton *skeleton, BoneId p_root_bone, BoneId p_leaf_bone);
 	bool is_valid();
 	float twist_influence = 0; //How much the chain tries to twist to follow the end when the start is facing a different direction
 	float twist_start = 0; //Where along the chain the twisting starts
-	float chain_curve = 0; //To prevent chains from bending the wrong way, we precurve it before solving the IK. This controls how much to precurve it
-	float chain_curve_angle = 0; //This defines which way to precurve it
-	float start_influence = 0; //how much the start bone is influenced by the root rotation
-	float end_influence = 0; //how much the end bone is influenced by the goal rotation
+	Vector3 chain_curve_direction; //This defines which way to prebend it
+	float root_influence = 0; //how much the start bone is influenced by the root rotation
+	float leaf_influence = 0; //how much the end bone is influenced by the goal rotation
+	float get_total_length();
+	Vector<Vector3> get_joints();
 };
 
 #endif
