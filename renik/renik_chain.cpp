@@ -1,5 +1,18 @@
 #include "renik_chain.h"
 
+RenIKChain::RenIKChain() :
+		chain_curve_direction(Vector3()),
+		root_influence(0),
+		leaf_influence(0),
+		twist_influence(1),
+		twist_start(0){};
+RenIKChain::RenIKChain(Vector3 p_chain_curve_direction, float p_root_influence, float p_leaf_influence, float p_twist_influence, float p_twist_start) :
+		chain_curve_direction(p_chain_curve_direction),
+		root_influence(p_root_influence),
+		leaf_influence(p_leaf_influence),
+		twist_influence(p_twist_influence),
+		twist_start(p_twist_start){};
+
 void RenIKChain::init_chain(Skeleton *skeleton) {
 	joints.clear();
 	total_length = 0;
@@ -11,7 +24,6 @@ void RenIKChain::init_chain(Skeleton *skeleton) {
 		rest_leaf = skeleton->get_bone_rest(leaf_bone);
 		while (bone != root_bone) {
 			Transform rest_pose = skeleton->get_bone_rest(bone);
-			root_bone_direction = rest_pose.origin;
 			rest_leaf = rest_pose * rest_leaf.orthonormalized();
 			last_length = rest_pose.origin.length();
 			total_length += last_length;
@@ -50,11 +62,11 @@ void RenIKChain::init_chain(Skeleton *skeleton) {
 			progress += j.prev_distance;
 			float percentage = (progress / total_length);
 			float effectiveRootInfluence = root_influence <= 0 || percentage >= root_influence ? 0 : (percentage - root_influence) / -root_influence;
-			float effectiveLeafInfluence = leaf_influence <= 0 || percentage <= leaf_influence ? 0 : (percentage - (total_length - leaf_influence)) / leaf_influence;
+			float effectiveLeafInfluence = leaf_influence <= 0 || percentage <= 1 - leaf_influence ? 0 : (percentage - (1 - leaf_influence)) / leaf_influence;
 			float effectiveTwistInfluence = twist_start >= 1 || twist_influence <= 0 || percentage <= twist_start ? 0 : (percentage - twist_start) * (twist_influence / (1 - twist_start));
-			j.root_influence = effectiveRootInfluence;
-			j.leaf_influence = effectiveLeafInfluence;
-			j.twist_influence = effectiveTwistInfluence;
+			j.root_influence = effectiveRootInfluence > 1 ? 1 : effectiveRootInfluence;
+			j.leaf_influence = effectiveLeafInfluence > 1 ? 1 : effectiveLeafInfluence;
+			j.twist_influence = effectiveTwistInfluence > 1 ? 1 : effectiveTwistInfluence;
 
 			if (!joints.empty()) {
 				RenIKChain::Joint oldJ = joints[joints.size() - 1];
@@ -74,11 +86,11 @@ void RenIKChain::init_chain(Skeleton *skeleton) {
 	}
 }
 
-void RenIKChain::set_root_bone(Skeleton* skeleton, BoneId p_root_bone){
+void RenIKChain::set_root_bone(Skeleton *skeleton, BoneId p_root_bone) {
 	root_bone = p_root_bone;
 	init_chain(skeleton);
 }
-void RenIKChain::set_leaf_bone(Skeleton* skeleton, BoneId p_leaf_bone){
+void RenIKChain::set_leaf_bone(Skeleton *skeleton, BoneId p_leaf_bone) {
 	leaf_bone = p_leaf_bone;
 	init_chain(skeleton);
 }
@@ -109,4 +121,53 @@ BoneId RenIKChain::get_root_bone() {
 
 BoneId RenIKChain::get_leaf_bone() {
 	return leaf_bone;
+}
+
+float RenIKChain::get_root_stiffness() {
+	return root_influence;
+}
+
+void RenIKChain::set_root_stiffness(Skeleton *skeleton, float stiffness) {
+	root_influence = stiffness;
+	init_chain(skeleton);
+}
+
+float RenIKChain::get_leaf_stiffness() {
+	return leaf_influence;
+}
+
+void RenIKChain::set_leaf_stiffness(Skeleton *skeleton, float stiffness) {
+	leaf_influence = stiffness;
+	init_chain(skeleton);
+}
+
+float RenIKChain::get_twist() {
+	return twist_influence;
+}
+
+void RenIKChain::set_twist(Skeleton *skeleton, float p_twist) {
+	twist_influence = p_twist;
+	init_chain(skeleton);
+}
+
+float RenIKChain::get_twist_start() {
+	return twist_start;
+}
+
+void RenIKChain::set_twist_start(Skeleton *skeleton, float p_twist_start) {
+	twist_start = p_twist_start;
+	init_chain(skeleton);
+}
+
+bool RenIKChain::contains_bone(Skeleton *skeleton, BoneId bone) {
+	if (skeleton) {
+		BoneId spineBone = leaf_bone;
+		while (spineBone >= 0) {
+			if(spineBone == bone){
+				return true;
+			}
+			spineBone = skeleton->get_bone_parent(spineBone);
+		}
+	}
+	return false;
 }

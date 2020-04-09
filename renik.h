@@ -97,16 +97,16 @@ public:
 	void _notification(int p_what);
 	static void _bind_methods();
 
-	void update_ik(float influence);
+	void update_ik();
 	void update_placement(float delta);
 
 	void apply_ik_map(Map<BoneId, Quat> ikMap);
 	void apply_ik_map(Map<BoneId, Basis> ikMap);
-	void perform_torso_ik(float influence = 1);
-	void perform_hand_left_ik(float influence = 1);
-	void perform_hand_right_ik(float influence = 1);
-	void perform_foot_left_ik(float influence = 1);
-	void perform_foot_right_ik(float influence = 1);
+	void perform_torso_ik();
+	void perform_hand_left_ik();
+	void perform_hand_right_ik();
+	void perform_foot_left_ik();
+	void perform_foot_right_ik();
 	void reset_chain(RenIKChain chain);
 	void reset_limb(RenIKLimb limb);
 
@@ -207,18 +207,22 @@ public:
 	float get_leg_target_twist_influence();
 	void set_leg_target_twist_influence(float influence);
 
-	float get_neck_bending();
-	void set_neck_bending(float influence);
-	float get_spine_curve();
-	void set_spine_curve(float influence);
-	float get_spine_curve_offset();
-	void set_spine_curve_offset(float degrees);
-	float get_crouch_amount();
-	void set_crouch_amount(float influence);
-	float get_hunch_amount();
-	void set_hunch_amount(float influence);
-	float get_follow_head_influence();
-	void set_follow_head_influence(float influence);
+	Vector3 get_spine_curve();
+	void set_spine_curve(Vector3 influence);
+	float get_upper_spine_stiffness();
+	void set_upper_spine_stiffness(float influence);
+	float get_lower_spine_stiffness();
+	void set_lower_spine_stiffness(float influence);
+	float get_spine_twist();
+	void set_spine_twist(float influence);
+	float get_spine_twist_start();
+	void set_spine_twist_start(float influence);
+
+	float get_shoulder_influence();
+	void set_shoulder_influence(float influence);
+
+	Vector3 get_shoulder_offset();
+	void set_shoulder_offset(Vector3 euler);
 
 	bool get_use_editor_speed();
 	void set_use_editor_speed(bool enable);
@@ -277,6 +281,11 @@ private:
 	RenIKLimb limb_arm_right;
 	RenIKLimb limb_leg_left;
 	RenIKLimb limb_leg_right;
+	float shoulder_influence = 0.3;
+	bool left_shoulder_enabled = false;
+	bool right_shoulder_enabled = false;
+	Vector3 left_shoulder_offset;
+	Vector3 right_shoulder_offset;
 
 	//General Settings ------------------
 	bool manual_update = false;

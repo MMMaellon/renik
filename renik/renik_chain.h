@@ -28,18 +28,19 @@ private:
 	Vector<Joint> joints;
 	float total_length = 0;
 	Transform rest_leaf;
-	Vector3 root_bone_direction;
 	void init_chain(Skeleton *skeleton);
+	float root_influence = 0; //how much the start bone is influenced by the root rotation
+	float leaf_influence = 0; //how much the end bone is influenced by the goal rotation
+	float twist_influence = 1; //How much the chain tries to twist to follow the end when the start is facing a different direction
+	float twist_start = 0; //Where along the chain the twisting starts
 
 public:
+	RenIKChain();
+	RenIKChain(Vector3 p_chain_curve_direction, float p_root_influence, float p_leaf_influence, float p_twist_influence, float p_twist_start);
 	void set_root_bone(Skeleton *skeleton, BoneId p_root_bone);
 	void set_leaf_bone(Skeleton *skeleton, BoneId p_leaf_bone);
 	bool is_valid();
-	float twist_influence = 1; //How much the chain tries to twist to follow the end when the start is facing a different direction
-	float twist_start = 0; //Where along the chain the twisting starts
 	Vector3 chain_curve_direction; //This defines which way to prebend it
-	float root_influence = 0; //how much the start bone is influenced by the root rotation
-	float leaf_influence = 0; //how much the end bone is influenced by the goal rotation
 	float get_total_length();
 	Vector<RenIKChain::Joint> get_joints();
 	Transform get_relative_rest_leaf();
@@ -47,6 +48,16 @@ public:
 	BoneId get_first_bone();
 	BoneId get_root_bone();
 	BoneId get_leaf_bone();
+
+	float get_root_stiffness();
+	void set_root_stiffness(Skeleton *skeleton, float stiffness);
+	float get_leaf_stiffness();
+	void set_leaf_stiffness(Skeleton *skeleton, float stiffness);
+	float get_twist();
+	void set_twist(Skeleton *skeleton, float p_twist);
+	float get_twist_start();
+	void set_twist_start(Skeleton *skeleton, float p_twist_start);
+	bool contains_bone(Skeleton *skeleton, BoneId bone);
 };
 
 #endif
