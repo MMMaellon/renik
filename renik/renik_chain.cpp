@@ -1,8 +1,6 @@
 #include "renik_chain.h"
 
-void RenIKChain::set_chain(Skeleton *skeleton, BoneId p_root_bone, BoneId p_leaf_bone) {
-	root_bone = p_root_bone < p_leaf_bone || p_leaf_bone < 0 ? p_root_bone : p_leaf_bone;
-	leaf_bone = p_root_bone < p_leaf_bone || p_root_bone < 0 ? p_leaf_bone : p_root_bone;
+void RenIKChain::init_chain(Skeleton *skeleton) {
 	joints.clear();
 	total_length = 0;
 	if (skeleton && root_bone >= 0 && leaf_bone >= 0 && root_bone < skeleton->get_bone_count() && leaf_bone < skeleton->get_bone_count()) {
@@ -10,14 +8,21 @@ void RenIKChain::set_chain(Skeleton *skeleton, BoneId p_root_bone, BoneId p_leaf
 		//generate the chain of bones
 		Vector<BoneId> chain;
 		float last_length;
+		rest_leaf = skeleton->get_bone_rest(leaf_bone);
 		while (bone != root_bone) {
-			last_length = skeleton->get_bone_rest(bone).origin.length();
+			Transform rest_pose = skeleton->get_bone_rest(bone);
+			root_bone_direction = rest_pose.origin;
+			rest_leaf = rest_pose * rest_leaf.orthonormalized();
+			last_length = rest_pose.origin.length();
 			total_length += last_length;
 			if (bone < 0) { //invalid chain
 				total_length = 0;
+				first_bone = -1;
+				rest_leaf = Transform();
 				return;
 			}
 			chain.push_back(bone);
+			first_bone = bone;
 			bone = skeleton->get_bone_parent(bone);
 		}
 		total_length -= last_length;
@@ -25,16 +30,19 @@ void RenIKChain::set_chain(Skeleton *skeleton, BoneId p_root_bone, BoneId p_leaf
 
 		if (total_length <= 0) { //invalid chain
 			total_length = 0;
+			first_bone = -1;
+			rest_leaf = Transform();
 			return;
 		}
 
 		Basis totalRotation;
 		float progress = 0;
 		//flip the order and figure out the relative distances of these joints
-		for (int i = chain.size() - 2; i >= 0; i--) {//skips the last joint because we're only doing joints we can move
-			Joint j;
+		for (int i = chain.size() - 1; i >= 0; i--) {
+			RenIKChain::Joint j;
 			j.id = chain[i];
 			Transform boneTransform = skeleton->get_bone_rest(j.id);
+			j.rotation = boneTransform.basis.get_rotation_quat();
 			j.relative_prev = totalRotation.xform_inv(boneTransform.origin);
 			j.prev_distance = j.relative_prev.length();
 
@@ -43,29 +51,62 @@ void RenIKChain::set_chain(Skeleton *skeleton, BoneId p_root_bone, BoneId p_leaf
 			float percentage = (progress / total_length);
 			float effectiveRootInfluence = root_influence <= 0 || percentage >= root_influence ? 0 : (percentage - root_influence) / -root_influence;
 			float effectiveLeafInfluence = leaf_influence <= 0 || percentage <= leaf_influence ? 0 : (percentage - (total_length - leaf_influence)) / leaf_influence;
-			float effectiveTwistInfluence = twist_start >= 1 || twist_influence <= 0 || percentage >= twist_start ? 0 : (percentage - twist_start) * (twist_influence / (1 - twist_start));
+			float effectiveTwistInfluence = twist_start >= 1 || twist_influence <= 0 || percentage <= twist_start ? 0 : (percentage - twist_start) * (twist_influence / (1 - twist_start));
 			j.root_influence = effectiveRootInfluence;
 			j.leaf_influence = effectiveLeafInfluence;
 			j.twist_influence = effectiveTwistInfluence;
 
 			if (!joints.empty()) {
-				joints[joints.size() - 1].relative_next = -j.relative_prev;
-				joints[joints.size() - 1].next_distance = j.prev_distance;
+				RenIKChain::Joint oldJ = joints[joints.size() - 1];
+				oldJ.relative_next = -j.relative_prev;
+				oldJ.next_distance = j.prev_distance;
+				joints.set(joints.size() - 1, oldJ);
 			}
 			joints.push_back(j);
 			totalRotation = (totalRotation * boneTransform.basis).orthonormalized();
 		}
+		if (!joints.empty()) {
+			RenIKChain::Joint oldJ = joints[joints.size() - 1];
+			oldJ.relative_next = -skeleton->get_bone_rest(leaf_bone).origin;
+			oldJ.next_distance = oldJ.relative_next.length();
+			joints.set(joints.size() - 1, oldJ);
+		}
 	}
 }
 
+void RenIKChain::set_root_bone(Skeleton* skeleton, BoneId p_root_bone){
+	root_bone = p_root_bone;
+	init_chain(skeleton);
+}
+void RenIKChain::set_leaf_bone(Skeleton* skeleton, BoneId p_leaf_bone){
+	leaf_bone = p_leaf_bone;
+	init_chain(skeleton);
+}
+
 bool RenIKChain::is_valid() {
-	return bones.size() > 2 && !joints.empty();
+	return !joints.empty();
 }
 
 float RenIKChain::get_total_length() {
 	return total_length;
 }
 
-Vector<Vector3> RenIKChain::get_joints() {
+Vector<RenIKChain::Joint> RenIKChain::get_joints() {
 	return joints;
+}
+
+Transform RenIKChain::get_relative_rest_leaf() {
+	return rest_leaf;
+}
+
+BoneId RenIKChain::get_first_bone() {
+	return first_bone;
+}
+
+BoneId RenIKChain::get_root_bone() {
+	return root_bone;
+}
+
+BoneId RenIKChain::get_leaf_bone() {
+	return leaf_bone;
 }

@@ -268,8 +268,14 @@ void RenIK::apply_ik_map(Map<BoneId, Basis> ikMap) {
 void RenIK::perform_torso_ik(float influence) {
 	if (head_target_spatial && skeleton && spine_chain.is_valid()) {
 		Transform headTransform = head_target_spatial->get_global_transform();
-		Transform hipTransform = hip_target_spatial ? hip_target_spatial->get_global_transform(): placedHip;
+		Transform hipTransform = hip_target_spatial ? hip_target_spatial->get_global_transform() : placedHip;
+		Vector3 delta = hipTransform.origin + hipTransform.basis.xform(spine_chain.get_joints()[0].relative_prev) - headTransform.origin;
+		if (delta.length() > spine_chain.get_total_length()) {
+			hipTransform.set_origin(headTransform.origin + (delta.normalized() * spine_chain.get_total_length()) - hipTransform.basis.xform(spine_chain.get_joints()[0].relative_prev));
+		}
+		skeleton->set_bone_global_pose_override(spine_chain.get_root_bone(), hipTransform, 1, true);
 		apply_ik_map(solve_ifabrik(spine_chain, hipTransform, headTransform, 0.001, 12));
+		skeleton->set_bone_global_pose_override(spine_chain.get_leaf_bone(), headTransform, 1, true);
 	}
 }
 
@@ -336,9 +342,9 @@ void RenIK::perform_foot_right_ik(float influence) {
 }
 
 void RenIK::reset_chain(RenIKChain chain) {
-	if (skeleton && chain.get_start_bone() < skeleton->get_bone_count() && chain.get_end_bone() < skeleton->get_bone_count()) {
-		BoneId bone = chain.get_start_bone();
-		while (bone >= 0 && bone != chain.get_end_bone()) {
+	if (skeleton && chain.get_leaf_bone() < skeleton->get_bone_count() && chain.get_root_bone() < skeleton->get_bone_count()) {
+		BoneId bone = chain.get_leaf_bone();
+		while (bone >= 0 && bone != chain.get_root_bone()) {
 			skeleton->set_bone_custom_pose(bone, Transform());
 			bone = skeleton->get_bone_parent(bone);
 		}
@@ -613,70 +619,88 @@ Map<BoneId, Basis> RenIK::solve_trig_ik_redux(RenIKLimb &limb, Transform root, T
 
 Map<BoneId, Quat> RenIK::solve_ifabrik(RenIKChain chain, Transform root, Transform target, float threshold, int loopLimit) {
 	Map<BoneId, Quat> map;
-	if (chain.is_valid()) {
-		//The true root of the limb is the point where the upper bone starts
-		Transform trueRoot = chain.get_rest_start();
-		Transform localTarget = trueRoot.affine_inverse() * target;
-		Transform localTargetDelta = chain.get_rest_start().affine_inverse() * localTarget;
+	if (chain.is_valid()) { //if the chain is valid there's at least one joint in the chain and there's one bone between it and the root
+		Vector<RenIKChain::Joint> joints = chain.get_joints(); //just so I don't have to call it all the time
+		Transform trueRoot = root.translated(joints[0].relative_prev);
+		Transform targetDelta = target * chain.get_relative_rest_leaf().affine_inverse(); //how the change in the target would affect the chain if the chain was parented to the target instead of the root
+		Transform trueRelativeTarget = trueRoot.affine_inverse() * target;
+		Quat prebend = align_vectors(chain.get_relative_rest_leaf().origin - joints[0].relative_prev, trueRelativeTarget.origin);
+		Transform prebentRoot = Transform(prebend, -trueRoot.origin).translated(trueRoot.origin) * root; //The angle root is rotated to point at the target;
 
-		Vector<RenIKChain::Joint> joints = chain.get_joints(); //will have n-1 joints. The last is going to be at the root. The first is going to be at the target
+		Vector<Vector3> globalJointPoints;
 
 		//We generate the starting points
 		//Here is where we take into account root and target influences and the prebend vector
-		jointPoints.set(jointPoints.size() - 1, Vector3()); //The root joint
-		float progress = 0;
-		for (int i = jointPoints.size() - 2; i > 0; i--) {
-			progress += chain.get_bone_length(i);
-			Vector3 rootVector = chain.get_rest_joints()[i]; //tries to match the rest transform
-			Vector3 targetVector = localTargetDelta.xform(chain.get_rest_joints()[i]);
-			Vector3 prebendVector = align_vectors(Vector3(0, 1, 0), localTarget.origin).xform(chain.chain_curve_direction);
-			float rootProgress = progress / chain.get_total_length();
-			float targetProgress = (chain.get_total_length() - progress) / chain.get_total_length();
-			float rootInfluence = (1 - rootProgress);
-			float targetInfluence = (1 - targetProgress);
-
-			jointPoints.set(i, jointPoints[i] + prebendVector);
-			jointPoints[i].linear_interpolate(rootVector, rootInfluence);
-			jointPoints[i].linear_interpolate(targetVector, targetInfluence);
+		Vector3 relativeJoint = joints[0].relative_prev;
+		for (int i = 1; i < joints.size(); i++) {
+			relativeJoint = relativeJoint + joints[i].relative_prev;
+			Vector3 prebentJoint = prebentRoot.xform(relativeJoint); //if you rotated the root around the true root so that the whole chain was pointing to the leaf and then you moved everything along the prebend vector
+			Vector3 rootJoint = root.xform(relativeJoint); //if you moved the joint with the root
+			Vector3 leafJoint = targetDelta.xform(relativeJoint); //if you moved the joint with the leaf
+			prebentJoint.linear_interpolate(rootJoint, joints[i].root_influence);
+			prebentJoint.linear_interpolate(leafJoint, joints[i].leaf_influence); //leaf influence dominates
+			globalJointPoints.push_back(prebentJoint);
 		}
-		jointPoints.set(0, localTarget.origin); //The target joint
 
 		//We then do regular FABRIK
 		for (int i = 0; i < loopLimit; i++) {
-			Vector3 lastJoint = Vector3(); //the root joint
+			Vector3 lastJoint = trueRoot.origin; //the root joint
 			//Forwards
-			for (int j = jointPoints.size() - 2; j > 0; j--) {
-				Vector3 delta = jointPoints[j] - lastJoint;
-				delta.normalize();
-				delta = delta * chain.get_bone_length(j + 1); //set to length of parent
-				jointPoints.set(j, lastJoint + delta);
+			for (int j = 1; j < joints.size(); j++) { //we skip the first joint because we're not allowed to move that joint
+				Vector3 delta = globalJointPoints[j - 1] - lastJoint;
+				delta = delta.normalized() * joints[j].prev_distance;
+				globalJointPoints.set(j - 1, lastJoint + delta);
+				lastJoint = globalJointPoints[j - 1];
 			}
 
-			lastJoint = jointPoints[0];
+			lastJoint = target.origin;
 			//Backwards
-			for (int j = 1; j < jointPoints.size() - 1; j++) {
-				Vector3 delta = jointPoints[j] - lastJoint;
-				delta.normalize();
-				delta = delta * chain.get_bone_length(j);
-				jointPoints.set(j, lastJoint + delta);
+			for (int j = joints.size() - 1; j >= 1; j--) { //we skip the first joint because we're not allowed to move that joint
+				Vector3 delta = globalJointPoints[j - 1] - lastJoint;
+				delta = delta.normalized() * joints[j].next_distance;
+				globalJointPoints.set(j - 1, lastJoint + delta);
+				lastJoint = globalJointPoints[j - 1];
 			}
 
-			float error = lastJoint.length() - chain.get_bone_length(chain.get_bone_count() - 1);
-			if ((Math::abs(error)) < threshold) {
+			float error = (lastJoint - trueRoot.origin).length();
+			if (error < threshold) {
 				break;
 			}
 		}
 
-		//Convert everything to quaternions and store it in the map
-		Quat prev = root.get_basis().get_quat();
-		map.insert(chain.get_bone_id(chain.get_bone_count() - 1), prev); //set the root
-		for (int i = chain.get_bone_count() - 2; i > 0; i--) {
-			BoneId bone = chain.get_bone_id(i);
-			Vector3 nextBone = jointPoints[i + 1];
-			map.insert(bone, root.get_basis().get_quat());
+		//Add a little twist
+		//We align the leaf's y axis with the rest_leaf's y-axis and see how far off the x-axes are to calculate the twist.
+		trueRelativeTarget.orthonormalize();
+		Vector3 leafX = align_vectors(trueRelativeTarget.basis.xform(Vector3(0, 1, 0)), chain.get_relative_rest_leaf().basis.xform(Vector3(0, 1, 0))).normalized().xform(trueRelativeTarget.basis.xform(Vector3(1, 0, 0)));
+		Vector3 restX = chain.get_relative_rest_leaf().basis.xform(Vector3(1, 0, 0));
+		Vector3 restZ = chain.get_relative_rest_leaf().basis.xform(Vector3(0, 0, 1));
+		float maxTwist = leafX.angle_to(restX);
+		if (leafX.cross(restX).dot(Vector3(0,1,0)) > 0) {
+			maxTwist *= -1;
 		}
-	}
 
+		//Convert everything to quaternions and store it in the map
+		Quat parentRot = root.get_basis().get_quat();
+		Vector3 parentPos = trueRoot.origin;
+		Quat prevTwist;
+		globalJointPoints.push_back(target.origin);
+		for (int i = 0; i < joints.size(); i++) { //the last one's rotation is defined by the leaf position not a joint so we skip it
+			parentRot = parentRot * joints[i].rotation;
+			Quat pose = align_vectors(Vector3(0, 1, 0), Transform(parentRot, parentPos).affine_inverse().xform(globalJointPoints[i])); //offset by one because joints has one extra element
+			Quat twist = Quat(Vector3(0, 1, 0), maxTwist * joints[i].twist_influence);
+			pose = (joints[i].rotation.inverse() * prevTwist).inverse() * pose * twist;
+			prevTwist = twist;
+			map.insert(joints[i].id, pose);
+			parentRot = parentRot * pose;
+			parentPos = globalJointPoints[i];
+		}
+
+		// parentRot = parentRot * joints[0].rotation;
+		// parent.translate(joints[0].relative_prev);
+		// Quat pose = align_vectors(axis, Transform(parentRot, parent.origin).affine_inverse().xform(target.origin)); //offset by one because joints has one extra element
+		// map.insert(joints[0].id, pose);
+		// parentRot = parentRot * pose;
+	}
 	return map;
 }
 
@@ -815,7 +839,7 @@ void RenIK::set_foot_right_bone_by_name(String p_bone) {
 
 void RenIK::set_head_bone(BoneId p_bone) {
 	head = p_bone;
-	spine_chain.set_chain(skeleton, spine_chain.get_start_bone(), p_bone);
+	spine_chain.set_leaf_bone(skeleton, p_bone);
 }
 void RenIK::set_hand_left_bone(BoneId p_bone) {
 	limb_arm_left.set_leaf(skeleton, p_bone);
@@ -825,7 +849,7 @@ void RenIK::set_hand_right_bone(BoneId p_bone) {
 }
 void RenIK::set_hip_bone(BoneId p_bone) {
 	hip = p_bone;
-	spine_chain.set_chain(skeleton, p_bone, spine_chain.get_end_bone());
+	spine_chain.set_root_bone(skeleton, p_bone);
 	if (skeleton) {
 		hip_height = skeleton->get_bone_rest(hip).get_origin()[1]; //y component of the hip origin
 	}

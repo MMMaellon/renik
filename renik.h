@@ -230,9 +230,7 @@ public:
 
 	static Map<BoneId, Basis> solve_trig_ik_redux(RenIKLimb &limb, Transform limb_parent_transform, Transform target);
 
-	static Map<BoneId, Quat> solve_isfabrik(RenIKChain chain, Transform chain_parent_transform, Transform target, float threshold, int loopLimit);
-
-	static Map<BoneId, Quat> solve_fabrik(RenIKChain chain, Transform chain_parent_transform, Transform target, float threshold, int loopLimit);
+	static Map<BoneId, Quat> solve_ifabrik(RenIKChain chain, Transform chain_parent_transform, Transform target, float threshold, int loopLimit);
 
 	void hip_place(float delta, RenIKConfig config);
 	void foot_place(float delta, RenIKConfig config);
