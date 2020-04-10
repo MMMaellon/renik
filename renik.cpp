@@ -20,8 +20,10 @@
 RenIK::RenIK() :
 		//IK DEFAULTS
 		spine_chain(Vector3(0, 1.5, -1), 1, 1, 1, 0),
-		left_shoulder_offset(Math::deg2rad(-50.0), Math::deg2rad(-15.0), Math::deg2rad(-15.0)),
-		right_shoulder_offset(Math::deg2rad(-50.0), Math::deg2rad(15.0), Math::deg2rad(15.0)),
+		left_shoulder_offset(Math::deg2rad(-30.0), Math::deg2rad(-10.0), Math::deg2rad(0.0)),
+		right_shoulder_offset(Math::deg2rad(-30.0), Math::deg2rad(10.0), Math::deg2rad(0.0)),
+		left_shoulder_pole_offset(Math::deg2rad(60.0), Math::deg2rad(0.0), Math::deg2rad(0.0)),
+		right_shoulder_pole_offset(Math::deg2rad(60.0), Math::deg2rad(0.0), Math::deg2rad(0.0)),
 		limb_arm_left(0, 0, Math_PI, 0.25, 0.25, Math::deg2rad(20.0), Math::deg2rad(45.0), 0.25, Vector3(Math::deg2rad(60.0), 0, 0), Vector3(2.0, 0, -2.0)),
 		limb_arm_right(0, 0, -Math_PI, 0.25, 0.25, Math::deg2rad(-20.0), Math::deg2rad(45.0), 0.25, Vector3(Math::deg2rad(60.0), 0, 0), Vector3(2.0, 0, 2.0)),
 		limb_leg_left(0, 0, 0, 0.25, 0.25, 0, Math::deg2rad(45.0), 0.5, Vector3(0, 0, Math_PI), Vector3()),
@@ -132,6 +134,8 @@ void RenIK::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_shoulder_influence", "influence"), &RenIK::set_shoulder_influence);
 	ClassDB::bind_method(D_METHOD("get_shoulder_offset"), &RenIK::get_shoulder_offset);
 	ClassDB::bind_method(D_METHOD("set_shoulder_offset", "euler"), &RenIK::set_shoulder_offset);
+	ClassDB::bind_method(D_METHOD("get_shoulder_pole_offset"), &RenIK::get_shoulder_pole_offset);
+	ClassDB::bind_method(D_METHOD("set_shoulder_pole_offset", "euler"), &RenIK::set_shoulder_pole_offset);
 
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "live_preview"), "set_live_preview", "get_live_preview");
 
@@ -167,6 +171,7 @@ void RenIK::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::VECTOR3, "arm_pole_offset"), "set_arm_pole_offset", "get_arm_pole_offset");
 	ADD_PROPERTY(PropertyInfo(Variant::VECTOR3, "arm_target_position_influence"), "set_arm_target_position_influence", "get_arm_target_position_influence");
 	ADD_PROPERTY(PropertyInfo(Variant::REAL, "arm_target_rotation_influence", PROPERTY_HINT_RANGE, "0,100,0.1"), "set_arm_target_rotation_influence", "get_arm_target_rotation_influence");
+	ADD_PROPERTY(PropertyInfo(Variant::VECTOR3, "arm_shoulder_pole_offset"), "set_shoulder_pole_offset", "get_shoulder_pole_offset");
 
 	ADD_GROUP("Leg IK Settings", "leg_");
 	ADD_PROPERTY(PropertyInfo(Variant::REAL, "leg_knee_direction_offset", PROPERTY_HINT_RANGE, "-360,360,0.1"), "set_leg_roll_offset", "get_leg_roll_offset");
@@ -318,8 +323,9 @@ void RenIK::perform_hand_left_ik() {
 				root = root * skeleton->get_bone_rest(rootBone);
 				Vector3 targetVector = root.affine_inverse().xform(hand_left_target_spatial->get_global_transform().origin);
 				Quat offsetQuat = Quat(left_shoulder_offset);
-				Quat poleOffset = (limb_arm_left.pole_offset * offsetQuat.inverse()).slerp(Quat(), 1 - shoulder_influence);
-				Quat quatAlignToTarget = align_vectors((limb_arm_left.pole_offset).xform(Vector3(0, 1, 0)), targetVector).slerp(Quat(), 1 - shoulder_influence) * poleOffset;
+				Quat poleOffset = Quat(left_shoulder_pole_offset);
+				Quat poleOffsetScaled = poleOffset.slerp(Quat(), 1 - shoulder_influence);
+				Quat quatAlignToTarget = align_vectors(poleOffset.xform(Vector3(0, 1, 0)), targetVector).slerp(Quat(), 1 - shoulder_influence) * poleOffsetScaled;
 				Transform customPose = Transform(offsetQuat * quatAlignToTarget, Vector3());
 				skeleton->set_bone_custom_pose(rootBone, customPose);
 			}
@@ -342,8 +348,9 @@ void RenIK::perform_hand_right_ik() {
 				root = root * skeleton->get_bone_rest(rootBone);
 				Vector3 targetVector = root.affine_inverse().xform(hand_right_target_spatial->get_global_transform().origin);
 				Quat offsetQuat = Quat(right_shoulder_offset);
-				Quat poleOffset = (limb_arm_right.pole_offset * offsetQuat.inverse()).slerp(Quat(), 1 - shoulder_influence);
-				Quat quatAlignToTarget = align_vectors((limb_arm_right.pole_offset).xform(Vector3(0, 1, 0)), targetVector).slerp(Quat(), 1 - shoulder_influence) * poleOffset;
+				Quat poleOffset = Quat(right_shoulder_pole_offset);
+				Quat poleOffsetScaled = poleOffset.slerp(Quat(), 1 - shoulder_influence);
+				Quat quatAlignToTarget = align_vectors(poleOffset.xform(Vector3(0, 1, 0)), targetVector).slerp(Quat(), 1 - shoulder_influence) * poleOffsetScaled;
 				Transform customPose = Transform(offsetQuat * quatAlignToTarget, Vector3());
 				skeleton->set_bone_custom_pose(rootBone, customPose);
 			}
@@ -1235,6 +1242,14 @@ Vector3 RenIK::get_shoulder_offset() {
 void RenIK::set_shoulder_offset(Vector3 euler) {
 	left_shoulder_offset = Vector3(Math::deg2rad(euler[0]), Math::deg2rad(euler[1]), Math::deg2rad(euler[2]));
 	right_shoulder_offset = Vector3(Math::deg2rad(euler[0]), -Math::deg2rad(euler[1]), -Math::deg2rad(euler[2]));
+}
+
+Vector3 RenIK::get_shoulder_pole_offset() {
+	return Vector3(Math::rad2deg(left_shoulder_pole_offset[0]), Math::rad2deg(left_shoulder_pole_offset[1]), Math::rad2deg(left_shoulder_pole_offset[2]));
+}
+void RenIK::set_shoulder_pole_offset(Vector3 euler) {
+	left_shoulder_pole_offset = Vector3(Math::deg2rad(euler[0]), Math::deg2rad(euler[1]), Math::deg2rad(euler[2]));
+	right_shoulder_pole_offset = Vector3(Math::deg2rad(euler[0]), -Math::deg2rad(euler[1]), -Math::deg2rad(euler[2]));
 }
 
 #endif // _3D_DISABLED

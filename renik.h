@@ -223,6 +223,8 @@ public:
 
 	Vector3 get_shoulder_offset();
 	void set_shoulder_offset(Vector3 euler);
+	Vector3 get_shoulder_pole_offset();
+	void set_shoulder_pole_offset(Vector3 euler);
 
 	bool get_use_editor_speed();
 	void set_use_editor_speed(bool enable);
@@ -281,11 +283,13 @@ private:
 	RenIKLimb limb_arm_right;
 	RenIKLimb limb_leg_left;
 	RenIKLimb limb_leg_right;
-	float shoulder_influence = 0.3;
+	float shoulder_influence = 0.4;
 	bool left_shoulder_enabled = false;
 	bool right_shoulder_enabled = false;
 	Vector3 left_shoulder_offset;
 	Vector3 right_shoulder_offset;
+	Vector3 left_shoulder_pole_offset;
+	Vector3 right_shoulder_pole_offset;
 
 	//General Settings ------------------
 	bool manual_update = false;
