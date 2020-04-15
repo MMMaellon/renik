@@ -19,7 +19,7 @@
 
 RenIK::RenIK() :
 		//IK DEFAULTS
-		spine_chain(Vector3(0, 1.5, -1), 1, 1, 1, 0),
+		spine_chain(Vector3(0, 15, -15), 1, 1, 1, 0),
 		left_shoulder_offset(Math::deg2rad(-30.0), Math::deg2rad(-10.0), Math::deg2rad(0.0)),
 		right_shoulder_offset(Math::deg2rad(-30.0), Math::deg2rad(10.0), Math::deg2rad(0.0)),
 		left_shoulder_pole_offset(Math::deg2rad(60.0), Math::deg2rad(0.0), Math::deg2rad(0.0)),
@@ -137,6 +137,18 @@ void RenIK::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_shoulder_pole_offset"), &RenIK::get_shoulder_pole_offset);
 	ClassDB::bind_method(D_METHOD("set_shoulder_pole_offset", "euler"), &RenIK::set_shoulder_pole_offset);
 
+	ClassDB::bind_method(D_METHOD("set_collide_with_areas", "enable"), &RenIK::set_collide_with_areas);
+	ClassDB::bind_method(D_METHOD("is_collide_with_areas_enabled"), &RenIK::is_collide_with_areas_enabled);
+
+	ClassDB::bind_method(D_METHOD("set_collide_with_bodies", "enable"), &RenIK::set_collide_with_bodies);
+	ClassDB::bind_method(D_METHOD("is_collide_with_bodies_enabled"), &RenIK::is_collide_with_bodies_enabled);
+
+	ClassDB::bind_method(D_METHOD("set_collision_mask", "mask"), &RenIK::set_collision_mask);
+	ClassDB::bind_method(D_METHOD("get_collision_mask"), &RenIK::get_collision_mask);
+
+	ClassDB::bind_method(D_METHOD("set_collision_mask_bit", "bit", "value"), &RenIK::set_collision_mask_bit);
+	ClassDB::bind_method(D_METHOD("get_collision_mask_bit", "bit"), &RenIK::get_collision_mask_bit);
+
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "live_preview"), "set_live_preview", "get_live_preview");
 
 	ADD_GROUP("Armature", "armature_");
@@ -195,6 +207,9 @@ void RenIK::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::REAL, "torso_spine_twist_start", PROPERTY_HINT_RANGE, "0,100,0.1"), "set_spine_twist_start", "get_spine_twist_start");
 
 	ADD_GROUP("Walk Settings (Advanced)", "walk_");
+	ADD_PROPERTY(PropertyInfo(Variant::INT, "walk_collision_mask", PROPERTY_HINT_LAYERS_3D_PHYSICS), "set_collision_mask", "get_collision_mask");
+	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "walk_collide_with_areas", PROPERTY_HINT_LAYERS_3D_PHYSICS), "set_collide_with_areas", "is_collide_with_areas_enabled");
+	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "walk_collide_with_bodies", PROPERTY_HINT_LAYERS_3D_PHYSICS), "set_collide_with_bodies", "is_collide_with_bodies_enabled");
 
 	ClassDB::bind_method(D_METHOD("update_ik"), &RenIK::update_ik);
 	ClassDB::bind_method(D_METHOD("update_placement"), &RenIK::update_placement);
@@ -225,18 +240,14 @@ void RenIK::_notification(int p_what) {
 			break;
 		case NOTIFICATION_INTERNAL_PROCESS:
 			if (!Engine::get_singleton()->is_editor_hint() || live_preview) {
-				if (!manual_update) {
-					update_ik();
-				}
+				update_ik();
 			}
 			break;
 		case NOTIFICATION_INTERNAL_PHYSICS_PROCESS:
 			if (!Engine::get_singleton()->is_editor_hint() || live_preview) {
-				if (!manual_update) {
-					update_placement(get_physics_process_delta_time());
-				}
-				break;
+				update_placement(get_physics_process_delta_time());
 			}
+			break;
 	}
 }
 
@@ -255,8 +266,22 @@ void RenIK::_initialize() {
 	set_foot_left_target_path(get_foot_left_target_path());
 	set_foot_right_target_path(get_foot_right_target_path());
 	set_process_priority(1); //makes sure that ik is done last after all physics and movement have taken place
-	set_process_internal(true);
+	enable_solve_ik_every_frame(true);
+	enable_hip_placement(true);
+	enable_foot_placement(true);
 	set_physics_process_internal(true);
+}
+
+void RenIK::enable_solve_ik_every_frame(bool automatically_update_ik) {
+	set_process_internal(automatically_update_ik);
+}
+
+void RenIK::enable_hip_placement(bool enabled) {
+	hip_placement = enabled;
+}
+
+void RenIK::enable_foot_placement(bool enabled) {
+	foot_placement = enabled;
 }
 
 void RenIK::update_ik() {
@@ -268,11 +293,10 @@ void RenIK::update_ik() {
 }
 
 void RenIK::update_placement(float delta) {
-	//TODO raytrace for floor here
-	//in the meantime, let's assume we're standing on the floor (aka its 0 away)
-
+	//Based on head position and delta time, we calc our speed and distance from the ground and place the feet accordingly
+	foot_place(delta, config, Set<RID>(), collision_mask, collide_with_bodies, collide_with_areas);
+	//Once the feet are placed, we put the hips at a comfortable position between the two
 	hip_place(delta, config);
-	foot_place(delta, config);
 }
 
 void RenIK::apply_ik_map(Map<BoneId, Quat> ikMap) {
@@ -404,10 +428,12 @@ void RenIK::reset_chain(RenIKChain chain) {
 	if (skeleton && chain.get_leaf_bone() < skeleton->get_bone_count() && chain.get_root_bone() < skeleton->get_bone_count()) {
 		BoneId bone = chain.get_leaf_bone();
 		while (bone >= 0 && bone != chain.get_root_bone()) {
+			skeleton->set_bone_global_pose_override(bone, Transform(), 0, false);
 			skeleton->set_bone_custom_pose(bone, Transform());
 			bone = skeleton->get_bone_parent(bone);
 		}
 		if (bone >= 0) {
+			skeleton->set_bone_global_pose_override(bone, Transform(), 0, false);
 			skeleton->set_bone_custom_pose(bone, Transform());
 		}
 	}
@@ -424,7 +450,210 @@ void RenIK::reset_limb(RenIKLimb limb) {
 void RenIK::hip_place(float delta, RenIKConfig config) {
 }
 
-void RenIK::foot_place(float delta, RenIKConfig config) {
+/*foot_place requires raycasting unless a raycast result is provided.
+	Raycasting needs to happen inside of a physics update
+*/
+void RenIK::foot_place(float delta, RenIKConfig config, Set<RID> exclude, uint32_t collision_mask, bool collide_with_bodies = true, bool collide_with_areas = false) {
+	if (head_target_spatial) {
+		Ref<World> w3d = head_target_spatial->get_world();
+		ERR_FAIL_COND(w3d.is_null());
+
+		PhysicsDirectSpaceState *dss = PhysicsServer::get_singleton()->space_get_direct_state(w3d->get_space());
+		ERR_FAIL_COND(!dss);
+
+		Transform headTransform = head_target_spatial->get_global_transform();
+
+		PhysicsDirectSpaceState::RayResult left_raycast;
+		PhysicsDirectSpaceState::RayResult right_raycast;
+
+		float startOffset = (config.spine_length * -config.center_of_balance_position) / sqrt(2);
+		Vector3 leftStart = headTransform.translated(Vector3(0, startOffset, startOffset) + config.left_hip_offset).origin;
+		Vector3 rightStart = headTransform.translated(Vector3(0, startOffset, startOffset) + config.right_hip_offset).origin;
+		Vector3 leftStop = headTransform.origin + Vector3(0, (-config.spine_length - config.left_leg_length) * (1 + config.raycast_allowance) + config.left_hip_offset[1], 0) + headTransform.basis.xform(config.left_hip_offset);
+		Vector3 rightStop = headTransform.origin + Vector3(0, (-config.spine_length - config.right_leg_length) * (1 + config.raycast_allowance) + config.right_hip_offset[1], 0) + headTransform.basis.xform(config.right_hip_offset);
+
+		bool left_collided = dss->intersect_ray(leftStart, leftStop, left_raycast, exclude, collision_mask, collide_with_bodies, collide_with_areas);
+		bool right_collided = dss->intersect_ray(rightStart, rightStop, right_raycast, exclude, collision_mask, collide_with_bodies, collide_with_areas);
+		if (!left_collided) {
+			left_raycast.collider = nullptr;
+		}
+		if (!right_collided) {
+			right_raycast.collider = nullptr;
+		}
+		foot_place(delta, config, left_raycast, right_raycast);
+	}
+}
+
+void RenIK::foot_place(float delta, RenIKConfig config, PhysicsDirectSpaceState::RayResult left_raycast, PhysicsDirectSpaceState::RayResult right_raycast) {
+	if (head_target_spatial) {
+		Basis uprightFootBasis(Vector3(-1, 0, 0), Vector3(0, -1, 0), Vector3(0, 0, 1));
+		const Spatial *newGroundLeftPointer = Object::cast_to<Spatial>(left_raycast.collider);
+		const Spatial *newGroundRightPointer = Object::cast_to<Spatial>(right_raycast.collider);
+		Transform centerGround = groundLeft.interpolate_with(groundRight, 0.5);
+		Transform headTransform = head_target_spatial->get_global_transform();
+		Vector3 closestToHead = newGroundLeftPointer ? vector_rejection(headTransform.origin - left_raycast.position, left_raycast.normal) + left_raycast.position : Vector3();
+		float headDistance = closestToHead.distance_to(headTransform.origin);
+		Vector3 newHead = centerGround.xform_inv(headTransform.origin);
+		Vector3 velocity = (newHead - prevHead) / delta;
+		float speed = velocity.length();
+		Vector3 leftOffset = standLeft.origin - left_raycast.position;
+		Vector3 rightOffset = standRight.origin - right_raycast.position;
+		Vector3 axis;
+		float leftRotation;
+		float rightRotation;
+		(standLeft.basis.inverse() * head_target_spatial->get_global_transform().basis).get_rotation_axis_angle(axis, leftRotation);
+		(standRight.basis.inverse() * head_target_spatial->get_global_transform().basis).get_rotation_axis_angle(axis, rightRotation);
+		//figure out if we're in the proper state
+		switch (walk_state) {
+			case -1:
+				if ((placedLeft.origin - standLeft.origin).length_squared() < 0.1 && (placedRight.origin - standRight.origin).length_squared() < 0.1) {
+					walk_state = 0;
+				}
+			case 0: //standing state
+				//check balance & speed under threshold
+				if ((!newGroundLeftPointer && !newGroundRightPointer) || //if both feet are off the ground
+						(headDistance < config.spine_length) //if too close to the ground
+				) {
+					walk_state = -2; //start free falling
+				} else if (leftOffset.length_squared() > config.balance_threshold || //if the left foot is too far away from where it should be
+						   rightOffset.length_squared() > config.balance_threshold || //if the right foot is too far away from where it should be
+						   (leftOffset + rightOffset).length_squared() > config.balance_threshold || //if we're off balance
+						   leftRotation > config.rotation_threshold || //if the left foot is twisted
+						   rightRotation > config.rotation_threshold || //if the right foot is twisted
+						   newGroundLeftPointer != groundLeftPointer || newGroundRightPointer != newGroundRightPointer // if the ground object disappears or changes suddenly
+				) {
+					walk_state = 1;
+				}
+				break;
+			case 1: //stepping state
+				//check speed above threshold
+				if ((!newGroundLeftPointer && !newGroundRightPointer) || //if both feet are off the ground
+						(headDistance < config.spine_length) //if too close to the ground
+				) {
+					walk_state = -2;
+				} else if (speed < config.min_threshold) { //moving too slow
+					walk_state = -1;
+				}
+				break;
+			default: //jumping / falling
+				if ((newGroundLeftPointer || newGroundRightPointer) && //if at least one foot is on the ground
+						(headDistance > config.spine_length) //if we aren't too close to the ground
+				) {
+					walk_state = 1;
+				}
+				break;
+		}
+
+		groundLeftPointer = newGroundLeftPointer;
+		groundRightPointer = newGroundRightPointer;
+
+		//for dangling
+		Vector3 hipDangle(0, config.spine_length * (config.dangle_height - 1), 0);
+		Vector3 legDangle = headTransform.basis.xform_inv(Vector3(0, config.left_leg_length * (config.dangle_height - 1), 0));
+		if (headDistance < config.spine_length && left_raycast.normal.length_squared() + right_raycast.normal.length_squared() > 0.01) {
+			legDangle = headTransform.basis.xform_inv(vector_rejection(legDangle, left_raycast.normal.linear_interpolate(right_raycast.normal, 0.5)).normalized()) * -config.left_leg_length;
+		} else if (headDistance < config.spine_length || headTransform.basis.xform(Vector3(0, 1, 0)).angle_to(Vector3(0, 1, 0)) > Math_PI / 3) {
+			legDangle = headTransform.basis.xform_inv(vector_rejection(legDangle, Vector3(0, 1, 0)).normalized()) * -config.left_leg_length;
+		}
+		Vector3 leftDangleVector = hipDangle + config.left_hip_offset + legDangle;
+		Vector3 rightDangleVector = hipDangle + config.right_hip_offset + legDangle;
+		Basis uprightRotatedFoot = headTransform.basis * uprightFootBasis;
+		Quat pointFeetToHead = align_vectors(hipDangle + legDangle, Vector3(0, -1, 0));
+		Transform dangleLeft = headTransform * Transform(uprightFootBasis * pointFeetToHead, leftDangleVector);
+		Transform dangleRight = headTransform * Transform(uprightFootBasis * pointFeetToHead, rightDangleVector);
+
+		switch (walk_state) {
+			case 0: //standing state
+				if (groundLeftPointer) {
+					standLeft = groundLeft * groundedLeft;
+					placedLeft = standLeft;
+				} else {
+					placedLeft = placedLeft.interpolate_with(dangleLeft, config.dangle_stiffness);
+				}
+				if (groundRightPointer) {
+					standRight = groundRight * groundedRight;
+					placedRight = standRight;
+				} else {
+					placedRight = placedRight.interpolate_with(dangleRight, config.dangle_stiffness);
+				}
+				break;
+			case -1: //transitioning to standing state
+				if (groundLeftPointer) {
+					standLeft = leftRotation > config.rotation_threshold ? Transform(uprightFootBasis * pointFeetToHead, left_raycast.position) : groundLeft * groundedLeft;
+					placedLeft = placedLeft.interpolate_with(standLeft, 0.75);
+				} else {
+					placedLeft = placedLeft.interpolate_with(dangleLeft, config.dangle_stiffness);
+				}
+				if (groundRightPointer) {
+					standRight = rightRotation > config.rotation_threshold ? Transform(uprightFootBasis * pointFeetToHead, right_raycast.position) : groundRight * groundedRight;
+					placedRight = placedRight.interpolate_with(standRight, 0.75);
+				} else {
+					placedRight = placedRight.interpolate_with(dangleRight, config.dangle_stiffness);
+				}
+				break;
+			case 1: //stepping state
+				if (groundLeftPointer) {
+					groundLeft = groundLeftPointer->get_global_transform();
+					groundedLeft = groundLeft.affine_inverse() * Transform(uprightRotatedFoot * align_vectors(left_raycast.normal, uprightRotatedFoot.xform_inv(Vector3(0, -1, 0))), left_raycast.position);
+					placedLeft = groundLeft * groundedLeft * steppingLeft;
+				} else {
+					placedLeft = placedLeft.interpolate_with(dangleLeft, config.dangle_stiffness);
+				}
+				if (groundRightPointer) {
+					groundRight = groundRightPointer->get_global_transform();
+					groundedRight = groundRight.affine_inverse() * Transform(uprightRotatedFoot * align_vectors(right_raycast.normal, uprightRotatedFoot.xform_inv(Vector3(0, -1, 0))), right_raycast.position);
+					placedRight = groundRight * groundedRight * steppingRight;
+				} else {
+					placedRight = placedRight.interpolate_with(dangleRight, config.dangle_stiffness);
+				}
+				break;
+			default: //jumping / falling
+				placedLeft = placedLeft.interpolate_with(dangleLeft, config.dangle_stiffness);
+				placedRight = placedRight.interpolate_with(dangleRight, config.dangle_stiffness);
+				break;
+		}
+	}
+}
+
+void RenIK::set_collision_mask(uint32_t p_mask) {
+	collision_mask = p_mask;
+}
+
+uint32_t RenIK::get_collision_mask() const {
+	return collision_mask;
+}
+
+void RenIK::set_collision_mask_bit(int p_bit, bool p_value) {
+	uint32_t mask = get_collision_mask();
+	if (p_value)
+		mask |= 1 << p_bit;
+	else
+		mask &= ~(1 << p_bit);
+	set_collision_mask(mask);
+}
+
+bool RenIK::get_collision_mask_bit(int p_bit) const {
+	return get_collision_mask() & (1 << p_bit);
+}
+
+void RenIK::set_collide_with_areas(bool p_clip) {
+
+	collide_with_areas = p_clip;
+}
+
+bool RenIK::is_collide_with_areas_enabled() const {
+
+	return collide_with_areas;
+}
+
+void RenIK::set_collide_with_bodies(bool p_clip) {
+
+	collide_with_bodies = p_clip;
+}
+
+bool RenIK::is_collide_with_bodies_enabled() const {
+
+	return collide_with_bodies;
 }
 
 //IK SOLVING
@@ -684,7 +913,9 @@ Map<BoneId, Quat> RenIK::solve_ifabrik(RenIKChain chain, Transform root, Transfo
 		Transform targetDelta = target * chain.get_relative_rest_leaf().affine_inverse(); //how the change in the target would affect the chain if the chain was parented to the target instead of the root
 		Transform trueRelativeTarget = trueRoot.affine_inverse() * target;
 		Quat alignToTarget = align_vectors(chain.get_relative_rest_leaf().origin - joints[0].relative_prev, trueRelativeTarget.origin);
-		Transform prebentRoot = Transform(trueRoot.basis * alignToTarget, trueRoot.origin).translated((chain.chain_curve_direction * chain.get_total_length()) - joints[0].relative_prev); //The angle root is rotated to point at the target;
+		float heightDiff = (chain.get_relative_rest_leaf().origin - joints[0].relative_prev).length() - trueRelativeTarget.origin.length();
+		heightDiff = heightDiff < 0 ? 0 : heightDiff;
+		Transform prebentRoot = Transform(trueRoot.basis * alignToTarget, trueRoot.origin).translated((chain.chain_curve_direction * chain.get_total_length() * heightDiff) - joints[0].relative_prev); //The angle root is rotated to point at the target;
 
 		Vector<Vector3> globalJointPoints;
 
@@ -904,6 +1135,7 @@ void RenIK::set_foot_right_bone_by_name(String p_bone) {
 void RenIK::set_head_bone(BoneId p_bone) {
 	head = p_bone;
 	spine_chain.set_leaf_bone(skeleton, p_bone);
+	config.spine_length = spine_chain.get_total_length();
 }
 void RenIK::set_hand_left_bone(BoneId p_bone) {
 	limb_arm_left.set_leaf(skeleton, p_bone);
@@ -917,15 +1149,17 @@ void RenIK::set_hand_right_bone(BoneId p_bone) {
 void RenIK::set_hip_bone(BoneId p_bone) {
 	hip = p_bone;
 	spine_chain.set_root_bone(skeleton, p_bone);
-	if (skeleton) {
-		hip_height = skeleton->get_bone_rest(hip).get_origin()[1]; //y component of the hip origin
-	}
+	config.spine_length = spine_chain.get_total_length();
 }
 void RenIK::set_foot_left_bone(BoneId p_bone) {
 	limb_leg_left.set_leaf(skeleton, p_bone);
+	config.left_leg_length = limb_leg_left.is_valid() ? limb_leg_left.lower.origin.length() + limb_leg_left.leaf.origin.length() : 0;
+	config.left_hip_offset = limb_leg_left.is_valid() ? limb_leg_left.upper.origin : Vector3();
 }
 void RenIK::set_foot_right_bone(BoneId p_bone) {
 	limb_leg_right.set_leaf(skeleton, p_bone);
+	config.right_leg_length = limb_leg_right.is_valid() ? limb_leg_right.lower.origin.length() + limb_leg_right.leaf.origin.length() : 0;
+	config.right_hip_offset = limb_leg_right.is_valid() ? limb_leg_right.upper.origin : Vector3();
 }
 
 int64_t RenIK::get_hip_bone() {

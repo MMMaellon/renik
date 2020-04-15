@@ -4,6 +4,7 @@
 
 #include "renik/renik_chain.h"
 #include "renik/renik_limb.h"
+#include "servers/physics_server.h"
 #include <core/engine.h>
 #include <core/variant.h>
 #include <scene/3d/skeleton.h>
@@ -19,6 +20,11 @@ public:
 		GDCLASS(RenIKConfig, Reference);
 
 	public:
+		float spine_length;
+		float left_leg_length;
+		float right_leg_length;
+		Vector3 left_hip_offset;
+		Vector3 right_hip_offset;
 		//Hip Placement Adjustments
 		float crouch_amount; //Crouching means bending over at the hip while keeping the spine straight
 		float hunch_amount; //Hunching means bending over by arching the spine
@@ -39,6 +45,7 @@ public:
 		float min_threshold;
 		float max_threshold; //when all scaling stops and the legs just move faster
 		float raycast_threshold;
+		float rotation_threshold;
 		float balance_threshold;
 		float center_of_balance_position; //distance between hips and head that we'll call the center of balance. Usually at 25%, near the belly button
 
@@ -58,7 +65,7 @@ public:
 			hip_follow_head_influence = 0;
 			calculate_speed = false;
 			floor_offset = 0;
-			raycast_allowance = 0;
+			raycast_allowance = 0.05;
 			contact_length = 0;
 			followthru_angle = 0;
 			buildup_angle = 0;
@@ -67,10 +74,11 @@ public:
 			min_threshold = 0;
 			max_threshold = 0;
 			raycast_threshold = 0;
+			rotation_threshold = Math_PI / 2.0;
 			balance_threshold = 0;
-			center_of_balance_position = 0;
-			dangle_height = 0;
-			dangle_stiffness = 0;
+			center_of_balance_position = 0.75;
+			dangle_height = 0.2;
+			dangle_stiffness = 0.2;
 			contact_scale = 0;
 			height_scale = 0;
 			loop_scale = 0;
@@ -239,11 +247,21 @@ public:
 	static Map<BoneId, Quat> solve_ifabrik(RenIKChain chain, Transform chain_parent_transform, Transform target, float threshold, int loopLimit);
 
 	void hip_place(float delta, RenIKConfig config);
-	void foot_place(float delta, RenIKConfig config);
+	void foot_place(float delta, RenIKConfig config, Set<RID> exclude, uint32_t collision_mask, bool collide_with_bodies, bool collide_with_areas);
+	void foot_place(float delta, RenIKConfig config, PhysicsDirectSpaceState::RayResult left_raycast, PhysicsDirectSpaceState::RayResult right_raycast);
 	//All used in leg trace
 	void set_falling(bool falling);
-	void set_manual_update(bool update_manually);
-	void update();
+	void enable_solve_ik_every_frame(bool automatically_update_ik);
+	void enable_foot_placement(bool enabled);
+	void enable_hip_placement(bool enabled);
+	void set_collision_mask_bit(int p_bit, bool p_value);
+	bool get_collision_mask_bit(int p_bit) const;
+	void set_collision_mask(uint32_t p_mask);
+	uint32_t get_collision_mask() const;
+	void set_collide_with_areas(bool p_clip);
+	bool is_collide_with_areas_enabled() const;
+	void set_collide_with_bodies(bool p_clip);
+	bool is_collide_with_bodies_enabled() const;
 
 private:
 	//Setup -------------------------
@@ -283,7 +301,7 @@ private:
 	RenIKLimb limb_arm_right;
 	RenIKLimb limb_leg_left;
 	RenIKLimb limb_leg_right;
-	float shoulder_influence = 0.4;
+	float shoulder_influence = 0.3;
 	bool left_shoulder_enabled = false;
 	bool right_shoulder_enabled = false;
 	Vector3 left_shoulder_offset;
@@ -292,7 +310,6 @@ private:
 	Vector3 right_shoulder_pole_offset;
 
 	//General Settings ------------------
-	bool manual_update = false;
 	bool hip_placement = true;
 	bool foot_placement = true;
 	bool headTrackerEnabled = true;
@@ -303,67 +320,34 @@ private:
 	bool rightFootTrackerEnabled = true;
 
 	// //Internal Variables --------------------
-	// //IK Cache
-	// //If the transform didn't change, we skip recalculating IK
-	// Transform headTargetCached;
-	// Transform handLeftTargetCached;
-	// Transform handRightTargetCached;
-	// Transform hipTargetCached;
-	// Transform footLeftTargetCached;
-	// Transform footRightTargetCached;
 
-	// //tPose Cache
-	// float tPoseHeight;
-	// float tPoseHipsDist;
-	// Vector3 tPoseHipVector;
-	// Transform tPoseHeadLocal;
-	// Transform tPoseHipTransformLocalToHead;
-	// Transform tPoseHead;
-	// Transform tPoseHips;
-	// Transform tPoseHandLeft;
-	// Transform tPoseHandRight;
-	// Transform tPoseFootLeft;
-	// Transform tPoseFootRight;
-
-	int walk_state = 0; //0 is stand state, 1 is step state, -1 is jump state
+	int walk_state = 0; //0 is stand state, 1 is step state, -1 is transitioning to stand state, -2 is jump state
 	float ground_speed = 0;
+	Vector3 prevHead; //local to midpoint between grounds
 	Transform placedHip; //relative to skeleton
+	Transform standLeft; //relative to world
+	Transform standRight; //relative to world
 	Transform placedLeft; //relative to world
 	Transform placedRight; //relative to world
-
-	//cache
-	float hip_height = 0;
+	Transform groundedLeft; //relative to ground
+	Transform groundedRight; //relative to ground
+	Transform steppingLeft; //relative to grounded
+	Transform steppingRight; //relative to grounded
+	Transform groundLeft;
+	Transform groundRight;
+	const Spatial *groundLeftPointer;
+	const Spatial *groundRightPointer;
+	uint32_t collision_mask = 1; //the first bit is on but all others are off
+	bool collide_with_areas = false;
+	bool collide_with_bodies = true;
 
 	Vector<BoneId> calculate_bone_chain(BoneId root, BoneId leaf);
 
-	//SIFABRIK
-	float spineLength = 0;
-	struct BonePoint {
-		BonePoint(float l, Transform t, Vector3 p) {
-			length = l;
-			transform = t;
-			point = p;
-		}
-		BonePoint() {
-			length = 0;
-			transform = Transform();
-			point = Vector3();
-		}
-		float length = 0;
-		Transform transform; //local
-		Vector3 point; //global
-	};
-
 	static float smoothCurve(float number, float modifier = 0.5);
-	static float sinusoidalInterpolation(float number);
 	static Vector3 vector_rejection(Vector3 v, Vector3 normal);
 	static float safe_acos(float f);
 	static float safe_asin(float f);
 	static Vector3 get_perpendicular_vector(Vector3 v);
-
-	//for SIFABRIK
-	static void solveFABRIKPoints(std::vector<RenIK::BonePoint> &bonePoints, Vector3 rootPoint, Vector3 goal, float threshold, int loopLimit);
-	static Vector3 fitPointToLine(Vector3 point, Vector3 goal, float length);
 };
 
 #endif
