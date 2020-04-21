@@ -248,7 +248,7 @@ public:
 
 	void hip_place(float delta, RenIKConfig config);
 	void foot_place(float delta, RenIKConfig config, Set<RID> exclude, uint32_t collision_mask, bool collide_with_bodies, bool collide_with_areas);
-	void foot_place(float delta, RenIKConfig config, PhysicsDirectSpaceState::RayResult left_raycast, PhysicsDirectSpaceState::RayResult right_raycast);
+	void foot_place(float delta, RenIKConfig config, PhysicsDirectSpaceState::RayResult left_raycast, PhysicsDirectSpaceState::RayResult right_raycast, PhysicsDirectSpaceState::RayResult laying_raycast);
 	//All used in leg trace
 	void set_falling(bool falling);
 	void enable_solve_ik_every_frame(bool automatically_update_ik);
@@ -301,7 +301,7 @@ private:
 	RenIKLimb limb_arm_right;
 	RenIKLimb limb_leg_left;
 	RenIKLimb limb_leg_right;
-	float shoulder_influence = 0.3;
+	float shoulder_influence = 0.15;
 	bool left_shoulder_enabled = false;
 	bool right_shoulder_enabled = false;
 	Vector3 left_shoulder_offset;

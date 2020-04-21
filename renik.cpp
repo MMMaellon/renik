@@ -20,12 +20,12 @@
 RenIK::RenIK() :
 		//IK DEFAULTS
 		spine_chain(Vector3(0, 15, -15), 1, 1, 1, 0),
-		left_shoulder_offset(Math::deg2rad(-30.0), Math::deg2rad(-10.0), Math::deg2rad(0.0)),
-		right_shoulder_offset(Math::deg2rad(-30.0), Math::deg2rad(10.0), Math::deg2rad(0.0)),
-		left_shoulder_pole_offset(Math::deg2rad(60.0), Math::deg2rad(0.0), Math::deg2rad(0.0)),
-		right_shoulder_pole_offset(Math::deg2rad(60.0), Math::deg2rad(0.0), Math::deg2rad(0.0)),
-		limb_arm_left(0, 0, Math_PI, 0.25, 0.25, Math::deg2rad(20.0), Math::deg2rad(45.0), 0.25, Vector3(Math::deg2rad(60.0), 0, 0), Vector3(2.0, 0, -2.0)),
-		limb_arm_right(0, 0, -Math_PI, 0.25, 0.25, Math::deg2rad(-20.0), Math::deg2rad(45.0), 0.25, Vector3(Math::deg2rad(60.0), 0, 0), Vector3(2.0, 0, 2.0)),
+		left_shoulder_offset(Math::deg2rad(-20.0), Math::deg2rad(-10.0), Math::deg2rad(-10.0)),
+		right_shoulder_offset(Math::deg2rad(-20.0), Math::deg2rad(10.0), Math::deg2rad(10.0)),
+		left_shoulder_pole_offset(Math::deg2rad(78.0), Math::deg2rad(0.0), Math::deg2rad(0.0)),
+		right_shoulder_pole_offset(Math::deg2rad(78.0), Math::deg2rad(0.0), Math::deg2rad(0.0)),
+		limb_arm_left(0, 0, Math_PI, 0.5, 0.66666, Math::deg2rad(20.0), Math::deg2rad(45.0), 0.25, Vector3(Math::deg2rad(60.0), 0, 0), Vector3(2.0, -1, -2.0)),
+		limb_arm_right(0, 0, -Math_PI, 0.5, 0.66666, Math::deg2rad(-20.0), Math::deg2rad(45.0), 0.25, Vector3(Math::deg2rad(60.0), 0, 0), Vector3(2.0, 1, 2.0)),
 		limb_leg_left(0, 0, 0, 0.25, 0.25, 0, Math::deg2rad(45.0), 0.5, Vector3(0, 0, Math_PI), Vector3()),
 		limb_leg_right(0, 0, 0, 0.25, 0.25, 0, Math::deg2rad(45.0), 0.5, Vector3(0, 0, -Math_PI), Vector3()){};
 
@@ -349,7 +349,7 @@ void RenIK::perform_hand_left_ik() {
 				Quat offsetQuat = Quat(left_shoulder_offset);
 				Quat poleOffset = Quat(left_shoulder_pole_offset);
 				Quat poleOffsetScaled = poleOffset.slerp(Quat(), 1 - shoulder_influence);
-				Quat quatAlignToTarget = align_vectors(poleOffset.xform(Vector3(0, 1, 0)), targetVector).slerp(Quat(), 1 - shoulder_influence) * poleOffsetScaled;
+				Quat quatAlignToTarget = poleOffsetScaled * align_vectors(Vector3(0, 1, 0), poleOffset.inverse().xform(offsetQuat.inverse().xform(targetVector))).slerp(Quat(), 1 - shoulder_influence);
 				Transform customPose = Transform(offsetQuat * quatAlignToTarget, Vector3());
 				skeleton->set_bone_custom_pose(rootBone, customPose);
 			}
@@ -374,7 +374,7 @@ void RenIK::perform_hand_right_ik() {
 				Quat offsetQuat = Quat(right_shoulder_offset);
 				Quat poleOffset = Quat(right_shoulder_pole_offset);
 				Quat poleOffsetScaled = poleOffset.slerp(Quat(), 1 - shoulder_influence);
-				Quat quatAlignToTarget = align_vectors(poleOffset.xform(Vector3(0, 1, 0)), targetVector).slerp(Quat(), 1 - shoulder_influence) * poleOffsetScaled;
+				Quat quatAlignToTarget = poleOffsetScaled * align_vectors(Vector3(0, 1, 0), poleOffset.inverse().xform(offsetQuat.inverse().xform(targetVector))).slerp(Quat(), 1 - shoulder_influence);
 				Transform customPose = Transform(offsetQuat * quatAlignToTarget, Vector3());
 				skeleton->set_bone_custom_pose(rootBone, customPose);
 			}
@@ -465,6 +465,7 @@ void RenIK::foot_place(float delta, RenIKConfig config, Set<RID> exclude, uint32
 
 		PhysicsDirectSpaceState::RayResult left_raycast;
 		PhysicsDirectSpaceState::RayResult right_raycast;
+		PhysicsDirectSpaceState::RayResult laying_raycast;
 
 		float startOffset = (config.spine_length * -config.center_of_balance_position) / sqrt(2);
 		Vector3 leftStart = headTransform.translated(Vector3(0, startOffset, startOffset) + config.left_hip_offset).origin;
@@ -474,25 +475,27 @@ void RenIK::foot_place(float delta, RenIKConfig config, Set<RID> exclude, uint32
 
 		bool left_collided = dss->intersect_ray(leftStart, leftStop, left_raycast, exclude, collision_mask, collide_with_bodies, collide_with_areas);
 		bool right_collided = dss->intersect_ray(rightStart, rightStop, right_raycast, exclude, collision_mask, collide_with_bodies, collide_with_areas);
+		bool laying_down = dss->intersect_ray(headTransform.origin, headTransform.origin - Vector3(0, config.spine_length, 0), laying_raycast, exclude, collision_mask, collide_with_bodies, collide_with_areas);
 		if (!left_collided) {
 			left_raycast.collider = nullptr;
 		}
 		if (!right_collided) {
 			right_raycast.collider = nullptr;
 		}
-		foot_place(delta, config, left_raycast, right_raycast);
+		if (!laying_down) {
+			laying_raycast.collider = nullptr;
+		}
+		foot_place(delta, config, left_raycast, right_raycast, laying_raycast);
 	}
 }
 
-void RenIK::foot_place(float delta, RenIKConfig config, PhysicsDirectSpaceState::RayResult left_raycast, PhysicsDirectSpaceState::RayResult right_raycast) {
+void RenIK::foot_place(float delta, RenIKConfig config, PhysicsDirectSpaceState::RayResult left_raycast, PhysicsDirectSpaceState::RayResult right_raycast, PhysicsDirectSpaceState::RayResult laying_raycast) {
 	if (head_target_spatial) {
 		Basis uprightFootBasis(Vector3(-1, 0, 0), Vector3(0, -1, 0), Vector3(0, 0, 1));
 		const Spatial *newGroundLeftPointer = Object::cast_to<Spatial>(left_raycast.collider);
 		const Spatial *newGroundRightPointer = Object::cast_to<Spatial>(right_raycast.collider);
 		Transform centerGround = groundLeft.interpolate_with(groundRight, 0.5);
 		Transform headTransform = head_target_spatial->get_global_transform();
-		Vector3 closestToHead = newGroundLeftPointer ? vector_rejection(headTransform.origin - left_raycast.position, left_raycast.normal) + left_raycast.position : Vector3();
-		float headDistance = closestToHead.distance_to(headTransform.origin);
 		Vector3 newHead = centerGround.xform_inv(headTransform.origin);
 		Vector3 velocity = (newHead - prevHead) / delta;
 		float speed = velocity.length();
@@ -512,7 +515,7 @@ void RenIK::foot_place(float delta, RenIKConfig config, PhysicsDirectSpaceState:
 			case 0: //standing state
 				//check balance & speed under threshold
 				if ((!newGroundLeftPointer && !newGroundRightPointer) || //if both feet are off the ground
-						(headDistance < config.spine_length) //if too close to the ground
+						laying_raycast.collider //if too close to the ground
 				) {
 					walk_state = -2; //start free falling
 				} else if (leftOffset.length_squared() > config.balance_threshold || //if the left foot is too far away from where it should be
@@ -528,7 +531,7 @@ void RenIK::foot_place(float delta, RenIKConfig config, PhysicsDirectSpaceState:
 			case 1: //stepping state
 				//check speed above threshold
 				if ((!newGroundLeftPointer && !newGroundRightPointer) || //if both feet are off the ground
-						(headDistance < config.spine_length) //if too close to the ground
+						laying_raycast.collider //if too close to the ground
 				) {
 					walk_state = -2;
 				} else if (speed < config.min_threshold) { //moving too slow
@@ -537,7 +540,7 @@ void RenIK::foot_place(float delta, RenIKConfig config, PhysicsDirectSpaceState:
 				break;
 			default: //jumping / falling
 				if ((newGroundLeftPointer || newGroundRightPointer) && //if at least one foot is on the ground
-						(headDistance > config.spine_length) //if we aren't too close to the ground
+						!laying_raycast.collider //if we aren't too close to the ground
 				) {
 					walk_state = 1;
 				}
@@ -549,11 +552,17 @@ void RenIK::foot_place(float delta, RenIKConfig config, PhysicsDirectSpaceState:
 
 		//for dangling
 		Vector3 hipDangle(0, config.spine_length * (config.dangle_height - 1), 0);
-		Vector3 legDangle = headTransform.basis.xform_inv(Vector3(0, config.left_leg_length * (config.dangle_height - 1), 0));
-		if (headDistance < config.spine_length && left_raycast.normal.length_squared() + right_raycast.normal.length_squared() > 0.01) {
-			legDangle = headTransform.basis.xform_inv(vector_rejection(legDangle, left_raycast.normal.linear_interpolate(right_raycast.normal, 0.5)).normalized()) * -config.left_leg_length;
-		} else if (headDistance < config.spine_length || headTransform.basis.xform(Vector3(0, 1, 0)).angle_to(Vector3(0, 1, 0)) > Math_PI / 3) {
-			legDangle = headTransform.basis.xform_inv(vector_rejection(legDangle, Vector3(0, 1, 0)).normalized()) * -config.left_leg_length;
+		Vector3 legDangle;
+		if (laying_raycast.collider) {
+			Vector3 groundNormal = laying_raycast.normal;
+			legDangle = headTransform.basis.xform_inv(vector_rejection(headTransform.basis.xform(Vector3(0, -1, 0)), groundNormal).normalized()) * config.left_leg_length;
+		} else {
+			Vector3 groundNormal = newGroundLeftPointer || newGroundRightPointer ? left_raycast.normal.linear_interpolate(right_raycast.normal, 0.5).normalized() : Vector3(0, 1, 0);
+			if (headTransform.basis.xform(Vector3(0, 1, 0)).angle_to(groundNormal) > Math_PI / 3) { //if head is at an extreme angle, just have the feet follow the head
+				legDangle = Vector3(0, -config.left_leg_length, 0);
+			} else { //otherwise if the head is mostly vertical, try to point the feet at the ground
+				legDangle = headTransform.basis.xform_inv(groundNormal * config.left_leg_length * (config.dangle_height - 1));
+			}
 		}
 		Vector3 leftDangleVector = hipDangle + config.left_hip_offset + legDangle;
 		Vector3 rightDangleVector = hipDangle + config.right_hip_offset + legDangle;
@@ -747,7 +756,8 @@ Map<BoneId, Quat> RenIK::solve_trig_ik(RenIKLimb limb, Transform root, Transform
 		//Then we roll the limb based on the target position
 		Vector3 targetRestPosition = upperVector.normalized() * (upperLength + lowerLength);
 		Vector3 rollVector = upperBend.inverse().xform(upperVector).normalized();
-		Quat positionRoll = Quat(rollVector, limb.target_position_influence.dot(targetRestPosition - targetVector));
+		float positionalRollAmount = limb.target_position_influence.dot(targetRestPosition - targetVector);
+		Quat positionRoll = Quat(rollVector, positionalRollAmount);
 		upper = upper.normalized() * positionRoll;
 		//And the target rotation
 
@@ -853,12 +863,14 @@ Map<BoneId, Basis> RenIK::solve_trig_ik_redux(RenIKLimb &limb, Transform root, T
 			jointRollAmount *= -1;
 		}
 		jointAxis.rotate(normalizedTargetVector, jointRollAmount);
+		float totalRoll = jointRollAmount + positionalOffset + limb.roll_offset;
 
 		//Add a little twist
 		//We align the leaf's y axis with the lower limb's y-axis and see how far off the x-axis is from the joint axis to calculate the twist.
 		Vector3 leafX = align_vectors(localLeafVector.rotated(normalizedTargetVector, jointRollAmount), localLowerVector.rotated(normalizedTargetVector, jointRollAmount)).xform(localTarget.get_basis().xform(Vector3(1, 0, 0)));
-		Vector3 lowerZ = jointAxis.rotated(localLowerVector, -limb.roll_offset).cross(localLowerVector);
-		float twistAngle = leafX.angle_to(jointAxis.rotated(localLowerVector, -limb.roll_offset));
+		Vector3 rolledJointAxis = jointAxis.rotated(localLowerVector, -totalRoll);
+		Vector3 lowerZ = rolledJointAxis.cross(localLowerVector);
+		float twistAngle = leafX.angle_to(rolledJointAxis);
 		if (leafX.dot(lowerZ) > 0) {
 			twistAngle *= -1;
 		}
@@ -883,8 +895,8 @@ Map<BoneId, Basis> RenIK::solve_trig_ik_redux(RenIKLimb &limb, Transform root, T
 		}
 
 		float lowerTwist = twistAngle * limb.lower_limb_twist;
-		float upperTwist = lowerTwist * limb.upper_limb_twist + limb.upper_twist_offset - limb.roll_offset;
-		lowerTwist += limb.lower_twist_offset - 2 * limb.roll_offset;
+		float upperTwist = lowerTwist * limb.upper_limb_twist + limb.upper_twist_offset - totalRoll;
+		lowerTwist += limb.lower_twist_offset - 2 * limb.roll_offset - positionalOffset - jointRollAmount;
 
 		jointAxis.rotate(normalizedTargetVector, twistAngle * limb.target_rotation_influence);
 
