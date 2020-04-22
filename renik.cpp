@@ -502,14 +502,14 @@ void RenIK::foot_place(float delta, RenIKConfig config, PhysicsDirectSpaceState:
 		Vector3 leftOffset = standLeft.origin - left_raycast.position;
 		Vector3 rightOffset = standRight.origin - right_raycast.position;
 		Vector3 axis;
-		float leftRotation;
-		float rightRotation;
-		(standLeft.basis.inverse() * head_target_spatial->get_global_transform().basis).get_rotation_axis_angle(axis, leftRotation);
-		(standRight.basis.inverse() * head_target_spatial->get_global_transform().basis).get_rotation_axis_angle(axis, rightRotation);
+		float leftRotation = 0;
+		float rightRotation = 0;
+		(standLeft.basis.inverse() * (head_target_spatial->get_global_transform().basis * uprightFootBasis)).get_rotation_axis_angle(axis, leftRotation);
+		(standRight.basis.inverse() * (head_target_spatial->get_global_transform().basis * uprightFootBasis)).get_rotation_axis_angle(axis, rightRotation);
 		//figure out if we're in the proper state
 		switch (walk_state) {
 			case -1:
-				if ((placedLeft.origin - standLeft.origin).length_squared() < 0.1 && (placedRight.origin - standRight.origin).length_squared() < 0.1) {
+				if ((placedLeft.origin - standLeft.origin).length_squared() < 0.01 && (placedRight.origin - standRight.origin).length_squared() < 0.01) {
 					walk_state = 0;
 				}
 			case 0: //standing state
@@ -518,14 +518,24 @@ void RenIK::foot_place(float delta, RenIKConfig config, PhysicsDirectSpaceState:
 						laying_raycast.collider //if too close to the ground
 				) {
 					walk_state = -2; //start free falling
-				} else if (leftOffset.length_squared() > config.balance_threshold || //if the left foot is too far away from where it should be
-						   rightOffset.length_squared() > config.balance_threshold || //if the right foot is too far away from where it should be
-						   (leftOffset + rightOffset).length_squared() > config.balance_threshold || //if we're off balance
+				} else if (leftOffset.length_squared() > config.balance_threshold * config.left_leg_length || //if the left foot is too far away from where it should be
+						   rightOffset.length_squared() > config.balance_threshold * config.right_leg_length || //if the right foot is too far away from where it should be
+						   (leftOffset + rightOffset).length_squared() > config.balance_threshold * config.spine_length || //if we're off balance
 						   leftRotation > config.rotation_threshold || //if the left foot is twisted
 						   rightRotation > config.rotation_threshold || //if the right foot is twisted
 						   newGroundLeftPointer != groundLeftPointer || newGroundRightPointer != newGroundRightPointer // if the ground object disappears or changes suddenly
 				) {
 					walk_state = 1;
+					//check if the left foot was the one that caused the step
+					if (leftOffset.length_squared() > config.balance_threshold * config.left_leg_length ||
+							leftRotation > config.rotation_threshold ||
+							newGroundLeftPointer != groundLeftPointer) {
+						step_progress = 0;
+					} else {
+						step_progress = 0.5;
+					};
+					lastLeft = placedLeft;
+					lastRight = placedRight;
 				}
 				break;
 			case 1: //stepping state
@@ -534,7 +544,7 @@ void RenIK::foot_place(float delta, RenIKConfig config, PhysicsDirectSpaceState:
 						laying_raycast.collider //if too close to the ground
 				) {
 					walk_state = -2;
-				} else if (speed < config.min_threshold) { //moving too slow
+				} else if (speed < config.min_threshold * config.left_leg_length) { //moving too slow
 					walk_state = -1;
 				}
 				break;
@@ -543,10 +553,12 @@ void RenIK::foot_place(float delta, RenIKConfig config, PhysicsDirectSpaceState:
 						!laying_raycast.collider //if we aren't too close to the ground
 				) {
 					walk_state = 1;
+					lastLeft = placedLeft;
+					lastRight = placedRight;
 				}
 				break;
 		}
-
+		prevHead = newHead;
 		groundLeftPointer = newGroundLeftPointer;
 		groundRightPointer = newGroundRightPointer;
 
@@ -573,47 +585,109 @@ void RenIK::foot_place(float delta, RenIKConfig config, PhysicsDirectSpaceState:
 
 		switch (walk_state) {
 			case 0: //standing state
+			case -1: //transitioning to standing state
 				if (groundLeftPointer) {
 					standLeft = groundLeft * groundedLeft;
-					placedLeft = standLeft;
+					placedLeft = walk_state == 0 ? standLeft : placedLeft.interpolate_with(standLeft, config.dangle_stiffness);
 				} else {
 					placedLeft = placedLeft.interpolate_with(dangleLeft, config.dangle_stiffness);
 				}
 				if (groundRightPointer) {
 					standRight = groundRight * groundedRight;
-					placedRight = standRight;
+					placedRight = walk_state == 0 ? standRight : placedRight.interpolate_with(standRight, config.dangle_stiffness);
 				} else {
 					placedRight = placedRight.interpolate_with(dangleRight, config.dangle_stiffness);
 				}
 				break;
-			case -1: //transitioning to standing state
 				if (groundLeftPointer) {
 					standLeft = leftRotation > config.rotation_threshold ? Transform(uprightFootBasis * pointFeetToHead, left_raycast.position) : groundLeft * groundedLeft;
-					placedLeft = placedLeft.interpolate_with(standLeft, 0.75);
+					placedLeft = placedLeft.interpolate_with(standLeft, config.dangle_stiffness);
 				} else {
 					placedLeft = placedLeft.interpolate_with(dangleLeft, config.dangle_stiffness);
 				}
 				if (groundRightPointer) {
 					standRight = rightRotation > config.rotation_threshold ? Transform(uprightFootBasis * pointFeetToHead, right_raycast.position) : groundRight * groundedRight;
-					placedRight = placedRight.interpolate_with(standRight, 0.75);
+					placedRight = placedRight.interpolate_with(standRight, config.dangle_stiffness);
 				} else {
 					placedRight = placedRight.interpolate_with(dangleRight, config.dangle_stiffness);
 				}
 				break;
 			case 1: //stepping state
-				if (groundLeftPointer) {
-					groundLeft = groundLeftPointer->get_global_transform();
-					groundedLeft = groundLeft.affine_inverse() * Transform(uprightRotatedFoot * align_vectors(left_raycast.normal, uprightRotatedFoot.xform_inv(Vector3(0, -1, 0))), left_raycast.position);
-					placedLeft = groundLeft * groundedLeft * steppingLeft;
-				} else {
-					placedLeft = placedLeft.interpolate_with(dangleLeft, config.dangle_stiffness);
-				}
-				if (groundRightPointer) {
-					groundRight = groundRightPointer->get_global_transform();
-					groundedRight = groundRight.affine_inverse() * Transform(uprightRotatedFoot * align_vectors(right_raycast.normal, uprightRotatedFoot.xform_inv(Vector3(0, -1, 0))), right_raycast.position);
-					placedRight = groundRight * groundedRight * steppingRight;
-				} else {
-					placedRight = placedRight.interpolate_with(dangleRight, config.dangle_stiffness);
+				if (groundLeftPointer || groundRightPointer) {
+					//if only one foot has a hold, pretend we're tightrope walking
+					groundLeftPointer = groundLeftPointer ? groundLeftPointer : groundRightPointer;
+					groundRightPointer = groundRightPointer ? groundRightPointer : groundLeftPointer;
+					Vector3 leftPos = groundLeftPointer ? left_raycast.position : right_raycast.position;
+					Vector3 leftNormal = groundLeftPointer ? left_raycast.normal .normalized(): right_raycast.normal.normalized();
+					Vector3 rightPos = groundRightPointer ? right_raycast.position : left_raycast.position;
+					Vector3 rightNormal = groundRightPointer ? right_raycast.normal.normalized() : left_raycast.normal.normalized();
+
+					Quat rotationLeft = leftRotation > config.rotation_threshold ? pointFeetToHead : align_vectors(leftNormal, uprightRotatedFoot.xform_inv(Vector3(0, -1, 0)));
+					Quat rotationRight = rightRotation > config.rotation_threshold ? pointFeetToHead : align_vectors(rightNormal, uprightRotatedFoot.xform_inv(Vector3(0, -1, 0)));
+
+					// step_progress = step_progress + speed * speed > 1.0 ? 0.5 : step_progress + speed * speed;
+					step_progress = fmod((step_progress + sqrtf(speed)) , 1.0); //0 is left foot at apex, 0.5 is right foot at apex
+					float right_step_progress = fmod((step_progress + 0.5) , 1.0);
+					float totalContact = (config.contact_length / 2) * MIN(0, 1 - config.contact_scale * sqrt(speed / config.max_threshold));
+					float bottomSegmentSize = 0.5 - totalContact / 2; //size of followthru and buildup. starts at 0 for slow speeds
+					float topSegmentSize = 0.25; //size of the top halves of the loop
+					//
+					//ideal is where we want the foot to land. At slow speeds its a little in front of where we're headed. At high speeds it's directly below the center of gravity.
+					Transform idealLeft(uprightRotatedFoot * rotationLeft, leftPos + (vector_rejection(velocity, leftNormal).normalized() * totalContact));
+					Transform idealRight(uprightRotatedFoot * rotationLeft, rightPos + (vector_rejection(velocity, rightNormal).normalized() * totalContact));
+					placedLeft.set_basis(placedLeft.basis.slerp(idealLeft.basis, config.dangle_stiffness)); //always lags a little
+					placedRight.set_basis(placedRight.basis.slerp(idealLeft.basis, config.dangle_stiffness)); //always lags a little
+					Vector3 saddleLeft = (leftPos - headTransform.origin) * (1 - config.step_height - config.height_scale * speed * speed);
+					Vector3 saddleRight = (rightPos - headTransform.origin) * (1 - config.step_height - config.height_scale * speed * speed);
+					float followScale = config.loop_scale * speed * config.loop_ratio;
+					float buildScale = config.loop_scale * speed * (1 - config.loop_ratio);
+					Vector3 leftFollow = leftNormal * config.followthru_angle - velocity.normalized();
+					Vector3 rightFollow = rightNormal * config.followthru_angle - velocity.normalized();
+					Vector3 leftBuild = leftNormal * config.buildup_angle + velocity.normalized();
+					Vector3 rightBuild = rightNormal * config.buildup_angle + velocity.normalized();
+					//left foot
+					if (step_progress < topSegmentSize) { //starts at end of the followthru, ends at saddle
+						Vector3 startPos = headTransform.origin + lastLeft.origin + leftFollow * followScale;
+						Vector3 endPos = saddleLeft;
+						Quat startRot = lastLeft.basis.get_rotation_quat() * Quat(Vector3(1, 0, 0), followScale * Math_PI / 2); //rotated down 90 degrees
+						Quat endRot = idealLeft.basis.get_rotation_quat() * Quat(Vector3(1, 0, 0), Math_PI / 4);//rotated down 45 degrees
+						float segmentProgress = step_progress / topSegmentSize;
+						Vector3 posDiff = endPos - startPos;
+						Vector3 startCurve = startPos + leftNormal * (posDiff.length() / 4);
+						Vector3 endCurve = endPos - vector_rejection(posDiff, leftNormal).normalized() * (posDiff.length() / 4);
+						placedLeft.set_basis(startRot.slerp(endRot, segmentProgress));
+						placedLeft.set_origin(startPos.cubic_interpolate(endPos, startCurve, endCurve, segmentProgress));
+					} else if (step_progress < 2 * topSegmentSize) { //starts at saddle, ends at apex
+						Vector3 startPos = saddleLeft;
+						Vector3 endPos = headTransform.origin + idealLeft.origin + leftBuild * buildScale;
+						Quat startRot = idealLeft.basis.get_rotation_quat() * Quat(Vector3(1, 0, 0), Math_PI / 4);
+						Quat endRot = idealLeft.basis.get_rotation_quat() * Quat(Vector3(-1, 0, 0), buildScale * Math_PI / 4); //rotated up 45 degrees
+						float segmentProgress = (step_progress - topSegmentSize) / topSegmentSize;
+						Vector3 posDiff = endPos - startPos;
+						Vector3 startCurve = startPos + vector_rejection(posDiff, leftNormal).normalized() * (posDiff.length() / 4);
+						Vector3 endCurve = endPos - leftNormal * (posDiff.length() / 4);
+						placedLeft.set_basis(startRot.slerp(endRot, segmentProgress));
+						placedLeft.set_origin(startPos.cubic_interpolate(endPos, startCurve, endCurve, segmentProgress));
+					} else if (step_progress < 2 * topSegmentSize + bottomSegmentSize) { //starts at apex, goes to landing point
+						Vector3 startPos = headTransform.origin + idealLeft.origin + leftBuild * buildScale;
+						Vector3 endPos = idealLeft.origin;
+						Quat startRot = idealLeft.basis.get_rotation_quat() * Quat(Vector3(-1, 0, 0), buildScale * Math_PI / 4);
+						Quat endRot = idealLeft.basis;
+						float segmentProgress = (step_progress - topSegmentSize) / topSegmentSize;
+						Vector3 posDiff = endPos - startPos;
+						Vector3 startCurve = startPos - leftNormal * (posDiff.length() / 4);
+						Vector3 endCurve = endPos;
+						placedLeft.set_basis(startRot.slerp(endRot, segmentProgress));
+						placedLeft.set_origin(startPos.cubic_interpolate(endPos, startCurve, endCurve, segmentProgress));
+						//needed for the next step
+						groundLeft = groundLeftPointer->get_global_transform();
+						groundedLeft = groundLeft.affine_inverse() * idealLeft;
+					} else if (step_progress < 2 * topSegmentSize + bottomSegmentSize + totalContact) { //lands and stays in contact with the ground
+						groundLeft = groundLeftPointer->get_global_transform();
+						placedLeft = groundLeft * groundedLeft;
+					} else { //lifts back up during the follow thru
+						float segmentProgress = (step_progress - 2 * topSegmentSize - bottomSegmentSize - totalContact) / bottomSegmentSize;
+					}
 				}
 				break;
 			default: //jumping / falling

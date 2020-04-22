@@ -69,13 +69,13 @@ public:
 			contact_length = 0;
 			followthru_angle = 0;
 			buildup_angle = 0;
-			loop_ratio = 0;
+			loop_ratio = 0.5;
 			step_height = 0;
-			min_threshold = 0;
-			max_threshold = 0;
+			min_threshold = 0.1;
+			max_threshold = 1.0;
 			raycast_threshold = 0;
 			rotation_threshold = Math_PI / 2.0;
-			balance_threshold = 0;
+			balance_threshold = 0.25;
 			center_of_balance_position = 0.75;
 			dangle_height = 0.2;
 			dangle_stiffness = 0.2;
@@ -323,6 +323,7 @@ private:
 
 	int walk_state = 0; //0 is stand state, 1 is step state, -1 is transitioning to stand state, -2 is jump state
 	float ground_speed = 0;
+	float step_progress = 0;
 	Vector3 prevHead; //local to midpoint between grounds
 	Transform placedHip; //relative to skeleton
 	Transform standLeft; //relative to world
@@ -331,8 +332,8 @@ private:
 	Transform placedRight; //relative to world
 	Transform groundedLeft; //relative to ground
 	Transform groundedRight; //relative to ground
-	Transform steppingLeft; //relative to grounded
-	Transform steppingRight; //relative to grounded
+	Transform lastLeft; //relative to head (no rotation)
+	Transform lastRight; //relative to head (no rotation)
 	Transform groundLeft;
 	Transform groundRight;
 	const Spatial *groundLeftPointer;
