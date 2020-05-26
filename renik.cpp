@@ -508,16 +508,27 @@ void RenIK::foot_place(float delta, RenIKConfig config, PhysicsDirectSpaceState:
 		(standRight.basis.inverse() * (head_target_spatial->get_global_transform().basis * uprightFootBasis)).get_rotation_axis_angle(axis, rightRotation);
 		//figure out if we're in the proper state
 		switch (walk_state) {
-			case -1:
-				if ((placedLeft.origin - standLeft.origin).length_squared() < 0.01 && (placedRight.origin - standRight.origin).length_squared() < 0.01) {
-					walk_state = 0;
+			case FALLING:
+				if ((newGroundLeftPointer || newGroundRightPointer) && //if at least one foot is on the ground
+						!laying_raycast.collider //if we aren't too close to the ground
+				) {
+					walk_state = STANDING_TRANSITION;
+					lastLeft = placedLeft;
+					lastRight = placedRight;
 				}
-			case 0: //standing state
+				break;
+			case STANDING_TRANSITION:
+				if (walk_transition_progress >= 1.0f) {
+					walk_state = STANDING;
+				} else {
+				}
+				break;
+			case STANDING:
 				//check balance & speed under threshold
 				if ((!newGroundLeftPointer && !newGroundRightPointer) || //if both feet are off the ground
 						laying_raycast.collider //if too close to the ground
 				) {
-					walk_state = -2; //start free falling
+					walk_state = FALLING; //start free falling
 				} else if (leftOffset.length_squared() > config.balance_threshold * config.left_leg_length || //if the left foot is too far away from where it should be
 						   rightOffset.length_squared() > config.balance_threshold * config.right_leg_length || //if the right foot is too far away from where it should be
 						   (leftOffset + rightOffset).length_squared() > config.balance_threshold * config.spine_length || //if we're off balance
@@ -525,7 +536,7 @@ void RenIK::foot_place(float delta, RenIKConfig config, PhysicsDirectSpaceState:
 						   rightRotation > config.rotation_threshold || //if the right foot is twisted
 						   newGroundLeftPointer != groundLeftPointer || newGroundRightPointer != newGroundRightPointer // if the ground object disappears or changes suddenly
 				) {
-					walk_state = 1;
+					walk_state = STANDING_TRANSITION;
 					//check if the left foot was the one that caused the step
 					if (leftOffset.length_squared() > config.balance_threshold * config.left_leg_length ||
 							leftRotation > config.rotation_threshold ||
@@ -538,25 +549,44 @@ void RenIK::foot_place(float delta, RenIKConfig config, PhysicsDirectSpaceState:
 					lastRight = placedRight;
 				}
 				break;
-			case 1: //stepping state
+			case STEPPING_TRANSITION:
+				if (walk_transition_progress >= 1.0f) {
+					walk_state = STEPPING;
+				} else {
+
+				}
+				break;
+			case STEPPING:
 				//check speed above threshold
 				if ((!newGroundLeftPointer && !newGroundRightPointer) || //if both feet are off the ground
 						laying_raycast.collider //if too close to the ground
 				) {
-					walk_state = -2;
+					walk_state = LAYING_TRANSITION;
 				} else if (speed < config.min_threshold * config.left_leg_length) { //moving too slow
-					walk_state = -1;
+					walk_state = STANDING_TRANSITION;
 				}
 				break;
-			default: //jumping / falling
-				if ((newGroundLeftPointer || newGroundRightPointer) && //if at least one foot is on the ground
-						!laying_raycast.collider //if we aren't too close to the ground
-				) {
-					walk_state = 1;
-					lastLeft = placedLeft;
-					lastRight = placedRight;
+			case LAYING_TRANSITION:
+				if (walk_transition_progress >= 1.0f) {
+					walk_state = LAYING;
+				} else {
 				}
 				break;
+			case LAYING:
+				break;
+			case OTHER_TRANSITION:
+				if (walk_transition_progress >= 1.0f) {
+					walk_state = OTHER;
+				} else {
+				}
+				break;
+			case OTHER:
+				break;
+		}
+		if(walk_state < 0){//if we're in a transition
+			walk_transition_progress += delta;
+		} else {
+			walk_transition_progress = 0;
 		}
 		prevHead = newHead;
 		groundLeftPointer = newGroundLeftPointer;
@@ -584,35 +614,36 @@ void RenIK::foot_place(float delta, RenIKConfig config, PhysicsDirectSpaceState:
 		Transform dangleRight = headTransform * Transform(uprightFootBasis * pointFeetToHead, rightDangleVector);
 
 		switch (walk_state) {
-			case 0: //standing state
-			case -1: //transitioning to standing state
+			case STANDING: //standing state
+			case STANDING_TRANSITION: //transitioning to standing state
 				if (groundLeftPointer) {
 					standLeft = groundLeft * groundedLeft;
-					placedLeft = walk_state == 0 ? standLeft : placedLeft.interpolate_with(standLeft, config.dangle_stiffness);
+					placedLeft = walk_state == STANDING ? standLeft : placedLeft.interpolate_with(standLeft, config.dangle_stiffness);
 				} else {
 					placedLeft = placedLeft.interpolate_with(dangleLeft, config.dangle_stiffness);
 				}
 				if (groundRightPointer) {
 					standRight = groundRight * groundedRight;
-					placedRight = walk_state == 0 ? standRight : placedRight.interpolate_with(standRight, config.dangle_stiffness);
+					placedRight = walk_state == STANDING ? standRight : placedRight.interpolate_with(standRight, config.dangle_stiffness);
 				} else {
 					placedRight = placedRight.interpolate_with(dangleRight, config.dangle_stiffness);
 				}
 				break;
-				if (groundLeftPointer) {
-					standLeft = leftRotation > config.rotation_threshold ? Transform(uprightFootBasis * pointFeetToHead, left_raycast.position) : groundLeft * groundedLeft;
-					placedLeft = placedLeft.interpolate_with(standLeft, config.dangle_stiffness);
-				} else {
-					placedLeft = placedLeft.interpolate_with(dangleLeft, config.dangle_stiffness);
-				}
-				if (groundRightPointer) {
-					standRight = rightRotation > config.rotation_threshold ? Transform(uprightFootBasis * pointFeetToHead, right_raycast.position) : groundRight * groundedRight;
-					placedRight = placedRight.interpolate_with(standRight, config.dangle_stiffness);
-				} else {
-					placedRight = placedRight.interpolate_with(dangleRight, config.dangle_stiffness);
-				}
-				break;
-			case 1: //stepping state
+				// if (groundLeftPointer) {
+				// 	standLeft = leftRotation > config.rotation_threshold ? Transform(uprightFootBasis * pointFeetToHead, left_raycast.position) : groundLeft * groundedLeft;
+				// 	placedLeft = placedLeft.interpolate_with(standLeft, config.dangle_stiffness);
+				// } else {
+				// 	placedLeft = placedLeft.interpolate_with(dangleLeft, config.dangle_stiffness);
+				// }
+				// if (groundRightPointer) {
+				// 	standRight = rightRotation > config.rotation_threshold ? Transform(uprightFootBasis * pointFeetToHead, right_raycast.position) : groundRight * groundedRight;
+				// 	placedRight = placedRight.interpolate_with(standRight, config.dangle_stiffness);
+				// } else {
+				// 	placedRight = placedRight.interpolate_with(dangleRight, config.dangle_stiffness);
+				// }
+				// break;
+			case STEPPING: //stepping state
+			case STEPPING_TRANSITION:
 				if (groundLeftPointer || groundRightPointer) {
 					//if only one foot has a hold, pretend we're tightrope walking
 					groundLeftPointer = groundLeftPointer ? groundLeftPointer : groundRightPointer;
@@ -690,7 +721,12 @@ void RenIK::foot_place(float delta, RenIKConfig config, PhysicsDirectSpaceState:
 					}
 				}
 				break;
-			default: //jumping / falling
+			case FALLING: //jumping / falling
+				placedLeft = placedLeft.interpolate_with(dangleLeft, config.dangle_stiffness);
+				placedRight = placedRight.interpolate_with(dangleRight, config.dangle_stiffness);
+				break;
+			case LAYING:
+			case LAYING_TRANSITION:
 				placedLeft = placedLeft.interpolate_with(dangleLeft, config.dangle_stiffness);
 				placedRight = placedRight.interpolate_with(dangleRight, config.dangle_stiffness);
 				break;

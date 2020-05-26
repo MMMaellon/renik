@@ -321,7 +321,19 @@ private:
 
 	// //Internal Variables --------------------
 
-	int walk_state = 0; //0 is stand state, 1 is step state, -1 is transitioning to stand state, -2 is jump state
+	int walk_state = 0; // -2 is falling, -1 is transitioning to standing, 0 is stand state, 1 is transitioning to stepping, 2 is stepping
+#define FALLING 0
+#define STANDING_TRANSITION -1
+#define STANDING 1
+#define STEPPING_TRANSITION -2
+#define STEPPING 2
+#define LAYING_TRANSITION -3
+#define LAYING 3
+#define OTHER_TRANSITION -4
+#define OTHER 4
+	float walk_transition_duration = 100;
+	float walk_transition_progress = 0;
+
 	float ground_speed = 0;
 	float step_progress = 0;
 	Vector3 prevHead; //local to midpoint between grounds
