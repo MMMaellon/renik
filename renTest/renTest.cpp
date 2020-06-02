@@ -4,10 +4,10 @@ RenIKTest::RenIKTest(){};
 
 void RenIKTest::test() {
 	printf("Running RenIK Unit Tests...\n");
-	Quat rightAngle = RenIK::align_vectors(Vector3(1, 0, 0), Vector3(0, 1, 0));
+	Quat rightAngle = RenIKHelper::align_vectors(Vector3(1, 0, 0), Vector3(0, 1, 0));
 	Quat rightAngleCheck = Quat(Vector3(0, 0, 1), Math::deg2rad(90.0));
 	assert(rightAngle == rightAngleCheck);
-	Quat noRotation = RenIK::align_vectors(Vector3(1, 0, 0), Vector3(0.5, 0, 0));
+	Quat noRotation = RenIKHelper::align_vectors(Vector3(1, 0, 0), Vector3(0.5, 0, 0));
 	Quat noRotationCheck = Quat(Vector3(0, 0, 1), 0);
 	assert(noRotation == noRotationCheck);
 

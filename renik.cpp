@@ -358,7 +358,7 @@ void RenIK::perform_hand_left_ik() {
 				Quat offsetQuat = Quat(left_shoulder_offset);
 				Quat poleOffset = Quat(left_shoulder_pole_offset);
 				Quat poleOffsetScaled = poleOffset.slerp(Quat(), 1 - shoulder_influence);
-				Quat quatAlignToTarget = poleOffsetScaled * align_vectors(Vector3(0, 1, 0), poleOffset.inverse().xform(offsetQuat.inverse().xform(targetVector))).slerp(Quat(), 1 - shoulder_influence);
+				Quat quatAlignToTarget = poleOffsetScaled * RenIKHelper::align_vectors(Vector3(0, 1, 0), poleOffset.inverse().xform(offsetQuat.inverse().xform(targetVector))).slerp(Quat(), 1 - shoulder_influence);
 				Transform customPose = Transform(offsetQuat * quatAlignToTarget, Vector3());
 				skeleton->set_bone_custom_pose(rootBone, customPose);
 			}
@@ -383,7 +383,7 @@ void RenIK::perform_hand_right_ik() {
 				Quat offsetQuat = Quat(right_shoulder_offset);
 				Quat poleOffset = Quat(right_shoulder_pole_offset);
 				Quat poleOffsetScaled = poleOffset.slerp(Quat(), 1 - shoulder_influence);
-				Quat quatAlignToTarget = poleOffsetScaled * align_vectors(Vector3(0, 1, 0), poleOffset.inverse().xform(offsetQuat.inverse().xform(targetVector))).slerp(Quat(), 1 - shoulder_influence);
+				Quat quatAlignToTarget = poleOffsetScaled * RenIKHelper::align_vectors(Vector3(0, 1, 0), poleOffset.inverse().xform(offsetQuat.inverse().xform(targetVector))).slerp(Quat(), 1 - shoulder_influence);
 				Transform customPose = Transform(offsetQuat * quatAlignToTarget, Vector3());
 				skeleton->set_bone_custom_pose(rootBone, customPose);
 			}
@@ -458,55 +458,6 @@ void RenIK::reset_limb(RenIKLimb limb) {
 
 //IK SOLVING
 
-float RenIK::safe_acos(float f) {
-	if (f > 1) {
-		f = 1;
-	} else if (f < -1) {
-		f = -1;
-	}
-	return acos(f);
-}
-float RenIK::safe_asin(float f) {
-	if (f > 1) {
-		f = 1;
-	} else if (f < -1) {
-		f = -1;
-	}
-	return asin(f);
-}
-
-Vector3 RenIK::get_perpendicular_vector(Vector3 v) {
-	Vector3 perpendicular;
-	if (v[0] != 0 && v[1] != 0) {
-		perpendicular = Vector3(0, 0, 1).cross(v).normalized();
-	} else {
-		perpendicular = Vector3(1, 0, 0);
-	}
-	return perpendicular;
-}
-
-Vector3 RenIK::vector_rejection(Vector3 v, Vector3 normal) {
-	float normalLength = normal.length();
-	Vector3 proj = (normal.dot(v) / normalLength) * (normal / normalLength);
-	return v - proj;
-}
-
-Quat RenIK::align_vectors(Vector3 a, Vector3 b, float influence) {
-	a.normalize();
-	b.normalize();
-	if (a.length_squared() != 0 && b.length_squared() != 0) {
-		//Find the axis perpendicular to both vectors and rotate along it by the angular difference
-		Vector3 perpendicular = a.cross(b).normalized();
-		float angleDiff = a.angle_to(b) * influence;
-		if (perpendicular.length_squared() == 0) {
-			perpendicular = get_perpendicular_vector(a);
-		}
-		return Quat(perpendicular, angleDiff);
-	} else {
-		return Quat();
-	}
-}
-
 Map<BoneId, Quat> RenIK::solve_trig_ik(RenIKLimb limb, Transform root, Transform target) {
 	Map<BoneId, Quat> map;
 
@@ -528,7 +479,7 @@ Map<BoneId, Quat> RenIK::solve_trig_ik(RenIKLimb limb, Transform root, Transform
 		lower.normalize();
 		//Then we line up the limb with our target
 		Vector3 targetVector = limb.pole_offset.inverse().xform(localTarget.get_origin());
-		upper = upper * align_vectors(upperVector, targetVector);
+		upper = upper * RenIKHelper::align_vectors(upperVector, targetVector);
 		//Then we calculate how much we need to bend so we don't extend past the target
 		//Law of Cosines
 		float upperLength = upperVector.length();
@@ -537,9 +488,9 @@ Map<BoneId, Quat> RenIK::solve_trig_ik(RenIKLimb limb, Transform root, Transform
 		float lowerLength2 = lowerVector.length_squared();
 		float targetDistance = targetVector.length();
 		float targetDistance2 = targetVector.length_squared();
-		float upperAngle = safe_acos((upperLength2 + targetDistance2 - lowerLength2) / (2 * upperLength * targetDistance));
-		float lowerAngle = safe_acos((upperLength2 + lowerLength2 - targetDistance2) / (2 * upperLength * lowerLength)) - Math_PI;
-		Vector3 bendAxis = get_perpendicular_vector(upperVector); //TODO figure out how to set this automatically to the right axis
+		float upperAngle = RenIKHelper::safe_acos((upperLength2 + targetDistance2 - lowerLength2) / (2 * upperLength * targetDistance));
+		float lowerAngle = RenIKHelper::safe_acos((upperLength2 + lowerLength2 - targetDistance2) / (2 * upperLength * lowerLength)) - Math_PI;
+		Vector3 bendAxis = RenIKHelper::get_perpendicular_vector(upperVector); //TODO figure out how to set this automatically to the right axis
 		Quat upperBend = Quat(bendAxis, upperAngle);
 		Quat lowerBend = Quat(bendAxis, lowerAngle);
 		upper = upper * upperBend;
@@ -559,9 +510,9 @@ Map<BoneId, Quat> RenIK::solve_trig_ik(RenIKLimb limb, Transform root, Transform
 		// if we had a plane along the roll vector we can project the leaf and lower limb on it to see which direction we need to roll to reduce the angle between the two
 		Vector3 restVector = (armCombined).xform(lowerVector).normalized();
 		Vector3 leafVector = leaf.xform(restVector).normalized();
-		Vector3 restRejection = vector_rejection(restVector.normalized(), rollVector);
-		Vector3 leafRejection = vector_rejection(leafVector.normalized(), rollVector);
-		float directionalRollAmount = safe_acos(restRejection.normalized().dot(leafRejection.normalized())) * limb.target_rotation_influence;
+		Vector3 restRejection = RenIKHelper::vector_rejection(restVector.normalized(), rollVector);
+		Vector3 leafRejection = RenIKHelper::vector_rejection(leafVector.normalized(), rollVector);
+		float directionalRollAmount = RenIKHelper::safe_acos(restRejection.normalized().dot(leafRejection.normalized())) * limb.target_rotation_influence;
 		Vector3 directionality = restRejection.normalized().cross(leafRejection.normalized());
 		float check = directionality.dot(targetVector.normalized());
 		if (check > 0) {
@@ -599,14 +550,9 @@ std::pair<float, float> RenIK::trig_angles(Vector3 const &side1, Vector3 const &
 	float length1 = sqrt(length1Squared) * 2;
 	float length2 = sqrt(length2Squared);
 	float length3 = sqrt(length3Squared); // multiply by 2 here to save on having to multiply by 2 twice later
-	float angle1 = safe_acos((length1Squared + length3Squared - length2Squared) / (length1 * length3));
-	float angle2 = Math_PI - safe_acos((length1Squared + length2Squared - length3Squared) / (length1 * length2));
+	float angle1 = RenIKHelper::safe_acos((length1Squared + length3Squared - length2Squared) / (length1 * length3));
+	float angle2 = Math_PI - RenIKHelper::safe_acos((length1Squared + length2Squared - length3Squared) / (length1 * length2));
 	return std::make_pair(angle1, angle2);
-}
-
-//random helper function
-float RenIK::smoothCurve(float number, float modifier) {
-	return number / (abs(number) + modifier);
 }
 
 Map<BoneId, Basis> RenIK::solve_trig_ik_redux(RenIKLimb &limb, Transform root, Transform target) {
@@ -630,7 +576,7 @@ Map<BoneId, Basis> RenIK::solve_trig_ik_redux(RenIKLimb &limb, Transform root, T
 		//The local x-axis of the upper limb is axis along which the limb will bend
 		//We take into account how the pole offset and alignment with the target vector will affect this axis
 		Vector3 startingPole = limb.pole_offset.xform(Vector3(0, 1, 0)); //the opposite of this vector is where the pole is
-		Vector3 jointAxis = align_vectors(startingPole, targetVector).xform(limb.pole_offset.xform(Vector3(1, 0, 0)));
+		Vector3 jointAxis = RenIKHelper::align_vectors(startingPole, targetVector).xform(limb.pole_offset.xform(Vector3(1, 0, 0)));
 
 		// //We then find how far away from the rest position the leaf is and use that to change the rotational axis more.
 		Vector3 leafRestVector = limb.get_upper().get_basis().xform(limb.get_lower().xform(limb.get_leaf().get_origin()));
@@ -646,8 +592,8 @@ Map<BoneId, Basis> RenIK::solve_trig_ik_redux(RenIKLimb &limb, Transform root, T
 		//A rejection is the opposite of a projection. We use the target vector because that's our axis of rotation for the whole limb.
 		//We then turn the whole arm along the target vector based on how close the rejections are
 		//We scale the amount we rotate with the rotation influence setting and the angle between the leaf and lower vector so if the arm is mostly straight, we rotate less
-		Vector3 leafRejection = vector_rejection(localLeafVector, normalizedTargetVector);
-		Vector3 lowerRejection = vector_rejection(localLowerVector, normalizedTargetVector);
+		Vector3 leafRejection = RenIKHelper::vector_rejection(localLeafVector, normalizedTargetVector);
+		Vector3 lowerRejection = RenIKHelper::vector_rejection(localLowerVector, normalizedTargetVector);
 		float jointRollAmount = (leafRejection.angle_to(lowerRejection)) * limb.target_rotation_influence;
 		jointRollAmount *= abs(localLeafVector.cross(localLowerVector).dot(normalizedTargetVector));
 		if (leafRejection.cross(lowerRejection).dot(normalizedTargetVector) > 0) {
@@ -658,7 +604,7 @@ Map<BoneId, Basis> RenIK::solve_trig_ik_redux(RenIKLimb &limb, Transform root, T
 
 		//Add a little twist
 		//We align the leaf's y axis with the lower limb's y-axis and see how far off the x-axis is from the joint axis to calculate the twist.
-		Vector3 leafX = align_vectors(localLeafVector.rotated(normalizedTargetVector, jointRollAmount), localLowerVector.rotated(normalizedTargetVector, jointRollAmount)).xform(localTarget.get_basis().xform(Vector3(1, 0, 0)));
+		Vector3 leafX = RenIKHelper::align_vectors(localLeafVector.rotated(normalizedTargetVector, jointRollAmount), localLowerVector.rotated(normalizedTargetVector, jointRollAmount)).xform(localTarget.get_basis().xform(Vector3(1, 0, 0)));
 		Vector3 rolledJointAxis = jointAxis.rotated(localLowerVector, -totalRoll);
 		Vector3 lowerZ = rolledJointAxis.cross(localLowerVector);
 		float twistAngle = leafX.angle_to(rolledJointAxis);
@@ -715,7 +661,7 @@ Map<BoneId, Quat> RenIK::solve_ifabrik(RenIKChain chain, Transform root, Transfo
 		Transform trueRoot = root.translated(joints[0].relative_prev);
 		Transform targetDelta = target * chain.get_relative_rest_leaf().affine_inverse(); //how the change in the target would affect the chain if the chain was parented to the target instead of the root
 		Transform trueRelativeTarget = trueRoot.affine_inverse() * target;
-		Quat alignToTarget = align_vectors(chain.get_relative_rest_leaf().origin - joints[0].relative_prev, trueRelativeTarget.origin);
+		Quat alignToTarget = RenIKHelper::align_vectors(chain.get_relative_rest_leaf().origin - joints[0].relative_prev, trueRelativeTarget.origin);
 		float heightDiff = (chain.get_relative_rest_leaf().origin - joints[0].relative_prev).length() - trueRelativeTarget.origin.length();
 		heightDiff = heightDiff < 0 ? 0 : heightDiff;
 		Transform prebentRoot = Transform(trueRoot.basis * alignToTarget, trueRoot.origin).translated((chain.chain_curve_direction * chain.get_total_length() * heightDiff) - joints[0].relative_prev); //The angle root is rotated to point at the target;
@@ -764,7 +710,7 @@ Map<BoneId, Quat> RenIK::solve_ifabrik(RenIKChain chain, Transform root, Transfo
 		//Add a little twist
 		//We align the leaf's y axis with the rest_leaf's y-axis and see how far off the x-axes are to calculate the twist.
 		trueRelativeTarget.orthonormalize();
-		Vector3 leafX = align_vectors(trueRelativeTarget.basis.xform(Vector3(0, 1, 0)), chain.get_relative_rest_leaf().basis.xform(Vector3(0, 1, 0))).normalized().xform(trueRelativeTarget.basis.xform(Vector3(1, 0, 0)));
+		Vector3 leafX = RenIKHelper::align_vectors(trueRelativeTarget.basis.xform(Vector3(0, 1, 0)), chain.get_relative_rest_leaf().basis.xform(Vector3(0, 1, 0))).normalized().xform(trueRelativeTarget.basis.xform(Vector3(1, 0, 0)));
 		Vector3 restX = chain.get_relative_rest_leaf().basis.xform(Vector3(1, 0, 0));
 		Vector3 restZ = chain.get_relative_rest_leaf().basis.xform(Vector3(0, 0, 1));
 		float maxTwist = leafX.angle_to(restX);
@@ -778,7 +724,7 @@ Map<BoneId, Quat> RenIK::solve_ifabrik(RenIKChain chain, Transform root, Transfo
 		Quat prevTwist;
 		globalJointPoints.push_back(target.origin);
 		for (int i = 0; i < joints.size(); i++) { //the last one's rotation is defined by the leaf position not a joint so we skip it
-			Quat pose = align_vectors(Vector3(0, 1, 0), Transform(parentRot * joints[i].rotation, parentPos).affine_inverse().xform(globalJointPoints[i])); //offset by one because joints has one extra element
+			Quat pose = RenIKHelper::align_vectors(Vector3(0, 1, 0), Transform(parentRot * joints[i].rotation, parentPos).affine_inverse().xform(globalJointPoints[i])); //offset by one because joints has one extra element
 			Quat twist = Quat(Vector3(0, 1, 0), maxTwist * joints[i].twist_influence);
 			pose = prevTwist.inverse() * joints[i].rotation * pose * twist;
 			prevTwist = twist;
@@ -939,7 +885,12 @@ void RenIK::set_head_bone(BoneId p_bone) {
 	head = p_bone;
 	spine_chain.set_leaf_bone(skeleton, p_bone);
 	placement.spine_length = spine_chain.get_total_length();
+	//calc rest offset of hips
+	if (head >= 0 && head < skeleton->get_bone_count() && hip >= 0 && hip < skeleton->get_bone_count()) {
+		placement.hip_offset = skeleton->get_bone_global_pose(hip).origin - skeleton->get_bone_global_pose(head).origin;
+	}
 }
+
 void RenIK::set_hand_left_bone(BoneId p_bone) {
 	limb_arm_left.set_leaf(skeleton, p_bone);
 	left_shoulder_enabled = skeleton && limb_arm_left.is_valid() && !spine_chain.contains_bone(skeleton, skeleton->get_bone_parent(limb_arm_left.get_lower_bone()));
@@ -949,16 +900,24 @@ void RenIK::set_hand_right_bone(BoneId p_bone) {
 	limb_arm_right.set_leaf(skeleton, p_bone);
 	right_shoulder_enabled = skeleton && limb_arm_right.is_valid() && !spine_chain.contains_bone(skeleton, skeleton->get_bone_parent(limb_arm_right.get_lower_bone()));
 }
+
 void RenIK::set_hip_bone(BoneId p_bone) {
 	hip = p_bone;
 	spine_chain.set_root_bone(skeleton, p_bone);
 	placement.spine_length = spine_chain.get_total_length();
+
+	//calc rest offset of hips
+	if (head >= 0 && head < skeleton->get_bone_count() && hip >= 0 && hip < skeleton->get_bone_count()) {
+		placement.hip_offset = skeleton->get_bone_global_pose(hip).origin - skeleton->get_bone_global_pose(head).origin;
+	}
 }
+
 void RenIK::set_foot_left_bone(BoneId p_bone) {
 	limb_leg_left.set_leaf(skeleton, p_bone);
 	placement.left_leg_length = limb_leg_left.is_valid() ? limb_leg_left.lower.origin.length() + limb_leg_left.leaf.origin.length() : 0;
 	placement.left_hip_offset = limb_leg_left.is_valid() ? limb_leg_left.upper.origin : Vector3();
 }
+
 void RenIK::set_foot_right_bone(BoneId p_bone) {
 	limb_leg_right.set_leaf(skeleton, p_bone);
 	placement.right_leg_length = limb_leg_right.is_valid() ? limb_leg_right.lower.origin.length() + limb_leg_right.leaf.origin.length() : 0;

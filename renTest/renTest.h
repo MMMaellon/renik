@@ -8,6 +8,7 @@ For example, we'll test the Fabrik algorithm, the quaternion rotation algorithms
 #define RENIK_UNIT_TEST_H
 
 #include "../renik.h"
+#include "../renik/renik_helper.h"
 
 class RenIKTest : public Object {
 	GDCLASS(RenIKTest, Object);

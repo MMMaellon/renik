@@ -3,6 +3,7 @@
 #ifndef _3D_DISABLED
 
 #include "renik/renik_chain.h"
+#include "renik/renik_helper.h"
 #include "renik/renik_limb.h"
 #include "renik/renik_placement.h"
 #include "servers/physics_server.h"
@@ -172,8 +173,6 @@ public:
 	void set_collide_with_bodies(bool p_clip);
 	bool is_collide_with_bodies_enabled() const;
 
-	static Quat align_vectors(Vector3 a, Vector3 b, float influence = 1);
-
 	static std::pair<float, float> trig_angles(Vector3 const &length1, Vector3 const &length2, Vector3 const &length3);
 	static Map<BoneId, Quat> solve_trig_ik(RenIKLimb limb, Transform limb_parent_transform, Transform target);
 
@@ -238,12 +237,6 @@ private:
 	bool rightFootTrackerEnabled = true;
 
 	Vector<BoneId> calculate_bone_chain(BoneId root, BoneId leaf);
-
-	static float smoothCurve(float number, float modifier = 0.5);
-	static Vector3 vector_rejection(Vector3 v, Vector3 normal);
-	static float safe_acos(float f);
-	static float safe_asin(float f);
-	static Vector3 get_perpendicular_vector(Vector3 v);
 };
 
 #endif
