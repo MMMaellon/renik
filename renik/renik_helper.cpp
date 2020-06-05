@@ -44,12 +44,12 @@ Quat RenIKHelper::align_vectors(Vector3 a, Vector3 b, float influence) {
 	b.normalize();
 	if (a.length_squared() != 0 && b.length_squared() != 0) {
 		//Find the axis perpendicular to both vectors and rotate along it by the angular difference
-		Vector3 perpendicular = a.cross(b).normalized();
+		Vector3 perpendicular = a.cross(b);
 		float angleDiff = a.angle_to(b) * influence;
 		if (perpendicular.length_squared() == 0) {
 			perpendicular = get_perpendicular_vector(a);
 		}
-		return Quat(perpendicular, angleDiff).normalized();
+		return Quat(perpendicular.normalized().normalized(), angleDiff).normalized();//lmao look at this double normalization bullshit
 	} else {
 		return Quat();
 	}
@@ -80,9 +80,10 @@ Vector3 RenIKHelper::log_clamp(Vector3 vector, Vector3 target, float looseness) 
 float RenIKHelper::log_clamp(float value, float target, float looseness) {
 	float difference = value - target;
 	float effectiveLooseness = difference >= 0 ? looseness : looseness * -1;
-	if (looseness > 0) {
-		return target + effectiveLooseness * log(1 + (difference / effectiveLooseness));
-	} else {
-		return target;
-	}
+	return target + effectiveLooseness * log(1 + (difference / effectiveLooseness));
+	// if (looseness > 0) {
+	// 	return target + effectiveLooseness * log(1 + (difference / effectiveLooseness));
+	// } else {
+	// 	return target;
+	// }
 }
