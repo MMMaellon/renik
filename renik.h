@@ -37,8 +37,8 @@ public:
 	void perform_hand_right_ik();
 	void perform_foot_left_ik();
 	void perform_foot_right_ik();
-	void reset_chain(RenIKChain chain);
-	void reset_limb(RenIKLimb limb);
+	void reset_chain(Ref<RenIKChain> chain);
+	void reset_limb(Ref<RenIKLimb> limb);
 
 	bool get_live_preview();
 	void set_live_preview(bool p_enable);
@@ -174,11 +174,11 @@ public:
 	bool is_collide_with_bodies_enabled() const;
 
 	static std::pair<float, float> trig_angles(Vector3 const &length1, Vector3 const &length2, Vector3 const &length3);
-	static Map<BoneId, Quat> solve_trig_ik(RenIKLimb limb, Transform limb_parent_transform, Transform target);
+	static Map<BoneId, Quat> solve_trig_ik(Ref<RenIKLimb> limb, Transform limb_parent_transform, Transform target);
 
-	static Map<BoneId, Basis> solve_trig_ik_redux(RenIKLimb &limb, Transform limb_parent_transform, Transform target);
+	static Map<BoneId, Basis> solve_trig_ik_redux(Ref<RenIKLimb> limb, Transform limb_parent_transform, Transform target);
 
-	static Map<BoneId, Quat> solve_ifabrik(RenIKChain chain, Transform chain_parent_transform, Transform target, float threshold, int loopLimit);
+	static Map<BoneId, Quat> solve_ifabrik(Ref<RenIKChain> chain, Transform chain_parent_transform, Transform target, float threshold, int loopLimit);
 
 private:
 	//Setup -------------------------
@@ -213,11 +213,11 @@ private:
 	BoneId hip = -1;
 	BoneId head = -1;
 
-	RenIKChain spine_chain;
-	RenIKLimb limb_arm_left;
-	RenIKLimb limb_arm_right;
-	RenIKLimb limb_leg_left;
-	RenIKLimb limb_leg_right;
+	Ref<RenIKChain> spine_chain;
+	Ref<RenIKLimb> limb_arm_left;
+	Ref<RenIKLimb> limb_arm_right;
+	Ref<RenIKLimb> limb_leg_left;
+	Ref<RenIKLimb> limb_leg_right;
 	float shoulder_influence = 0.15;
 	bool left_shoulder_enabled = false;
 	bool right_shoulder_enabled = false;

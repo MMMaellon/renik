@@ -1,17 +1,11 @@
 #include "renik_chain.h"
-
-RenIKChain::RenIKChain() :
-		chain_curve_direction(Vector3()),
-		root_influence(0),
-		leaf_influence(0),
-		twist_influence(1),
-		twist_start(0){};
-RenIKChain::RenIKChain(Vector3 p_chain_curve_direction, float p_root_influence, float p_leaf_influence, float p_twist_influence, float p_twist_start) :
-		chain_curve_direction(p_chain_curve_direction),
-		root_influence(p_root_influence),
-		leaf_influence(p_leaf_influence),
-		twist_influence(p_twist_influence),
-		twist_start(p_twist_start){};
+void RenIKChain::init(Vector3 p_chain_curve_direction, float p_root_influence, float p_leaf_influence, float p_twist_influence, float p_twist_start) {
+	chain_curve_direction = p_chain_curve_direction;
+	root_influence = p_root_influence;
+	leaf_influence = p_leaf_influence;
+	twist_influence = p_twist_influence;
+	twist_start = p_twist_start;
+}
 
 void RenIKChain::init_chain(Skeleton *skeleton) {
 	joints.clear();
