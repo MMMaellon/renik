@@ -3,8 +3,8 @@
 
 #include <scene/3d/skeleton.h>
 
-struct RenIKChain : public Reference {
-	GDCLASS(RenIKChain, Reference);
+struct RenIKChain : public Resource {
+	GDCLASS(RenIKChain, Resource);
 
 public:
 	struct Joint {
@@ -35,8 +35,8 @@ private:
 	float twist_start = 0; //Where along the chain the twisting starts
 
 public:
-	RenIKChain();
-	RenIKChain(Vector3 p_chain_curve_direction, float p_root_influence, float p_leaf_influence, float p_twist_influence, float p_twist_start);
+	void init();
+	void init(Vector3 p_chain_curve_direction, float p_root_influence, float p_leaf_influence, float p_twist_influence, float p_twist_start);
 	void set_root_bone(Skeleton *skeleton, BoneId p_root_bone);
 	void set_leaf_bone(Skeleton *skeleton, BoneId p_leaf_bone);
 	bool is_valid();

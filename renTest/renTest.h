@@ -18,8 +18,8 @@ public:
 	RenIKTest();
 
 	static void test();
-	static void assert(bool assertion);
-	static void assert(float value1, float value2);
+	static void assert(char* test_name, bool assertion);
+	static void assert(char* test_name, float value1, float value2);
 };
 
 #endif
