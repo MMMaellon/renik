@@ -39,6 +39,10 @@ void RenIK::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_live_preview", "p_enable"), &RenIK::set_live_preview);
 	ClassDB::bind_method(D_METHOD("get_live_preview"), &RenIK::get_live_preview);
 
+	ClassDB::bind_method(D_METHOD("enable_solve_ik_every_frame", "p_enable"), &RenIK::enable_solve_ik_every_frame);
+	ClassDB::bind_method(D_METHOD("enable_hip_placement", "p_enable"), &RenIK::enable_hip_placement);
+	ClassDB::bind_method(D_METHOD("enable_foot_placement", "p_enable"), &RenIK::enable_foot_placement);
+
 	ClassDB::bind_method(D_METHOD("set_skeleton_path", "p_path"), &RenIK::set_skeleton_path);
 	ClassDB::bind_method(D_METHOD("set_skeleton_", "p_node"), &RenIK::set_skeleton);
 	ClassDB::bind_method(D_METHOD("get_skeleton_path"), &RenIK::get_skeleton_path);
@@ -271,11 +275,11 @@ void RenIK::_initialize() {
 	set_hand_right_target_path(get_hand_right_target_path());
 	set_foot_left_target_path(get_foot_left_target_path());
 	set_foot_right_target_path(get_foot_right_target_path());
-	set_process_priority(1); //makes sure that ik is done last after all physics and movement have taken place
-	enable_solve_ik_every_frame(true);
-	enable_hip_placement(true);
-	enable_foot_placement(true);
-	set_physics_process_internal(true);
+	// set_process_priority(1); //makes sure that ik is done last after all physics and movement have taken place
+	// enable_solve_ik_every_frame(true);
+	// enable_hip_placement(true);
+	// enable_foot_placement(true);
+	// set_physics_process_internal(true);
 }
 
 void RenIK::enable_solve_ik_every_frame(bool automatically_update_ik) {
