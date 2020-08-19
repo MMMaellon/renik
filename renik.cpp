@@ -1,6 +1,9 @@
 #include "renik.h"
 #ifndef _3D_DISABLED
 
+const float DEFAULT_THRESHOLD = 0.0005;
+const int DEFAULT_LOOP_LIMIT = 16;
+
 #define RENIK_PROPERTY_STRING_SKELETON_PATH "armature_skeleton_path"
 
 #define RENIK_PROPERTY_STRING_HEAD_BONE "armature_head"
@@ -275,6 +278,11 @@ void RenIK::_initialize() {
 	set_hand_right_target_path(get_hand_right_target_path());
 	set_foot_left_target_path(get_foot_left_target_path());
 	set_foot_right_target_path(get_foot_right_target_path());
+
+	if(Engine::get_singleton()->is_editor_hint()) {
+		set_process_internal(true);
+		set_physics_process_internal(true);
+	}
 	// set_process_priority(1); //makes sure that ik is done last after all physics and movement have taken place
 	// enable_solve_ik_every_frame(true);
 	// enable_hip_placement(true);
@@ -340,16 +348,35 @@ void RenIK::apply_ik_map(Map<BoneId, Basis> ikMap) {
 
 void RenIK::perform_torso_ik() {
 	if (head_target_spatial && skeleton && spine_chain->is_valid()) {
-		Transform headTransform = head_target_spatial->get_global_transform();
-		Transform hipTransform = hip_target_spatial ? hip_target_spatial->get_global_transform() : placement.hip;
-		Vector3 delta = hipTransform.origin + hipTransform.basis.xform(spine_chain->get_joints()[0].relative_prev) - headTransform.origin;
+		Transform headGlobalTransform = head_target_spatial->get_global_transform();
+		Transform hipGlobalTransform = hip_target_spatial ? hip_target_spatial->get_global_transform() : placement.hip;
+		Vector3 delta = hipGlobalTransform.origin + hipGlobalTransform.basis.xform(spine_chain->get_joints()[0].relative_prev) - headGlobalTransform.origin;
 		float fullLength = spine_chain->get_total_length();
 		if (delta.length() > fullLength) {
-			hipTransform.set_origin(headTransform.origin + (delta.normalized() * fullLength) - hipTransform.basis.xform(spine_chain->get_joints()[0].relative_prev));
+			hipGlobalTransform.set_origin(headGlobalTransform.origin + (delta.normalized() * fullLength) - hipGlobalTransform.basis.xform(spine_chain->get_joints()[0].relative_prev));
 		}
-		skeleton->set_bone_global_pose_override(spine_chain->get_root_bone(), hipTransform, 1, true);
-		apply_ik_map(solve_ifabrik(spine_chain, hipTransform, headTransform, 0.0005, 16));
-		skeleton->set_bone_global_pose_override(spine_chain->get_leaf_bone(), headTransform, 1, true);
+
+		int hipParent = skeleton->get_bone_parent(spine_chain->get_root_bone());
+		if (hipParent != -1) {
+			skeleton->set_bone_custom_pose(spine_chain->get_root_bone(),
+				(skeleton->get_bone_global_pose(hipParent)
+					* skeleton->get_bone_rest(spine_chain->get_root_bone())
+					* skeleton->get_bone_pose(spine_chain->get_root_bone())).affine_inverse()
+				* hipGlobalTransform);
+		} else {
+			skeleton->set_bone_custom_pose(spine_chain->get_root_bone(),
+				(skeleton->get_bone_rest(spine_chain->get_root_bone())
+					* skeleton->get_bone_pose(spine_chain->get_root_bone())).affine_inverse()
+				* hipGlobalTransform);
+		}
+
+		apply_ik_map(solve_ifabrik(spine_chain, hipGlobalTransform, headGlobalTransform, DEFAULT_THRESHOLD, DEFAULT_LOOP_LIMIT));
+
+		int headParent = skeleton->get_bone_parent(spine_chain->get_leaf_bone());
+
+		skeleton->set_bone_custom_pose(spine_chain->get_leaf_bone(),
+			(skeleton->get_bone_global_pose(headParent) * skeleton->get_bone_rest(spine_chain->get_leaf_bone()) * skeleton->get_bone_pose(spine_chain->get_leaf_bone())).affine_inverse()
+			* headGlobalTransform);
 	}
 }
 
@@ -447,12 +474,12 @@ void RenIK::reset_chain(Ref<RenIKChain> chain) {
 	if (skeleton && chain->get_leaf_bone() < skeleton->get_bone_count() && chain->get_root_bone() < skeleton->get_bone_count()) {
 		BoneId bone = chain->get_leaf_bone();
 		while (bone >= 0 && bone != chain->get_root_bone()) {
-			skeleton->set_bone_global_pose_override(bone, Transform(), 0, false);
+			//skeleton->set_bone_global_pose_override(bone, Transform(), 0, false);
 			skeleton->set_bone_custom_pose(bone, Transform());
 			bone = skeleton->get_bone_parent(bone);
 		}
 		if (bone >= 0) {
-			skeleton->set_bone_global_pose_override(bone, Transform(), 0, false);
+			//skeleton->set_bone_global_pose_override(bone, Transform(), 0, false);
 			skeleton->set_bone_custom_pose(bone, Transform());
 		}
 	}
