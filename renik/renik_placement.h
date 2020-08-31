@@ -169,18 +169,29 @@ public:
 	float strafe_angle_limit = 0.75;
 	float step_pace = 0.015;
 
-	Transform hip; //relative to world
-	Transform left_foot; //relative to world
-	Transform right_foot; //relative to world
+	Transform prev_hip; //relative to world
+	Transform prev_left_foot; //relative to world
+	Transform prev_right_foot; //relative to world
 
+	Transform target_hip; //relative to world
+	Transform target_left_foot; //relative to world
+	Transform target_right_foot; //relative to world
+
+	// Saracen: these are used between the physics updates to provide smooth local interpolation of leg movement.
+	Transform interpolated_hip;
+	Transform interpolated_left_foot;
+	Transform interpolated_right_foot;
 
 	const Basis foot_basis_offset = Basis(Vector3(-1, 0, 0), Vector3(0, -1, 0), Vector3(0, 0, 1));
 
 	RenIKPlacement() { }
 
-	void hip_place(float delta, Transform head, Transform left_foot, Transform right_foot, float twist);
-	void foot_place(float delta, Transform head, Ref<World> w3d);
-	void foot_place(float delta, Transform head, PhysicsDirectSpaceState::RayResult left_raycast, PhysicsDirectSpaceState::RayResult right_raycast, PhysicsDirectSpaceState::RayResult laying_raycast);
+	void save_previous_transforms();
+	void interpolate_transforms(float fraction, bool update_hips, bool update_feet);
+
+	void hip_place(float delta, Transform head, Transform left_foot, Transform right_foot, float twist, bool instant);
+	void foot_place(float delta, Transform head, Ref<World> w3d, bool instant);
+	void foot_place(float delta, Transform head, PhysicsDirectSpaceState::RayResult left_raycast, PhysicsDirectSpaceState::RayResult right_raycast, PhysicsDirectSpaceState::RayResult laying_raycast, bool instant);
 	//All used in leg trace
 	void set_falling(bool falling);
 	void set_collision_mask_bit(int p_bit, bool p_value);
