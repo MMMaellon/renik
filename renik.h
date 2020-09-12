@@ -23,6 +23,20 @@ public:
 
 	void _initialize();
 
+	struct SpineTransforms{
+		Transform hipTransform;
+		Transform leftArmParentTransform;
+		Transform rightArmParentTransform;
+		Transform armParentTransform;
+		Transform headTransform;
+		SpineTransforms(Transform hip = Transform(), Transform left_arm = Transform(), Transform right_arm = Transform(), Transform head = Transform()) {
+			hipTransform = hip;
+			leftArmParentTransform = left_arm;
+			rightArmParentTransform = right_arm;
+			headTransform = head;
+		}
+	};
+
 	virtual void _validate_property(PropertyInfo &property) const;
 	void _notification(int p_what);
 	static void _bind_methods();
@@ -32,11 +46,14 @@ public:
 
 	void apply_ik_map(Map<BoneId, Quat> ikMap);
 	void apply_ik_map(Map<BoneId, Basis> ikMap);
-	void perform_torso_ik();
-	void perform_hand_left_ik();
-	void perform_hand_right_ik();
-	void perform_foot_left_ik();
-	void perform_foot_right_ik();
+
+	Transform get_global_parent_pose(BoneId child, Map<BoneId, Quat> ik_map, Transform map_global_parent);
+
+	SpineTransforms perform_torso_ik();
+	void perform_hand_left_ik(Transform global_parent);
+	void perform_hand_right_ik(Transform global_parent);
+	void perform_foot_left_ik(Transform global_parent);
+	void perform_foot_right_ik(Transform global_parent);
 	void reset_chain(Ref<RenIKChain> chain);
 	void reset_limb(Ref<RenIKLimb> limb);
 
