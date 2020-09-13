@@ -1,6 +1,9 @@
 #include "renik.h"
 #ifndef _3D_DISABLED
 
+const float DEFAULT_THRESHOLD = 0.0005;
+const int DEFAULT_LOOP_LIMIT = 16;
+
 #define RENIK_PROPERTY_STRING_SKELETON_PATH "armature_skeleton_path"
 
 #define RENIK_PROPERTY_STRING_HEAD_BONE "armature_head"
@@ -22,7 +25,7 @@ RenIK::RenIK() :
 		left_shoulder_offset(Math::deg2rad(-20.0), Math::deg2rad(-10.0), Math::deg2rad(-10.0)),
 		right_shoulder_offset(Math::deg2rad(-20.0), Math::deg2rad(10.0), Math::deg2rad(10.0)),
 		left_shoulder_pole_offset(Math::deg2rad(78.0), Math::deg2rad(0.0), Math::deg2rad(0.0)),
-		right_shoulder_pole_offset(Math::deg2rad(78.0), Math::deg2rad(0.0), Math::deg2rad(0.0)){
+		right_shoulder_pole_offset(Math::deg2rad(78.0), Math::deg2rad(0.0), Math::deg2rad(0.0)) {
 	spine_chain.instance();
 	spine_chain->init(Vector3(0, 15, -15), 1, 1, 1, 0);
 	limb_arm_left.instance();
@@ -276,13 +279,17 @@ void RenIK::_initialize() {
 	set_foot_left_target_path(get_foot_left_target_path());
 	set_foot_right_target_path(get_foot_right_target_path());
 
-	#ifdef TOOLS_ENABLED
-	set_process_priority(1); //makes sure that ik is done last after all physics and movement have taken place
-	enable_solve_ik_every_frame(true);
-	enable_hip_placement(true);
-	enable_foot_placement(true);
-	set_physics_process_internal(true);
-	#endif
+	if (Engine::get_singleton()->is_editor_hint()) {
+		set_process_internal(true);
+		set_physics_process_internal(true);
+	}
+	// #ifdef TOOLS_ENABLED
+	// set_process_priority(1); //makes sure that ik is done last after all physics and movement have taken place
+	// enable_solve_ik_every_frame(true);
+	// enable_hip_placement(true);
+	// enable_foot_placement(true);
+	// set_physics_process_internal(true);
+	// #endif
 }
 
 void RenIK::enable_solve_ik_every_frame(bool automatically_update_ik) {
@@ -298,6 +305,13 @@ void RenIK::enable_foot_placement(bool enabled) {
 }
 
 void RenIK::update_ik() {
+	// Saracen: since the foot placement is updated in the physics frame,
+	// interpolate the results to avoid jitter
+	placement.interpolate_transforms(
+			Engine::get_singleton()->get_physics_interpolation_fraction(),
+			!hip_target_spatial,
+			foot_placement);
+
 	SpineTransforms spine_global_transforms = perform_torso_ik();
 	perform_hand_left_ik(spine_global_transforms.leftArmParentTransform);
 	perform_hand_right_ik(spine_global_transforms.rightArmParentTransform);
@@ -306,21 +320,24 @@ void RenIK::update_ik() {
 }
 
 void RenIK::update_placement(float delta) {
+	// Saracen: save the transforms from the last update for use with interpolation
+	placement.save_previous_transforms();
+
 	//Based on head position and delta time, we calc our speed and distance from the ground and place the feet accordingly
 	if (foot_placement && head_target_spatial && head_target_spatial->is_inside_world()) {
-		placement.foot_place(delta, head_target_spatial->get_global_transform(), head_target_spatial->get_world());
+		placement.foot_place(delta, head_target_spatial->get_global_transform(), head_target_spatial->get_world(), false);
 	}
 	if (hip_placement && head_target_spatial) {
 		//calc twist from hands here
 		float twist = 0;
 		if (foot_placement) {
-			placement.hip_place(delta, head_target_spatial->get_global_transform(), placement.left_foot, placement.right_foot, twist);
+			placement.hip_place(delta, head_target_spatial->get_global_transform(), placement.target_left_foot, placement.target_right_foot, twist, false);
 		} else {
 			if (foot_left_target_spatial != nullptr && foot_right_target_spatial != nullptr) {
-				placement.hip_place(delta, head_target_spatial->get_global_transform(), foot_left_target_spatial->get_global_transform(), foot_right_target_spatial->get_global_transform(), twist);
+				placement.hip_place(delta, head_target_spatial->get_global_transform(), foot_left_target_spatial->get_global_transform(), foot_right_target_spatial->get_global_transform(), twist, false);
 			} else {
 				//I have no idea when you would hit this code, but if you do, it'll lag everything because of the call to get_bone_global_pose
-				placement.hip_place(delta, head_target_spatial->get_global_transform(), skeleton->get_global_transform() * skeleton->get_bone_global_pose(get_foot_left_bone()), skeleton->get_global_transform() * skeleton->get_bone_global_pose(get_foot_right_bone()), twist);
+				placement.hip_place(delta, head_target_spatial->get_global_transform(), skeleton->get_global_transform() * skeleton->get_bone_global_pose(get_foot_left_bone()), skeleton->get_global_transform() * skeleton->get_bone_global_pose(get_foot_right_bone()), twist, false);
 			}
 		}
 	}
@@ -346,15 +363,15 @@ void RenIK::apply_ik_map(Map<BoneId, Basis> ikMap) {
 	}
 }
 
-Transform RenIK::get_global_parent_pose(BoneId child, Map<BoneId, Quat> ik_map, Transform map_global_parent){
+Transform RenIK::get_global_parent_pose(BoneId child, Map<BoneId, Quat> ik_map, Transform map_global_parent) {
 	BoneId parent_id = skeleton->get_bone_parent(child);
 	while (parent_id >= 0) {
 		if (ik_map.has(parent_id)) {
 			BoneId super_parent = parent_id;
 			Transform full_transform = skeleton->get_bone_rest(super_parent) * Transform(ik_map[super_parent]);
-			while(skeleton->get_bone_parent(super_parent) >= 0){
+			while (skeleton->get_bone_parent(super_parent) >= 0) {
 				super_parent = skeleton->get_bone_parent(super_parent);
-				if(ik_map.has(super_parent)){
+				if (ik_map.has(super_parent)) {
 					full_transform = skeleton->get_bone_rest(super_parent) * Transform(ik_map[super_parent]) * full_transform;
 				} else {
 					full_transform = map_global_parent * full_transform;
@@ -370,27 +387,47 @@ Transform RenIK::get_global_parent_pose(BoneId child, Map<BoneId, Quat> ik_map, 
 
 RenIK::SpineTransforms RenIK::perform_torso_ik() {
 	if (head_target_spatial && skeleton && spine_chain->is_valid()) {
-		Transform headTransform = head_target_spatial->get_global_transform();
-		Transform hipTransform = hip_target_spatial ? hip_target_spatial->get_global_transform() : placement.hip;
-		Vector3 delta = hipTransform.origin + hipTransform.basis.xform(spine_chain->get_joints()[0].relative_prev) - headTransform.origin;
+		Transform headGlobalTransform = head_target_spatial->get_global_transform();
+		Transform hipGlobalTransform = hip_target_spatial ? hip_target_spatial->get_global_transform() : placement.interpolated_hip;
+		Vector3 delta = hipGlobalTransform.origin + hipGlobalTransform.basis.xform(spine_chain->get_joints()[0].relative_prev) - headGlobalTransform.origin;
 		float fullLength = spine_chain->get_total_length();
 		if (delta.length() > fullLength) {
-			hipTransform.set_origin(headTransform.origin + (delta.normalized() * fullLength) - hipTransform.basis.xform(spine_chain->get_joints()[0].relative_prev));
+			hipGlobalTransform.set_origin(headGlobalTransform.origin + (delta.normalized() * fullLength) - hipGlobalTransform.basis.xform(spine_chain->get_joints()[0].relative_prev));
 		}
-		skeleton->set_bone_global_pose_override(spine_chain->get_root_bone(), hipTransform, 1, true);
-		Map<BoneId, Quat> ik_map = solve_ifabrik(spine_chain, hipTransform, headTransform, 0.0005, 16);
+
+		Map<BoneId, Quat> ik_map = solve_ifabrik(spine_chain, hipGlobalTransform, headGlobalTransform, DEFAULT_THRESHOLD, DEFAULT_LOOP_LIMIT);
 		apply_ik_map(ik_map);
-		skeleton->set_bone_global_pose_override(spine_chain->get_leaf_bone(), headTransform, 1, true);
+
+		// int hipParent = skeleton->get_bone_parent(spine_chain->get_root_bone());
+		// if (hipParent != -1) {
+		// 	skeleton->set_bone_custom_pose(spine_chain->get_root_bone(),
+		// 			(skeleton->get_bone_global_pose(hipParent) * skeleton->get_bone_rest(spine_chain->get_root_bone()) * skeleton->get_bone_pose(spine_chain->get_root_bone())).affine_inverse() * hipGlobalTransform);
+		// } else {
+		// 	skeleton->set_bone_custom_pose(spine_chain->get_root_bone(),
+		// 			(skeleton->get_bone_rest(spine_chain->get_root_bone()) * skeleton->get_bone_pose(spine_chain->get_root_bone())).affine_inverse() * hipGlobalTransform);
+		// }
+		// int headParent = skeleton->get_bone_parent(spine_chain->get_leaf_bone());
+
+		// skeleton->set_bone_custom_pose(spine_chain->get_leaf_bone(),
+		// 		(skeleton->get_bone_global_pose(headParent) * skeleton->get_bone_rest(spine_chain->get_leaf_bone()) * skeleton->get_bone_pose(spine_chain->get_leaf_bone())).affine_inverse() * headGlobalTransform);
+
+		//Convert Hip and Head global poses to local poses and then apply them as custom pose
+		Transform headGlobalParent = get_global_parent_pose(head, ik_map, hipGlobalTransform);
+		Transform hipGlobalParent = get_global_parent_pose(hip, ik_map, hipGlobalTransform);
+
+		skeleton->set_bone_custom_pose(head, (headGlobalParent * skeleton->get_bone_rest(head) * skeleton->get_bone_pose(head)).affine_inverse() * headGlobalParent);
+		skeleton->set_bone_custom_pose(hip, (hipGlobalParent * skeleton->get_bone_rest(hip) * skeleton->get_bone_pose(hip)).affine_inverse() * hipGlobalParent);
+
 		//Calculate and return the parent bone position for the arms
 		Transform left_global_parent_pose = Transform();
 		Transform right_global_parent_pose = Transform();
 		if (limb_arm_left != nullptr) {
-			left_global_parent_pose = get_global_parent_pose(limb_arm_left->upper_id, ik_map, hipTransform);
+			left_global_parent_pose = get_global_parent_pose(limb_arm_left->upper_id, ik_map, hipGlobalTransform);
 		}
 		if (limb_arm_right != nullptr) {
-			right_global_parent_pose = get_global_parent_pose(limb_arm_right->upper_id, ik_map, hipTransform);
+			right_global_parent_pose = get_global_parent_pose(limb_arm_right->upper_id, ik_map, hipGlobalTransform);
 		}
-		return SpineTransforms(hipTransform, left_global_parent_pose, right_global_parent_pose, headTransform);
+		return SpineTransforms(hipGlobalTransform, left_global_parent_pose, right_global_parent_pose, headGlobalTransform);
 	}
 	return SpineTransforms();
 }
@@ -463,7 +500,7 @@ void RenIK::perform_foot_left_ik(Transform global_parent) {
 			// if (rootBone >= 0) {
 			// 	root = root * skeleton->get_bone_global_pose(rootBone);
 			// }
-			apply_ik_map(solve_trig_ik_redux(limb_leg_left, root, placement.left_foot));
+			apply_ik_map(solve_trig_ik_redux(limb_leg_left, root, placement.interpolated_left_foot));
 		}
 	}
 }
@@ -484,7 +521,7 @@ void RenIK::perform_foot_right_ik(Transform global_parent) {
 			// if (rootBone >= 0) {
 			// 	root = root * skeleton->get_bone_global_pose(rootBone);
 			// }
-			apply_ik_map(solve_trig_ik_redux(limb_leg_right, root, placement.right_foot));
+			apply_ik_map(solve_trig_ik_redux(limb_leg_right, root, placement.interpolated_right_foot));
 		}
 	}
 }
@@ -493,12 +530,12 @@ void RenIK::reset_chain(Ref<RenIKChain> chain) {
 	if (skeleton && chain->get_leaf_bone() < skeleton->get_bone_count() && chain->get_root_bone() < skeleton->get_bone_count()) {
 		BoneId bone = chain->get_leaf_bone();
 		while (bone >= 0 && bone != chain->get_root_bone()) {
-			skeleton->set_bone_global_pose_override(bone, Transform(), 0, false);
+			//skeleton->set_bone_global_pose_override(bone, Transform(), 0, false);
 			skeleton->set_bone_custom_pose(bone, Transform());
 			bone = skeleton->get_bone_parent(bone);
 		}
 		if (bone >= 0) {
-			skeleton->set_bone_global_pose_override(bone, Transform(), 0, false);
+			//skeleton->set_bone_global_pose_override(bone, Transform(), 0, false);
 			skeleton->set_bone_custom_pose(bone, Transform());
 		}
 	}
@@ -1305,7 +1342,7 @@ void RenIK::set_shoulder_pole_offset(Vector3 euler) {
 }
 
 //Placement
-void RenIK::set_falling(bool p_value){
+void RenIK::set_falling(bool p_value) {
 	placement.set_falling(p_value);
 }
 

@@ -1,4 +1,5 @@
 #include "renik_chain.h"
+
 void RenIKChain::init(Vector3 p_chain_curve_direction, float p_root_influence, float p_leaf_influence, float p_twist_influence, float p_twist_start) {
 	chain_curve_direction = p_chain_curve_direction;
 	root_influence = p_root_influence;
