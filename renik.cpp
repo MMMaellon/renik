@@ -413,10 +413,10 @@ RenIK::SpineTransforms RenIK::perform_torso_ik() {
 
 		//Convert Hip and Head global poses to local poses and then apply them as custom pose
 		Transform headGlobalParent = get_global_parent_pose(head, ik_map, hipGlobalTransform);
-		Transform hipGlobalParent = get_global_parent_pose(hip, ik_map, hipGlobalTransform);
+		Transform hipGlobalParent = get_global_parent_pose(hip, ik_map, Transform());
 
-		skeleton->set_bone_custom_pose(head, (headGlobalParent * skeleton->get_bone_rest(head) * skeleton->get_bone_pose(head)).affine_inverse() * headGlobalParent);
-		skeleton->set_bone_custom_pose(hip, (hipGlobalParent * skeleton->get_bone_rest(hip) * skeleton->get_bone_pose(hip)).affine_inverse() * hipGlobalParent);
+		skeleton->set_bone_custom_pose(head, (headGlobalParent * skeleton->get_bone_rest(head) * skeleton->get_bone_pose(head)).affine_inverse() * headGlobalTransform);
+		skeleton->set_bone_custom_pose(hip, (hipGlobalParent * skeleton->get_bone_rest(hip) * skeleton->get_bone_pose(hip)).affine_inverse() * hipGlobalTransform);
 
 		//Calculate and return the parent bone position for the arms
 		Transform left_global_parent_pose = Transform();
