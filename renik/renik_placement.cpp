@@ -190,10 +190,11 @@ void RenIKPlacement::loop_foot(Transform &step, Transform &stand, Transform &sta
 	Transform calculated_apex_foot = Transform(grounded_foot.basis.rotated_local(Vector3(1, 0, 0), ease_scaling * gait.apex_angle), ground_pos + ground_normal * vertical_scaling * gait.apex_vertical_scalar+ ground_normal * head_distance * gait.apex_vertical);
 	Transform calculated_drop_foot = Transform(grounded_foot.basis.rotated_local(Vector3(1, 0, 0), ease_scaling * gait.drop_angle), ground_pos + ground_normal * vertical_scaling * gait.drop_vertical_scalar + ground_normal * head_distance * gait.drop_vertical_scalar + ground_velocity.normalized() * horizontal_scaling * gait.drop_horizontal_scalar);
 
-	grounded_foot.interpolate_with(calculated_grounded_foot, gait_easing);
-	lifted_foot.interpolate_with(calculated_lifted_foot, gait_easing);
-	apex_foot.interpolate_with(calculated_apex_foot, gait_easing);
-	drop_foot.interpolate_with(calculated_drop_foot, gait_easing);
+	float clamped_gait_easing = CLAMP(gait_easing, 0, 1);
+	grounded_foot = grounded_foot.interpolate_with(calculated_grounded_foot, 1 - clamped_gait_easing);
+	lifted_foot = lifted_foot.interpolate_with(calculated_lifted_foot, 1 - clamped_gait_easing);
+	apex_foot = apex_foot.interpolate_with(calculated_apex_foot, 1 - clamped_gait_easing);
+	drop_foot = drop_foot.interpolate_with(calculated_drop_foot, 1 - clamped_gait_easing);
 
 	switch (loop_state) {
 		case LOOP_GROUND_IN:
