@@ -399,8 +399,6 @@ void RenIK::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "walk_collide_with_bodies", PROPERTY_HINT_LAYERS_3D_PHYSICS), "set_collide_with_bodies", "is_collide_with_bodies_enabled");
 
 	ADD_GROUP("Forward Gait (Advanced)", "forward_");
-	ADD_PROPERTY(PropertyInfo(Variant::REAL, "forward_", PROPERTY_HINT_RANGE, "0,100,0.1"), "set_spine_twist_start", "get_spine_twist_start");
-
 	ADD_PROPERTY(PropertyInfo(Variant::REAL, "forward_speed_scalar_min", PROPERTY_HINT_RANGE, "0,100,0.1"), "set_forward_speed_scalar_min", "get_forward_speed_scalar_min");
 	ADD_PROPERTY(PropertyInfo(Variant::REAL, "forward_speed_scalar_max", PROPERTY_HINT_RANGE, "0,100,0.1"), "set_forward_speed_scalar_max", "get_forward_speed_scalar_max");
 	ADD_PROPERTY(PropertyInfo(Variant::REAL, "forward_ground_time", PROPERTY_HINT_RANGE, "0,100,0.1"), "set_forward_ground_time", "get_forward_ground_time");

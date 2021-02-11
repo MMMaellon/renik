@@ -241,26 +241,13 @@ private:
 	int right_loop_state = 0;
 	float loop_scaling = 0;
 
-	//for gait easing
-	Transform left_grounded_foot;
-	Transform left_lifted_foot;
-	Transform left_apex_foot;
-	Transform left_drop_foot;
-	float left_gait_easing = 0.25;
-
-	Transform right_grounded_foot;
-	Transform right_lifted_foot;
-	Transform right_apex_foot;
-	Transform right_drop_foot;
-	float right_gait_easing = 0.25;
-
 	//helpers
 	bool is_balanced(Transform left, Transform right);
 	void stand_foot(Transform foot, Transform &stand, Transform &stand_local, Spatial *ground);
 	Transform dangle_foot(Transform head, float distance, float leg_length, Vector3 hip_offset);
 	void initialize_loop(Vector3 velocity, Vector3 left_ground, Vector3 right_ground, bool left_grounded, bool right_grounded);
 	void loop(Transform head, Vector3 velocity, Vector3 left_ground_pos, Vector3 left_normal, Vector3 right_ground_pos, Vector3 right_normal, bool left_grounded, bool right_grounded, Gait gait);
-	void loop_foot(Transform &step, Transform &stand, Transform &stand_local, Spatial *ground, Spatial **prev_ground, int &loop_state, Vector3 &grounded_stop, Transform head, float leg_length, float foot_length, Vector3 velocity, float loop_scaling, float step_progress, Vector3 ground_pos, Vector3 ground_normal, Gait gait, Transform grounded_foot, Transform lifted_foot, Transform apex_foot, Transform drop_foot, float gait_easing);
+	void loop_foot(Transform &step, Transform &stand, Transform &stand_local, Spatial *ground, Spatial **prev_ground, int &loop_state, Vector3 &grounded_stop, Transform head, float leg_length, float foot_length, Vector3 velocity, float loop_scaling, float step_progress, Vector3 ground_pos, Vector3 ground_normal, Gait gait);
 	void step_direction(Vector3 forward, Vector3 side, Vector3 velocity, Vector3 left_ground, Vector3 right_ground, bool left_grounded, bool right_grounded);
 	int get_loop_state(float loop_state_scaling, float loop_progress, float &loop_state_progress, Gait gait);
 };
