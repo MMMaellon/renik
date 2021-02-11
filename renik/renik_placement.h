@@ -120,17 +120,17 @@ public:
 #define OTHER_TRANSITION -6
 #define OTHER 6
 
-	Gait forward_gait = Gait(0.75, 0.75, 20, 10, 5, 10, 5, 10, 5, 10, 5, Math_PI / 2, Math_PI / 4, Math_PI / 3
+	Gait forward_gait = Gait(0.25, 0.5, 20, 10, 5, 10, 5, 10, 5, 10, 5, Math_PI / 2, Math_PI / 4, Math_PI / 3
 						, 0.0, 0.25, 0.5, Math_PI / 2
 						, 0.0, 0.1, Math_PI / 8
 						, 0.0, 0.05, 0.25, Math_PI / -8
 						, 0.05, 0.4, 0.85);
-	Gait backward_gait = Gait(1, 1, 20, 10, 5, 10, 5, 10, 5, 10, 5, 0, 0, 0
+	Gait backward_gait = Gait(0.25, 0.5, 20, 10, 5, 10, 5, 10, 5, 10, 5, 0, 0, 0
 						, 0.025, 0.1, 0.5, Math_PI / -8
 						, 0.1, 0.1, Math_PI / 8
 						, 0.0, 0.1, 0.1, Math_PI / 8
 						, 0.1, 0.4, 0.85);
-	Gait sideways_gait = Gait(1, 1, 20, 10, 5, 10, 5, 10, 5, 10, 5, 0, 0, 0
+	Gait sideways_gait = Gait(0.25, 0.5, 20, 10, 5, 10, 5, 10, 5, 10, 5, 0, 0, 0
 						, 0.05, 0.05, 0.15, 0.0
 						, 0.01, 0.1, Math_PI / 8
 						, 0.01, 0.05, 0.05, 0.0

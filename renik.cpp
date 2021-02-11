@@ -22,16 +22,16 @@ const int DEFAULT_LOOP_LIMIT = 16;
 
 RenIK::RenIK() :
 		//IK DEFAULTS
-		left_shoulder_offset(Math::deg2rad(-20.0), Math::deg2rad(-10.0), Math::deg2rad(-10.0)),
-		right_shoulder_offset(Math::deg2rad(-20.0), Math::deg2rad(10.0), Math::deg2rad(10.0)),
-		left_shoulder_pole_offset(Math::deg2rad(78.0), Math::deg2rad(0.0), Math::deg2rad(0.0)),
-		right_shoulder_pole_offset(Math::deg2rad(78.0), Math::deg2rad(0.0), Math::deg2rad(0.0)) {
+		left_shoulder_offset(Math::deg2rad(0.0), Math::deg2rad(0.0), Math::deg2rad(-20.0)),
+		right_shoulder_offset(Math::deg2rad(0.0), Math::deg2rad(0.0), Math::deg2rad(20.0)),
+		left_shoulder_pole_offset(Math::deg2rad(0.0), Math::deg2rad(0.0), Math::deg2rad(78.0)),
+		right_shoulder_pole_offset(Math::deg2rad(0.0), Math::deg2rad(0.0), Math::deg2rad(78.0)) {
 	spine_chain.instance();
-	spine_chain->init(Vector3(0, 15, -15), 1, 1, 1, 0);
+	spine_chain->init(Vector3(0, 15, -15), 0.5, 0.5, 1, 0);
 	limb_arm_left.instance();
-	limb_arm_left->init(0, 0, Math_PI, 0.5, 0.66666, Math::deg2rad(20.0), Math::deg2rad(45.0), 0.25, Vector3(Math::deg2rad(60.0), 0, 0), Vector3(2.0, -1, -2.0));
+	limb_arm_left->init(0, 0, Math::deg2rad(70.0), 0.5, 0.66666, Math::deg2rad(20.0), Math::deg2rad(45.0), 0.33, Vector3(Math::deg2rad(15.0), 0, Math::deg2rad(60.0)), Vector3(2.0, -1.5, -1.0));
 	limb_arm_right.instance();
-	limb_arm_right->init(0, 0, -Math_PI, 0.5, 0.66666, Math::deg2rad(-20.0), Math::deg2rad(45.0), 0.25, Vector3(Math::deg2rad(60.0), 0, 0), Vector3(2.0, 1, 2.0));
+	limb_arm_right->init(0, 0, Math::deg2rad(-70.0), 0.5, 0.66666, Math::deg2rad(-20.0), Math::deg2rad(45.0), 0.33, Vector3(Math::deg2rad(15.0), 0, Math::deg2rad(-60.0)), Vector3(2.0, 1.5, 1.0));
 	limb_leg_left.instance();
 	limb_leg_left->init(0, 0, 0, 0.25, 0.25, 0, Math::deg2rad(45.0), 0.5, Vector3(0, 0, Math_PI), Vector3());
 	limb_leg_right.instance();
@@ -162,6 +162,180 @@ void RenIK::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_collision_mask_bit", "bit", "value"), &RenIK::set_collision_mask_bit);
 	ClassDB::bind_method(D_METHOD("get_collision_mask_bit", "bit"), &RenIK::get_collision_mask_bit);
 
+	ClassDB::bind_method(D_METHOD("get_shoulder_influence"), &RenIK::get_shoulder_influence);
+	ClassDB::bind_method(D_METHOD("set_shoulder_influence", "influence"), &RenIK::set_shoulder_influence);
+
+	ClassDB::bind_method(D_METHOD("get_forward_speed_scalar_min"), &RenIK::get_forward_speed_scalar_min);
+	ClassDB::bind_method(D_METHOD("set_forward_speed_scalar_min", "speed_scalar_min"), &RenIK::set_forward_speed_scalar_min);
+	ClassDB::bind_method(D_METHOD("get_forward_speed_scalar_max"), &RenIK::get_forward_speed_scalar_max);
+	ClassDB::bind_method(D_METHOD("set_forward_speed_scalar_max", "speed_scalar_max"), &RenIK::set_forward_speed_scalar_max);
+	ClassDB::bind_method(D_METHOD("get_forward_ground_time"), &RenIK::get_forward_ground_time);
+	ClassDB::bind_method(D_METHOD("set_forward_ground_time", "ground_time"), &RenIK::set_forward_ground_time);
+	ClassDB::bind_method(D_METHOD("get_forward_lift_time_base"), &RenIK::get_forward_lift_time_base);
+	ClassDB::bind_method(D_METHOD("set_forward_lift_time_base", "lift_time_base"), &RenIK::set_forward_lift_time_base);
+	ClassDB::bind_method(D_METHOD("get_forward_lift_time_scalar"), &RenIK::get_forward_lift_time_scalar);
+	ClassDB::bind_method(D_METHOD("set_forward_lift_time_scalar", "lift_time_scalar"), &RenIK::set_forward_lift_time_scalar);
+	ClassDB::bind_method(D_METHOD("get_forward_apex_in_time_base"), &RenIK::get_forward_apex_in_time_base);
+	ClassDB::bind_method(D_METHOD("set_forward_apex_in_time_base", "apex_in_time_base"), &RenIK::set_forward_apex_in_time_base);
+	ClassDB::bind_method(D_METHOD("get_forward_apex_in_time_scalar"), &RenIK::get_forward_apex_in_time_scalar);
+	ClassDB::bind_method(D_METHOD("set_forward_apex_in_time_scalar", "apex_in_time_scalar"), &RenIK::set_forward_apex_in_time_scalar);
+	ClassDB::bind_method(D_METHOD("get_forward_apex_out_time_base"), &RenIK::get_forward_apex_out_time_base);
+	ClassDB::bind_method(D_METHOD("set_forward_apex_out_time_base", "apex_out_time_base"), &RenIK::set_forward_apex_out_time_base);
+	ClassDB::bind_method(D_METHOD("get_forward_apex_out_time_scalar"), &RenIK::get_forward_apex_out_time_scalar);
+	ClassDB::bind_method(D_METHOD("set_forward_apex_out_time_scalar", "apex_out_time_scalar"), &RenIK::set_forward_apex_out_time_scalar);
+	ClassDB::bind_method(D_METHOD("get_forward_drop_time_base"), &RenIK::get_forward_drop_time_base);
+	ClassDB::bind_method(D_METHOD("set_forward_drop_time_base", "drop_time_base"), &RenIK::set_forward_drop_time_base);
+	ClassDB::bind_method(D_METHOD("get_forward_drop_time_scalar"), &RenIK::get_forward_drop_time_scalar);
+	ClassDB::bind_method(D_METHOD("set_forward_drop_time_scalar", "drop_time_scalar"), &RenIK::set_forward_drop_time_scalar);
+	ClassDB::bind_method(D_METHOD("get_forward_tip_toe_distance_scalar"), &RenIK::get_forward_tip_toe_distance_scalar);
+	ClassDB::bind_method(D_METHOD("set_forward_tip_toe_distance_scalar", "tip_toe_distance_scalar"), &RenIK::set_forward_tip_toe_distance_scalar);
+	ClassDB::bind_method(D_METHOD("get_forward_tip_toe_speed_scalar"), &RenIK::get_forward_tip_toe_speed_scalar);
+	ClassDB::bind_method(D_METHOD("set_forward_tip_toe_speed_scalar", "tip_toe_speed_scalar"), &RenIK::set_forward_tip_toe_speed_scalar);
+	ClassDB::bind_method(D_METHOD("get_forward_tip_toe_angle_max"), &RenIK::get_forward_tip_toe_angle_max);
+	ClassDB::bind_method(D_METHOD("set_forward_tip_toe_angle_max", "tip_toe_angle_max"), &RenIK::set_forward_tip_toe_angle_max);
+	ClassDB::bind_method(D_METHOD("get_forward_lift_vertical"), &RenIK::get_forward_lift_vertical);
+	ClassDB::bind_method(D_METHOD("set_forward_lift_vertical", "lift_vertical"), &RenIK::set_forward_lift_vertical);
+	ClassDB::bind_method(D_METHOD("get_forward_lift_vertical_scalar"), &RenIK::get_forward_lift_vertical_scalar);
+	ClassDB::bind_method(D_METHOD("set_forward_lift_vertical_scalar", "lift_vertical_scalar"), &RenIK::set_forward_lift_vertical_scalar);
+	ClassDB::bind_method(D_METHOD("get_forward_lift_horizontal_scalar"), &RenIK::get_forward_lift_horizontal_scalar);
+	ClassDB::bind_method(D_METHOD("set_forward_lift_horizontal_scalar", "lift_horizontal_scalar"), &RenIK::set_forward_lift_horizontal_scalar);
+	ClassDB::bind_method(D_METHOD("get_forward_lift_angle"), &RenIK::get_forward_lift_angle);
+	ClassDB::bind_method(D_METHOD("set_forward_lift_angle", "lift_angle"), &RenIK::set_forward_lift_angle);
+	ClassDB::bind_method(D_METHOD("get_forward_apex_vertical"), &RenIK::get_forward_apex_vertical);
+	ClassDB::bind_method(D_METHOD("set_forward_apex_vertical", "apex_vertical"), &RenIK::set_forward_apex_vertical);
+	ClassDB::bind_method(D_METHOD("get_forward_apex_vertical_scalar"), &RenIK::get_forward_apex_vertical_scalar);
+	ClassDB::bind_method(D_METHOD("set_forward_apex_vertical_scalar", "apex_vertical_scalar"), &RenIK::set_forward_apex_vertical_scalar);
+	ClassDB::bind_method(D_METHOD("get_forward_apex_angle"), &RenIK::get_forward_apex_angle);
+	ClassDB::bind_method(D_METHOD("set_forward_apex_angle", "apex_angle"), &RenIK::set_forward_apex_angle);
+	ClassDB::bind_method(D_METHOD("get_forward_drop_vertical"), &RenIK::get_forward_drop_vertical);
+	ClassDB::bind_method(D_METHOD("set_forward_drop_vertical", "drop_vertical"), &RenIK::set_forward_drop_vertical);
+	ClassDB::bind_method(D_METHOD("get_forward_drop_vertical_scalar"), &RenIK::get_forward_drop_vertical_scalar);
+	ClassDB::bind_method(D_METHOD("set_forward_drop_vertical_scalar", "drop_vertical_scalar"), &RenIK::set_forward_drop_vertical_scalar);
+	ClassDB::bind_method(D_METHOD("get_forward_drop_horizontal_scalar"), &RenIK::get_forward_drop_horizontal_scalar);
+	ClassDB::bind_method(D_METHOD("set_forward_drop_horizontal_scalar", "drop_horizontal_scalar"), &RenIK::set_forward_drop_horizontal_scalar);
+	ClassDB::bind_method(D_METHOD("get_forward_drop_angle"), &RenIK::get_forward_drop_angle);
+	ClassDB::bind_method(D_METHOD("set_forward_drop_angle", "drop_angle"), &RenIK::set_forward_drop_angle);
+	ClassDB::bind_method(D_METHOD("get_forward_contact_point_ease"), &RenIK::get_forward_contact_point_ease);
+	ClassDB::bind_method(D_METHOD("set_forward_contact_point_ease", "contact_point_ease"), &RenIK::set_forward_contact_point_ease);
+	ClassDB::bind_method(D_METHOD("get_forward_contact_point_ease_scalar"), &RenIK::get_forward_contact_point_ease_scalar);
+	ClassDB::bind_method(D_METHOD("set_forward_contact_point_ease_scalar", "contact_point_ease_scalar"), &RenIK::set_forward_contact_point_ease_scalar);
+	ClassDB::bind_method(D_METHOD("get_forward_scaling_ease"), &RenIK::get_forward_scaling_ease);
+	ClassDB::bind_method(D_METHOD("set_forward_scaling_ease", "scaling_ease"), &RenIK::set_forward_scaling_ease);
+
+	ClassDB::bind_method(D_METHOD("get_backward_speed_scalar_min"), &RenIK::get_backward_speed_scalar_min);
+	ClassDB::bind_method(D_METHOD("set_backward_speed_scalar_min", "speed_scalar_min"), &RenIK::set_backward_speed_scalar_min);
+	ClassDB::bind_method(D_METHOD("get_backward_speed_scalar_max"), &RenIK::get_backward_speed_scalar_max);
+	ClassDB::bind_method(D_METHOD("set_backward_speed_scalar_max", "speed_scalar_max"), &RenIK::set_backward_speed_scalar_max);
+	ClassDB::bind_method(D_METHOD("get_backward_ground_time"), &RenIK::get_backward_ground_time);
+	ClassDB::bind_method(D_METHOD("set_backward_ground_time", "ground_time"), &RenIK::set_backward_ground_time);
+	ClassDB::bind_method(D_METHOD("get_backward_lift_time_base"), &RenIK::get_backward_lift_time_base);
+	ClassDB::bind_method(D_METHOD("set_backward_lift_time_base", "lift_time_base"), &RenIK::set_backward_lift_time_base);
+	ClassDB::bind_method(D_METHOD("get_backward_lift_time_scalar"), &RenIK::get_backward_lift_time_scalar);
+	ClassDB::bind_method(D_METHOD("set_backward_lift_time_scalar", "lift_time_scalar"), &RenIK::set_backward_lift_time_scalar);
+	ClassDB::bind_method(D_METHOD("get_backward_apex_in_time_base"), &RenIK::get_backward_apex_in_time_base);
+	ClassDB::bind_method(D_METHOD("set_backward_apex_in_time_base", "apex_in_time_base"), &RenIK::set_backward_apex_in_time_base);
+	ClassDB::bind_method(D_METHOD("get_backward_apex_in_time_scalar"), &RenIK::get_backward_apex_in_time_scalar);
+	ClassDB::bind_method(D_METHOD("set_backward_apex_in_time_scalar", "apex_in_time_scalar"), &RenIK::set_backward_apex_in_time_scalar);
+	ClassDB::bind_method(D_METHOD("get_backward_apex_out_time_base"), &RenIK::get_backward_apex_out_time_base);
+	ClassDB::bind_method(D_METHOD("set_backward_apex_out_time_base", "apex_out_time_base"), &RenIK::set_backward_apex_out_time_base);
+	ClassDB::bind_method(D_METHOD("get_backward_apex_out_time_scalar"), &RenIK::get_backward_apex_out_time_scalar);
+	ClassDB::bind_method(D_METHOD("set_backward_apex_out_time_scalar", "apex_out_time_scalar"), &RenIK::set_backward_apex_out_time_scalar);
+	ClassDB::bind_method(D_METHOD("get_backward_drop_time_base"), &RenIK::get_backward_drop_time_base);
+	ClassDB::bind_method(D_METHOD("set_backward_drop_time_base", "drop_time_base"), &RenIK::set_backward_drop_time_base);
+	ClassDB::bind_method(D_METHOD("get_backward_drop_time_scalar"), &RenIK::get_backward_drop_time_scalar);
+	ClassDB::bind_method(D_METHOD("set_backward_drop_time_scalar", "drop_time_scalar"), &RenIK::set_backward_drop_time_scalar);
+	ClassDB::bind_method(D_METHOD("get_backward_tip_toe_distance_scalar"), &RenIK::get_backward_tip_toe_distance_scalar);
+	ClassDB::bind_method(D_METHOD("set_backward_tip_toe_distance_scalar", "tip_toe_distance_scalar"), &RenIK::set_backward_tip_toe_distance_scalar);
+	ClassDB::bind_method(D_METHOD("get_backward_tip_toe_speed_scalar"), &RenIK::get_backward_tip_toe_speed_scalar);
+	ClassDB::bind_method(D_METHOD("set_backward_tip_toe_speed_scalar", "tip_toe_speed_scalar"), &RenIK::set_backward_tip_toe_speed_scalar);
+	ClassDB::bind_method(D_METHOD("get_backward_tip_toe_angle_max"), &RenIK::get_backward_tip_toe_angle_max);
+	ClassDB::bind_method(D_METHOD("set_backward_tip_toe_angle_max", "tip_toe_angle_max"), &RenIK::set_backward_tip_toe_angle_max);
+	ClassDB::bind_method(D_METHOD("get_backward_lift_vertical"), &RenIK::get_backward_lift_vertical);
+	ClassDB::bind_method(D_METHOD("set_backward_lift_vertical", "lift_vertical"), &RenIK::set_backward_lift_vertical);
+	ClassDB::bind_method(D_METHOD("get_backward_lift_vertical_scalar"), &RenIK::get_backward_lift_vertical_scalar);
+	ClassDB::bind_method(D_METHOD("set_backward_lift_vertical_scalar", "lift_vertical_scalar"), &RenIK::set_backward_lift_vertical_scalar);
+	ClassDB::bind_method(D_METHOD("get_backward_lift_horizontal_scalar"), &RenIK::get_backward_lift_horizontal_scalar);
+	ClassDB::bind_method(D_METHOD("set_backward_lift_horizontal_scalar", "lift_horizontal_scalar"), &RenIK::set_backward_lift_horizontal_scalar);
+	ClassDB::bind_method(D_METHOD("get_backward_lift_angle"), &RenIK::get_backward_lift_angle);
+	ClassDB::bind_method(D_METHOD("set_backward_lift_angle", "lift_angle"), &RenIK::set_backward_lift_angle);
+	ClassDB::bind_method(D_METHOD("get_backward_apex_vertical"), &RenIK::get_backward_apex_vertical);
+	ClassDB::bind_method(D_METHOD("set_backward_apex_vertical", "apex_vertical"), &RenIK::set_backward_apex_vertical);
+	ClassDB::bind_method(D_METHOD("get_backward_apex_vertical_scalar"), &RenIK::get_backward_apex_vertical_scalar);
+	ClassDB::bind_method(D_METHOD("set_backward_apex_vertical_scalar", "apex_vertical_scalar"), &RenIK::set_backward_apex_vertical_scalar);
+	ClassDB::bind_method(D_METHOD("get_backward_apex_angle"), &RenIK::get_backward_apex_angle);
+	ClassDB::bind_method(D_METHOD("set_backward_apex_angle", "apex_angle"), &RenIK::set_backward_apex_angle);
+	ClassDB::bind_method(D_METHOD("get_backward_drop_vertical"), &RenIK::get_backward_drop_vertical);
+	ClassDB::bind_method(D_METHOD("set_backward_drop_vertical", "drop_vertical"), &RenIK::set_backward_drop_vertical);
+	ClassDB::bind_method(D_METHOD("get_backward_drop_vertical_scalar"), &RenIK::get_backward_drop_vertical_scalar);
+	ClassDB::bind_method(D_METHOD("set_backward_drop_vertical_scalar", "drop_vertical_scalar"), &RenIK::set_backward_drop_vertical_scalar);
+	ClassDB::bind_method(D_METHOD("get_backward_drop_horizontal_scalar"), &RenIK::get_backward_drop_horizontal_scalar);
+	ClassDB::bind_method(D_METHOD("set_backward_drop_horizontal_scalar", "drop_horizontal_scalar"), &RenIK::set_backward_drop_horizontal_scalar);
+	ClassDB::bind_method(D_METHOD("get_backward_drop_angle"), &RenIK::get_backward_drop_angle);
+	ClassDB::bind_method(D_METHOD("set_backward_drop_angle", "drop_angle"), &RenIK::set_backward_drop_angle);
+	ClassDB::bind_method(D_METHOD("get_backward_contact_point_ease"), &RenIK::get_backward_contact_point_ease);
+	ClassDB::bind_method(D_METHOD("set_backward_contact_point_ease", "contact_point_ease"), &RenIK::set_backward_contact_point_ease);
+	ClassDB::bind_method(D_METHOD("get_backward_contact_point_ease_scalar"), &RenIK::get_backward_contact_point_ease_scalar);
+	ClassDB::bind_method(D_METHOD("set_backward_contact_point_ease_scalar", "contact_point_ease_scalar"), &RenIK::set_backward_contact_point_ease_scalar);
+	ClassDB::bind_method(D_METHOD("get_backward_scaling_ease"), &RenIK::get_backward_scaling_ease);
+	ClassDB::bind_method(D_METHOD("set_backward_scaling_ease", "scaling_ease"), &RenIK::set_backward_scaling_ease);
+
+	ClassDB::bind_method(D_METHOD("get_sideways_speed_scalar_min"), &RenIK::get_sideways_speed_scalar_min);
+	ClassDB::bind_method(D_METHOD("set_sideways_speed_scalar_min", "speed_scalar_min"), &RenIK::set_sideways_speed_scalar_min);
+	ClassDB::bind_method(D_METHOD("get_sideways_speed_scalar_max"), &RenIK::get_sideways_speed_scalar_max);
+	ClassDB::bind_method(D_METHOD("set_sideways_speed_scalar_max", "speed_scalar_max"), &RenIK::set_sideways_speed_scalar_max);
+	ClassDB::bind_method(D_METHOD("get_sideways_ground_time"), &RenIK::get_sideways_ground_time);
+	ClassDB::bind_method(D_METHOD("set_sideways_ground_time", "ground_time"), &RenIK::set_sideways_ground_time);
+	ClassDB::bind_method(D_METHOD("get_sideways_lift_time_base"), &RenIK::get_sideways_lift_time_base);
+	ClassDB::bind_method(D_METHOD("set_sideways_lift_time_base", "lift_time_base"), &RenIK::set_sideways_lift_time_base);
+	ClassDB::bind_method(D_METHOD("get_sideways_lift_time_scalar"), &RenIK::get_sideways_lift_time_scalar);
+	ClassDB::bind_method(D_METHOD("set_sideways_lift_time_scalar", "lift_time_scalar"), &RenIK::set_sideways_lift_time_scalar);
+	ClassDB::bind_method(D_METHOD("get_sideways_apex_in_time_base"), &RenIK::get_sideways_apex_in_time_base);
+	ClassDB::bind_method(D_METHOD("set_sideways_apex_in_time_base", "apex_in_time_base"), &RenIK::set_sideways_apex_in_time_base);
+	ClassDB::bind_method(D_METHOD("get_sideways_apex_in_time_scalar"), &RenIK::get_sideways_apex_in_time_scalar);
+	ClassDB::bind_method(D_METHOD("set_sideways_apex_in_time_scalar", "apex_in_time_scalar"), &RenIK::set_sideways_apex_in_time_scalar);
+	ClassDB::bind_method(D_METHOD("get_sideways_apex_out_time_base"), &RenIK::get_sideways_apex_out_time_base);
+	ClassDB::bind_method(D_METHOD("set_sideways_apex_out_time_base", "apex_out_time_base"), &RenIK::set_sideways_apex_out_time_base);
+	ClassDB::bind_method(D_METHOD("get_sideways_apex_out_time_scalar"), &RenIK::get_sideways_apex_out_time_scalar);
+	ClassDB::bind_method(D_METHOD("set_sideways_apex_out_time_scalar", "apex_out_time_scalar"), &RenIK::set_sideways_apex_out_time_scalar);
+	ClassDB::bind_method(D_METHOD("get_sideways_drop_time_base"), &RenIK::get_sideways_drop_time_base);
+	ClassDB::bind_method(D_METHOD("set_sideways_drop_time_base", "drop_time_base"), &RenIK::set_sideways_drop_time_base);
+	ClassDB::bind_method(D_METHOD("get_sideways_drop_time_scalar"), &RenIK::get_sideways_drop_time_scalar);
+	ClassDB::bind_method(D_METHOD("set_sideways_drop_time_scalar", "drop_time_scalar"), &RenIK::set_sideways_drop_time_scalar);
+	ClassDB::bind_method(D_METHOD("get_sideways_tip_toe_distance_scalar"), &RenIK::get_sideways_tip_toe_distance_scalar);
+	ClassDB::bind_method(D_METHOD("set_sideways_tip_toe_distance_scalar", "tip_toe_distance_scalar"), &RenIK::set_sideways_tip_toe_distance_scalar);
+	ClassDB::bind_method(D_METHOD("get_sideways_tip_toe_speed_scalar"), &RenIK::get_sideways_tip_toe_speed_scalar);
+	ClassDB::bind_method(D_METHOD("set_sideways_tip_toe_speed_scalar", "tip_toe_speed_scalar"), &RenIK::set_sideways_tip_toe_speed_scalar);
+	ClassDB::bind_method(D_METHOD("get_sideways_tip_toe_angle_max"), &RenIK::get_sideways_tip_toe_angle_max);
+	ClassDB::bind_method(D_METHOD("set_sideways_tip_toe_angle_max", "tip_toe_angle_max"), &RenIK::set_sideways_tip_toe_angle_max);
+	ClassDB::bind_method(D_METHOD("get_sideways_lift_vertical"), &RenIK::get_sideways_lift_vertical);
+	ClassDB::bind_method(D_METHOD("set_sideways_lift_vertical", "lift_vertical"), &RenIK::set_sideways_lift_vertical);
+	ClassDB::bind_method(D_METHOD("get_sideways_lift_vertical_scalar"), &RenIK::get_sideways_lift_vertical_scalar);
+	ClassDB::bind_method(D_METHOD("set_sideways_lift_vertical_scalar", "lift_vertical_scalar"), &RenIK::set_sideways_lift_vertical_scalar);
+	ClassDB::bind_method(D_METHOD("get_sideways_lift_horizontal_scalar"), &RenIK::get_sideways_lift_horizontal_scalar);
+	ClassDB::bind_method(D_METHOD("set_sideways_lift_horizontal_scalar", "lift_horizontal_scalar"), &RenIK::set_sideways_lift_horizontal_scalar);
+	ClassDB::bind_method(D_METHOD("get_sideways_lift_angle"), &RenIK::get_sideways_lift_angle);
+	ClassDB::bind_method(D_METHOD("set_sideways_lift_angle", "lift_angle"), &RenIK::set_sideways_lift_angle);
+	ClassDB::bind_method(D_METHOD("get_sideways_apex_vertical"), &RenIK::get_sideways_apex_vertical);
+	ClassDB::bind_method(D_METHOD("set_sideways_apex_vertical", "apex_vertical"), &RenIK::set_sideways_apex_vertical);
+	ClassDB::bind_method(D_METHOD("get_sideways_apex_vertical_scalar"), &RenIK::get_sideways_apex_vertical_scalar);
+	ClassDB::bind_method(D_METHOD("set_sideways_apex_vertical_scalar", "apex_vertical_scalar"), &RenIK::set_sideways_apex_vertical_scalar);
+	ClassDB::bind_method(D_METHOD("get_sideways_apex_angle"), &RenIK::get_sideways_apex_angle);
+	ClassDB::bind_method(D_METHOD("set_sideways_apex_angle", "apex_angle"), &RenIK::set_sideways_apex_angle);
+	ClassDB::bind_method(D_METHOD("get_sideways_drop_vertical"), &RenIK::get_sideways_drop_vertical);
+	ClassDB::bind_method(D_METHOD("set_sideways_drop_vertical", "drop_vertical"), &RenIK::set_sideways_drop_vertical);
+	ClassDB::bind_method(D_METHOD("get_sideways_drop_vertical_scalar"), &RenIK::get_sideways_drop_vertical_scalar);
+	ClassDB::bind_method(D_METHOD("set_sideways_drop_vertical_scalar", "drop_vertical_scalar"), &RenIK::set_sideways_drop_vertical_scalar);
+	ClassDB::bind_method(D_METHOD("get_sideways_drop_horizontal_scalar"), &RenIK::get_sideways_drop_horizontal_scalar);
+	ClassDB::bind_method(D_METHOD("set_sideways_drop_horizontal_scalar", "drop_horizontal_scalar"), &RenIK::set_sideways_drop_horizontal_scalar);
+	ClassDB::bind_method(D_METHOD("get_sideways_drop_angle"), &RenIK::get_sideways_drop_angle);
+	ClassDB::bind_method(D_METHOD("set_sideways_drop_angle", "drop_angle"), &RenIK::set_sideways_drop_angle);
+	ClassDB::bind_method(D_METHOD("get_sideways_contact_point_ease"), &RenIK::get_sideways_contact_point_ease);
+	ClassDB::bind_method(D_METHOD("set_sideways_contact_point_ease", "contact_point_ease"), &RenIK::set_sideways_contact_point_ease);
+	ClassDB::bind_method(D_METHOD("get_sideways_contact_point_ease_scalar"), &RenIK::get_sideways_contact_point_ease_scalar);
+	ClassDB::bind_method(D_METHOD("set_sideways_contact_point_ease_scalar", "contact_point_ease_scalar"), &RenIK::set_sideways_contact_point_ease_scalar);
+	ClassDB::bind_method(D_METHOD("get_sideways_scaling_ease"), &RenIK::get_sideways_scaling_ease);
+	ClassDB::bind_method(D_METHOD("set_sideways_scaling_ease", "scaling_ease"), &RenIK::set_sideways_scaling_ease);
+
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "live_preview"), "set_live_preview", "get_live_preview");
 
 	ADD_GROUP("Armature", "armature_");
@@ -223,6 +397,8 @@ void RenIK::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "walk_collision_mask", PROPERTY_HINT_LAYERS_3D_PHYSICS), "set_collision_mask", "get_collision_mask");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "walk_collide_with_areas", PROPERTY_HINT_LAYERS_3D_PHYSICS), "set_collide_with_areas", "is_collide_with_areas_enabled");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "walk_collide_with_bodies", PROPERTY_HINT_LAYERS_3D_PHYSICS), "set_collide_with_bodies", "is_collide_with_bodies_enabled");
+
+	ADD_PROPERTY(PropertyInfo(Variant::REAL, "torso_spine_twist_start", PROPERTY_HINT_RANGE, "0,100,0.1"), "set_spine_twist_start", "get_spine_twist_start");
 
 	ClassDB::bind_method(D_METHOD("update_ik"), &RenIK::update_ik);
 	ClassDB::bind_method(D_METHOD("update_placement"), &RenIK::update_placement);
@@ -777,7 +953,7 @@ Map<BoneId, Quat> RenIK::solve_ifabrik(Ref<RenIKChain> chain, Transform root, Tr
 		//We then do regular FABRIK
 		for (int i = 0; i < loopLimit; i++) {
 			Vector3 lastJoint = target.origin;
-			//Backwards
+			//Backward
 			for (int j = joints.size() - 1; j >= 1; j--) { //we skip the first joint because we're not allowed to move that joint
 				Vector3 delta = globalJointPoints[j - 1] - lastJoint;
 				delta = delta.normalized() * joints[j].next_distance;
@@ -1376,6 +1552,555 @@ void RenIK::set_collide_with_bodies(bool p_clip) {
 
 bool RenIK::is_collide_with_bodies_enabled() const {
 	return placement.is_collide_with_bodies_enabled();
+}
+
+void RenIK::set_forward_speed_scalar_min(float speed_scalar_min){
+	placement.forward_gait.speed_scalar_min = speed_scalar_min / 100.0;
+}
+float RenIK::get_forward_speed_scalar_min() const {
+	return placement.forward_gait.speed_scalar_min * 100.0;
+}
+void RenIK::set_forward_speed_scalar_max(float speed_scalar_max){
+	placement.forward_gait.speed_scalar_max = speed_scalar_max / 100.0;
+}
+float RenIK::get_forward_speed_scalar_max() const {
+	return placement.forward_gait.speed_scalar_max * 100.0;
+}
+
+void RenIK::set_forward_ground_time(float ground_time){
+	placement.forward_gait.ground_time = ground_time;
+}
+float RenIK::get_forward_ground_time() const {
+	return placement.forward_gait.ground_time;
+}
+void RenIK::set_forward_lift_time_base(float lift_time_base){
+	placement.forward_gait.lift_time_base = lift_time_base;
+}
+float RenIK::get_forward_lift_time_base() const {
+	return placement.forward_gait.lift_time_base;
+}
+void RenIK::set_forward_lift_time_scalar(float lift_time_scalar){
+	placement.forward_gait.lift_time_scalar = lift_time_scalar;
+}
+float RenIK::get_forward_lift_time_scalar() const {
+	return placement.forward_gait.lift_time_scalar;
+}
+void RenIK::set_forward_apex_in_time_base(float apex_in_time_base){
+	placement.forward_gait.apex_in_time_base = apex_in_time_base;
+}
+float RenIK::get_forward_apex_in_time_base() const {
+	return placement.forward_gait.apex_in_time_base;
+}
+void RenIK::set_forward_apex_in_time_scalar(float apex_in_time_scalar){
+	placement.forward_gait.apex_in_time_scalar = apex_in_time_scalar;
+}
+float RenIK::get_forward_apex_in_time_scalar() const {
+	return placement.forward_gait.apex_in_time_scalar;
+}
+void RenIK::set_forward_apex_out_time_base(float apex_out_time_base){
+	placement.forward_gait.apex_out_time_base = apex_out_time_base;
+}
+float RenIK::get_forward_apex_out_time_base() const {
+	return placement.forward_gait.apex_out_time_base;
+}
+void RenIK::set_forward_apex_out_time_scalar(float apex_out_time_scalar){
+	placement.forward_gait.apex_out_time_scalar = apex_out_time_scalar;
+}
+float RenIK::get_forward_apex_out_time_scalar() const {
+	return placement.forward_gait.apex_out_time_scalar;
+}
+void RenIK::set_forward_drop_time_base(float drop_time_base){
+	placement.forward_gait.drop_time_base = drop_time_base;
+}
+float RenIK::get_forward_drop_time_base() const {
+	return placement.forward_gait.drop_time_base;
+}
+void RenIK::set_forward_drop_time_scalar(float drop_time_scalar){
+	placement.forward_gait.drop_time_scalar = drop_time_scalar;
+}
+float RenIK::get_forward_drop_time_scalar() const {
+	return placement.forward_gait.drop_time_scalar;
+}
+
+void RenIK::set_forward_tip_toe_distance_scalar(float tip_toe_distance_scalar){
+	placement.forward_gait.tip_toe_distance_scalar = Math::deg2rad(tip_toe_distance_scalar);
+}
+float RenIK::get_forward_tip_toe_distance_scalar() const {
+	return Math::rad2deg(placement.forward_gait.tip_toe_distance_scalar);
+}
+void RenIK::set_forward_tip_toe_speed_scalar(float tip_toe_speed_scalar){
+	placement.forward_gait.tip_toe_speed_scalar = Math::deg2rad(tip_toe_speed_scalar);
+}
+float RenIK::get_forward_tip_toe_speed_scalar() const {
+	return Math::rad2deg(placement.forward_gait.tip_toe_speed_scalar);
+}
+void RenIK::set_forward_tip_toe_angle_max(float tip_toe_angle_max){
+	placement.forward_gait.tip_toe_angle_max = Math::deg2rad(tip_toe_angle_max);
+}
+float RenIK::get_forward_tip_toe_angle_max() const {
+	return Math::rad2deg(placement.forward_gait.tip_toe_angle_max);
+}
+
+void RenIK::set_forward_lift_vertical(float lift_vertical){
+	placement.forward_gait.lift_vertical = lift_vertical / 100.0;
+}
+float RenIK::get_forward_lift_vertical() const {
+	return placement.forward_gait.lift_vertical * 100.0;
+}
+void RenIK::set_forward_lift_vertical_scalar(float lift_vertical_scalar){
+	placement.forward_gait.lift_vertical_scalar = lift_vertical_scalar / 100.0;
+}
+float RenIK::get_forward_lift_vertical_scalar() const {
+	return placement.forward_gait.lift_vertical_scalar * 100.0;
+}
+void RenIK::set_forward_lift_horizontal_scalar(float lift_horizontal_scalar){
+	placement.forward_gait.lift_horizontal_scalar = lift_horizontal_scalar / 100.0;
+}
+float RenIK::get_forward_lift_horizontal_scalar() const {
+	return placement.forward_gait.lift_horizontal_scalar * 100.0;
+}
+void RenIK::set_forward_lift_angle(float lift_angle){
+	placement.forward_gait.lift_angle = Math::deg2rad(lift_angle);
+}
+float RenIK::get_forward_lift_angle() const {
+	return Math::rad2deg(placement.forward_gait.lift_angle);
+}
+
+void RenIK::set_forward_apex_vertical(float apex_vertical){
+	placement.forward_gait.apex_vertical = apex_vertical / 100.0;
+}
+float RenIK::get_forward_apex_vertical() const {
+	return placement.forward_gait.apex_vertical * 100.0;
+}
+void RenIK::set_forward_apex_vertical_scalar(float apex_vertical_scalar){
+	placement.forward_gait.apex_vertical_scalar = apex_vertical_scalar / 100.0;
+}
+float RenIK::get_forward_apex_vertical_scalar() const {
+	return placement.forward_gait.apex_vertical_scalar * 100.0;
+}
+void RenIK::set_forward_apex_angle(float apex_angle){
+	placement.forward_gait.apex_angle = Math::deg2rad(apex_angle);
+}
+float RenIK::get_forward_apex_angle() const {
+	return Math::rad2deg(placement.forward_gait.apex_angle);
+}
+
+void RenIK::set_forward_drop_vertical(float drop_vertical){
+	placement.forward_gait.drop_vertical = drop_vertical / 100.0;
+}
+float RenIK::get_forward_drop_vertical() const {
+	return placement.forward_gait.drop_vertical * 100.0;
+}
+void RenIK::set_forward_drop_vertical_scalar(float drop_vertical_scalar){
+	placement.forward_gait.drop_vertical_scalar = drop_vertical_scalar / 100.0;
+}
+float RenIK::get_forward_drop_vertical_scalar() const {
+	return placement.forward_gait.drop_vertical_scalar * 100.0;
+}
+void RenIK::set_forward_drop_horizontal_scalar(float drop_horizontal_scalar){
+	placement.forward_gait.drop_horizontal_scalar = drop_horizontal_scalar / 100.0;
+}
+float RenIK::get_forward_drop_horizontal_scalar() const {
+	return placement.forward_gait.drop_horizontal_scalar * 100.0;
+}
+void RenIK::set_forward_drop_angle(float drop_angle){
+	placement.forward_gait.drop_angle = Math::deg2rad(drop_angle);
+}
+float RenIK::get_forward_drop_angle() const {
+	return Math::rad2deg(placement.forward_gait.drop_angle);
+}
+
+void RenIK::set_forward_contact_point_ease(float contact_point_ease){
+	placement.forward_gait.contact_point_ease = contact_point_ease / 100.0;
+}
+float RenIK::get_forward_contact_point_ease() const {
+	return placement.forward_gait.contact_point_ease * 100.0;
+}
+void RenIK::set_forward_contact_point_ease_scalar(float contact_point_ease_scalar){
+	placement.forward_gait.contact_point_ease_scalar = contact_point_ease_scalar / 100.0;
+}
+float RenIK::get_forward_contact_point_ease_scalar() const {
+	return placement.forward_gait.contact_point_ease_scalar * 100.0;
+}
+void RenIK::set_forward_scaling_ease(float scaling_ease){
+	placement.forward_gait.scaling_ease = scaling_ease / 100.0;
+}
+float RenIK::get_forward_scaling_ease() const {
+	return placement.forward_gait.scaling_ease * 100.0;
+}
+
+
+
+
+
+
+
+
+void RenIK::set_backward_speed_scalar_min(float speed_scalar_min){
+	placement.backward_gait.speed_scalar_min = speed_scalar_min / 100.0;
+}
+float RenIK::get_backward_speed_scalar_min() const {
+	return placement.backward_gait.speed_scalar_min * 100.0;
+}
+void RenIK::set_backward_speed_scalar_max(float speed_scalar_max){
+	placement.backward_gait.speed_scalar_max = speed_scalar_max / 100.0;
+}
+float RenIK::get_backward_speed_scalar_max() const {
+	return placement.backward_gait.speed_scalar_max * 100.0;
+}
+
+void RenIK::set_backward_ground_time(float ground_time){
+	placement.backward_gait.ground_time = ground_time;
+}
+float RenIK::get_backward_ground_time() const {
+	return placement.backward_gait.ground_time;
+}
+void RenIK::set_backward_lift_time_base(float lift_time_base){
+	placement.backward_gait.lift_time_base = lift_time_base;
+}
+float RenIK::get_backward_lift_time_base() const {
+	return placement.backward_gait.lift_time_base;
+}
+void RenIK::set_backward_lift_time_scalar(float lift_time_scalar){
+	placement.backward_gait.lift_time_scalar = lift_time_scalar;
+}
+float RenIK::get_backward_lift_time_scalar() const {
+	return placement.backward_gait.lift_time_scalar;
+}
+void RenIK::set_backward_apex_in_time_base(float apex_in_time_base){
+	placement.backward_gait.apex_in_time_base = apex_in_time_base;
+}
+float RenIK::get_backward_apex_in_time_base() const {
+	return placement.backward_gait.apex_in_time_base;
+}
+void RenIK::set_backward_apex_in_time_scalar(float apex_in_time_scalar){
+	placement.backward_gait.apex_in_time_scalar = apex_in_time_scalar;
+}
+float RenIK::get_backward_apex_in_time_scalar() const {
+	return placement.backward_gait.apex_in_time_scalar;
+}
+void RenIK::set_backward_apex_out_time_base(float apex_out_time_base){
+	placement.backward_gait.apex_out_time_base = apex_out_time_base;
+}
+float RenIK::get_backward_apex_out_time_base() const {
+	return placement.backward_gait.apex_out_time_base;
+}
+void RenIK::set_backward_apex_out_time_scalar(float apex_out_time_scalar){
+	placement.backward_gait.apex_out_time_scalar = apex_out_time_scalar;
+}
+float RenIK::get_backward_apex_out_time_scalar() const {
+	return placement.backward_gait.apex_out_time_scalar;
+}
+void RenIK::set_backward_drop_time_base(float drop_time_base){
+	placement.backward_gait.drop_time_base = drop_time_base;
+}
+float RenIK::get_backward_drop_time_base() const {
+	return placement.backward_gait.drop_time_base;
+}
+void RenIK::set_backward_drop_time_scalar(float drop_time_scalar){
+	placement.backward_gait.drop_time_scalar = drop_time_scalar;
+}
+float RenIK::get_backward_drop_time_scalar() const {
+	return placement.backward_gait.drop_time_scalar;
+}
+
+void RenIK::set_backward_tip_toe_distance_scalar(float tip_toe_distance_scalar){
+	placement.backward_gait.tip_toe_distance_scalar = Math::deg2rad(tip_toe_distance_scalar);
+}
+float RenIK::get_backward_tip_toe_distance_scalar() const {
+	return Math::rad2deg(placement.backward_gait.tip_toe_distance_scalar);
+}
+void RenIK::set_backward_tip_toe_speed_scalar(float tip_toe_speed_scalar){
+	placement.backward_gait.tip_toe_speed_scalar = Math::deg2rad(tip_toe_speed_scalar);
+}
+float RenIK::get_backward_tip_toe_speed_scalar() const {
+	return Math::rad2deg(placement.backward_gait.tip_toe_speed_scalar);
+}
+void RenIK::set_backward_tip_toe_angle_max(float tip_toe_angle_max){
+	placement.backward_gait.tip_toe_angle_max = Math::deg2rad(tip_toe_angle_max);
+}
+float RenIK::get_backward_tip_toe_angle_max() const {
+	return Math::rad2deg(placement.backward_gait.tip_toe_angle_max);
+}
+
+void RenIK::set_backward_lift_vertical(float lift_vertical){
+	placement.backward_gait.lift_vertical = lift_vertical / 100.0;
+}
+float RenIK::get_backward_lift_vertical() const {
+	return placement.backward_gait.lift_vertical * 100.0;
+}
+void RenIK::set_backward_lift_vertical_scalar(float lift_vertical_scalar){
+	placement.backward_gait.lift_vertical_scalar = lift_vertical_scalar / 100.0;
+}
+float RenIK::get_backward_lift_vertical_scalar() const {
+	return placement.backward_gait.lift_vertical_scalar * 100.0;
+}
+void RenIK::set_backward_lift_horizontal_scalar(float lift_horizontal_scalar){
+	placement.backward_gait.lift_horizontal_scalar = lift_horizontal_scalar / 100.0;
+}
+float RenIK::get_backward_lift_horizontal_scalar() const {
+	return placement.backward_gait.lift_horizontal_scalar * 100.0;
+}
+void RenIK::set_backward_lift_angle(float lift_angle){
+	placement.backward_gait.lift_angle = Math::deg2rad(lift_angle);
+}
+float RenIK::get_backward_lift_angle() const {
+	return Math::rad2deg(placement.backward_gait.lift_angle);
+}
+
+void RenIK::set_backward_apex_vertical(float apex_vertical){
+	placement.backward_gait.apex_vertical = apex_vertical / 100.0;
+}
+float RenIK::get_backward_apex_vertical() const {
+	return placement.backward_gait.apex_vertical * 100.0;
+}
+void RenIK::set_backward_apex_vertical_scalar(float apex_vertical_scalar){
+	placement.backward_gait.apex_vertical_scalar = apex_vertical_scalar / 100.0;
+}
+float RenIK::get_backward_apex_vertical_scalar() const {
+	return placement.backward_gait.apex_vertical_scalar * 100.0;
+}
+void RenIK::set_backward_apex_angle(float apex_angle){
+	placement.backward_gait.apex_angle = Math::deg2rad(apex_angle);
+}
+float RenIK::get_backward_apex_angle() const {
+	return Math::rad2deg(placement.backward_gait.apex_angle);
+}
+
+void RenIK::set_backward_drop_vertical(float drop_vertical){
+	placement.backward_gait.drop_vertical = drop_vertical / 100.0;
+}
+float RenIK::get_backward_drop_vertical() const {
+	return placement.backward_gait.drop_vertical * 100.0;
+}
+void RenIK::set_backward_drop_vertical_scalar(float drop_vertical_scalar){
+	placement.backward_gait.drop_vertical_scalar = drop_vertical_scalar / 100.0;
+}
+float RenIK::get_backward_drop_vertical_scalar() const {
+	return placement.backward_gait.drop_vertical_scalar * 100.0;
+}
+void RenIK::set_backward_drop_horizontal_scalar(float drop_horizontal_scalar){
+	placement.backward_gait.drop_horizontal_scalar = drop_horizontal_scalar / 100.0;
+}
+float RenIK::get_backward_drop_horizontal_scalar() const {
+	return placement.backward_gait.drop_horizontal_scalar * 100.0;
+}
+void RenIK::set_backward_drop_angle(float drop_angle){
+	placement.backward_gait.drop_angle = Math::deg2rad(drop_angle);
+}
+float RenIK::get_backward_drop_angle() const {
+	return Math::rad2deg(placement.backward_gait.drop_angle);
+}
+
+void RenIK::set_backward_contact_point_ease(float contact_point_ease){
+	placement.backward_gait.contact_point_ease = contact_point_ease / 100.0;
+}
+float RenIK::get_backward_contact_point_ease() const {
+	return placement.backward_gait.contact_point_ease * 100.0;
+}
+void RenIK::set_backward_contact_point_ease_scalar(float contact_point_ease_scalar){
+	placement.backward_gait.contact_point_ease_scalar = contact_point_ease_scalar / 100.0;
+}
+float RenIK::get_backward_contact_point_ease_scalar() const {
+	return placement.backward_gait.contact_point_ease_scalar * 100.0;
+}
+void RenIK::set_backward_scaling_ease(float scaling_ease){
+	placement.backward_gait.scaling_ease = scaling_ease / 100.0;
+}
+float RenIK::get_backward_scaling_ease() const {
+	return placement.backward_gait.scaling_ease * 100.0;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+void RenIK::set_sideways_speed_scalar_min(float speed_scalar_min){
+	placement.sideways_gait.speed_scalar_min = speed_scalar_min / 100.0;
+}
+float RenIK::get_sideways_speed_scalar_min() const {
+	return placement.sideways_gait.speed_scalar_min * 100.0;
+}
+void RenIK::set_sideways_speed_scalar_max(float speed_scalar_max){
+	placement.sideways_gait.speed_scalar_max = speed_scalar_max / 100.0;
+}
+float RenIK::get_sideways_speed_scalar_max() const {
+	return placement.sideways_gait.speed_scalar_max * 100.0;
+}
+
+void RenIK::set_sideways_ground_time(float ground_time){
+	placement.sideways_gait.ground_time = ground_time;
+}
+float RenIK::get_sideways_ground_time() const {
+	return placement.sideways_gait.ground_time;
+}
+void RenIK::set_sideways_lift_time_base(float lift_time_base){
+	placement.sideways_gait.lift_time_base = lift_time_base;
+}
+float RenIK::get_sideways_lift_time_base() const {
+	return placement.sideways_gait.lift_time_base;
+}
+void RenIK::set_sideways_lift_time_scalar(float lift_time_scalar){
+	placement.sideways_gait.lift_time_scalar = lift_time_scalar;
+}
+float RenIK::get_sideways_lift_time_scalar() const {
+	return placement.sideways_gait.lift_time_scalar;
+}
+void RenIK::set_sideways_apex_in_time_base(float apex_in_time_base){
+	placement.sideways_gait.apex_in_time_base = apex_in_time_base;
+}
+float RenIK::get_sideways_apex_in_time_base() const {
+	return placement.sideways_gait.apex_in_time_base;
+}
+void RenIK::set_sideways_apex_in_time_scalar(float apex_in_time_scalar){
+	placement.sideways_gait.apex_in_time_scalar = apex_in_time_scalar;
+}
+float RenIK::get_sideways_apex_in_time_scalar() const {
+	return placement.sideways_gait.apex_in_time_scalar;
+}
+void RenIK::set_sideways_apex_out_time_base(float apex_out_time_base){
+	placement.sideways_gait.apex_out_time_base = apex_out_time_base;
+}
+float RenIK::get_sideways_apex_out_time_base() const {
+	return placement.sideways_gait.apex_out_time_base;
+}
+void RenIK::set_sideways_apex_out_time_scalar(float apex_out_time_scalar){
+	placement.sideways_gait.apex_out_time_scalar = apex_out_time_scalar;
+}
+float RenIK::get_sideways_apex_out_time_scalar() const {
+	return placement.sideways_gait.apex_out_time_scalar;
+}
+void RenIK::set_sideways_drop_time_base(float drop_time_base){
+	placement.sideways_gait.drop_time_base = drop_time_base;
+}
+float RenIK::get_sideways_drop_time_base() const {
+	return placement.sideways_gait.drop_time_base;
+}
+void RenIK::set_sideways_drop_time_scalar(float drop_time_scalar){
+	placement.sideways_gait.drop_time_scalar = drop_time_scalar;
+}
+float RenIK::get_sideways_drop_time_scalar() const {
+	return placement.sideways_gait.drop_time_scalar;
+}
+
+void RenIK::set_sideways_tip_toe_distance_scalar(float tip_toe_distance_scalar){
+	placement.sideways_gait.tip_toe_distance_scalar = Math::deg2rad(tip_toe_distance_scalar);
+}
+float RenIK::get_sideways_tip_toe_distance_scalar() const {
+	return Math::rad2deg(placement.sideways_gait.tip_toe_distance_scalar);
+}
+void RenIK::set_sideways_tip_toe_speed_scalar(float tip_toe_speed_scalar){
+	placement.sideways_gait.tip_toe_speed_scalar = Math::deg2rad(tip_toe_speed_scalar);
+}
+float RenIK::get_sideways_tip_toe_speed_scalar() const {
+	return Math::rad2deg(placement.sideways_gait.tip_toe_speed_scalar);
+}
+void RenIK::set_sideways_tip_toe_angle_max(float tip_toe_angle_max){
+	placement.sideways_gait.tip_toe_angle_max = Math::deg2rad(tip_toe_angle_max);
+}
+float RenIK::get_sideways_tip_toe_angle_max() const {
+	return Math::rad2deg(placement.sideways_gait.tip_toe_angle_max);
+}
+
+void RenIK::set_sideways_lift_vertical(float lift_vertical){
+	placement.sideways_gait.lift_vertical = lift_vertical / 100.0;
+}
+float RenIK::get_sideways_lift_vertical() const {
+	return placement.sideways_gait.lift_vertical * 100.0;
+}
+void RenIK::set_sideways_lift_vertical_scalar(float lift_vertical_scalar){
+	placement.sideways_gait.lift_vertical_scalar = lift_vertical_scalar / 100.0;
+}
+float RenIK::get_sideways_lift_vertical_scalar() const {
+	return placement.sideways_gait.lift_vertical_scalar * 100.0;
+}
+void RenIK::set_sideways_lift_horizontal_scalar(float lift_horizontal_scalar){
+	placement.sideways_gait.lift_horizontal_scalar = lift_horizontal_scalar / 100.0;
+}
+float RenIK::get_sideways_lift_horizontal_scalar() const {
+	return placement.sideways_gait.lift_horizontal_scalar * 100.0;
+}
+void RenIK::set_sideways_lift_angle(float lift_angle){
+	placement.sideways_gait.lift_angle = Math::deg2rad(lift_angle);
+}
+float RenIK::get_sideways_lift_angle() const {
+	return Math::rad2deg(placement.sideways_gait.lift_angle);
+}
+
+void RenIK::set_sideways_apex_vertical(float apex_vertical){
+	placement.sideways_gait.apex_vertical = apex_vertical / 100.0;
+}
+float RenIK::get_sideways_apex_vertical() const {
+	return placement.sideways_gait.apex_vertical * 100.0;
+}
+void RenIK::set_sideways_apex_vertical_scalar(float apex_vertical_scalar){
+	placement.sideways_gait.apex_vertical_scalar = apex_vertical_scalar / 100.0;
+}
+float RenIK::get_sideways_apex_vertical_scalar() const {
+	return placement.sideways_gait.apex_vertical_scalar * 100.0;
+}
+void RenIK::set_sideways_apex_angle(float apex_angle){
+	placement.sideways_gait.apex_angle = Math::deg2rad(apex_angle);
+}
+float RenIK::get_sideways_apex_angle() const {
+	return Math::rad2deg(placement.sideways_gait.apex_angle);
+}
+
+void RenIK::set_sideways_drop_vertical(float drop_vertical){
+	placement.sideways_gait.drop_vertical = drop_vertical / 100.0;
+}
+float RenIK::get_sideways_drop_vertical() const {
+	return placement.sideways_gait.drop_vertical * 100.0;
+}
+void RenIK::set_sideways_drop_vertical_scalar(float drop_vertical_scalar){
+	placement.sideways_gait.drop_vertical_scalar = drop_vertical_scalar / 100.0;
+}
+float RenIK::get_sideways_drop_vertical_scalar() const {
+	return placement.sideways_gait.drop_vertical_scalar * 100.0;
+}
+void RenIK::set_sideways_drop_horizontal_scalar(float drop_horizontal_scalar){
+	placement.sideways_gait.drop_horizontal_scalar = drop_horizontal_scalar / 100.0;
+}
+float RenIK::get_sideways_drop_horizontal_scalar() const {
+	return placement.sideways_gait.drop_horizontal_scalar * 100.0;
+}
+void RenIK::set_sideways_drop_angle(float drop_angle){
+	placement.sideways_gait.drop_angle = Math::deg2rad(drop_angle);
+}
+float RenIK::get_sideways_drop_angle() const {
+	return Math::rad2deg(placement.sideways_gait.drop_angle);
+}
+
+void RenIK::set_sideways_contact_point_ease(float contact_point_ease){
+	placement.sideways_gait.contact_point_ease = contact_point_ease / 100.0;
+}
+float RenIK::get_sideways_contact_point_ease() const {
+	return placement.sideways_gait.contact_point_ease * 100.0;
+}
+void RenIK::set_sideways_contact_point_ease_scalar(float contact_point_ease_scalar){
+	placement.sideways_gait.contact_point_ease_scalar = contact_point_ease_scalar / 100.0;
+}
+float RenIK::get_sideways_contact_point_ease_scalar() const {
+	return placement.sideways_gait.contact_point_ease_scalar * 100.0;
+}
+void RenIK::set_sideways_scaling_ease(float scaling_ease){
+	placement.sideways_gait.scaling_ease = scaling_ease / 100.0;
+}
+float RenIK::get_sideways_scaling_ease() const {
+	return placement.sideways_gait.scaling_ease * 100.0;
 }
 
 #endif // _3D_DISABLED
