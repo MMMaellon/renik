@@ -167,7 +167,8 @@ int RenIKPlacement::get_loop_state(float loop_state_scaling, float loop_progress
 	return state;
 }
 
-void RenIKPlacement::loop_foot(Transform &step, Transform &stand, Transform &stand_local, Spatial *ground, Spatial **prev_ground, int &loop_state, Vector3 &grounded_stop, Transform head, float leg_length, float foot_length, Vector3 velocity, float loop_scaling, float step_progress, Vector3 ground_pos, Vector3 ground_normal, Gait gait) {
+void RenIKPlacement::loop_foot(Transform &step, Transform &stand, Transform &stand_local, Spatial *ground, Spatial **prev_ground, int &loop_state, Vector3 &grounded_stop, Transform head, float leg_length, float foot_length, Vector3 velocity, float loop_scaling, float step_progress, Vector3 ground_pos, Vector3 ground_normal, Gait gait, Transform grounded_foot, Transform lifted_foot, Transform apex_foot, Transform drop_foot, float gait_easing)
+{
 	Quat upright_foot = RenIKHelper::align_vectors(Vector3(0,1,0), head.basis.xform_inv(ground_normal));
 	bool twisted = false;
 	if(ground_normal.dot(head.basis[1]) < cos(rotation_threshold) && ground_normal.dot(Vector3(0,1,0)) < cos(rotation_threshold)){
@@ -184,10 +185,15 @@ void RenIKPlacement::loop_foot(Transform &step, Transform &stand, Transform &sta
 	float ease_scaling = loop_scaling * loop_scaling * loop_scaling * loop_scaling;//ease the growth a little
 	float vertical_scaling = head_distance * ease_scaling;
 	float horizontal_scaling = leg_length * ease_scaling;
-	Transform grounded_foot = Transform(head.basis * upright_foot, ground_pos);
-	Transform lifted_foot = Transform(grounded_foot.basis.rotated_local(Vector3(1, 0, 0), ease_scaling * gait.lift_angle), ground_pos + ground_normal * vertical_scaling * gait.lift_vertical_scalar + ground_normal * head_distance * gait.lift_vertical - ground_velocity.normalized() * horizontal_scaling * gait.lift_horizontal_scalar);
-	Transform apex_foot = Transform(grounded_foot.basis.rotated_local(Vector3(1, 0, 0), ease_scaling * gait.apex_angle), ground_pos + ground_normal * vertical_scaling * gait.apex_vertical_scalar+ ground_normal * head_distance * gait.apex_vertical);
-	Transform drop_foot = Transform(grounded_foot.basis.rotated_local(Vector3(1, 0, 0), ease_scaling * gait.drop_angle), ground_pos + ground_normal * vertical_scaling * gait.drop_vertical_scalar + ground_normal * head_distance * gait.drop_vertical_scalar + ground_velocity.normalized() * horizontal_scaling * gait.drop_horizontal_scalar);
+	Transform calculated_grounded_foot = Transform(head.basis * upright_foot, ground_pos);
+	Transform calculated_lifted_foot = Transform(grounded_foot.basis.rotated_local(Vector3(1, 0, 0), ease_scaling * gait.lift_angle), ground_pos + ground_normal * vertical_scaling * gait.lift_vertical_scalar + ground_normal * head_distance * gait.lift_vertical - ground_velocity.normalized() * horizontal_scaling * gait.lift_horizontal_scalar);
+	Transform calculated_apex_foot = Transform(grounded_foot.basis.rotated_local(Vector3(1, 0, 0), ease_scaling * gait.apex_angle), ground_pos + ground_normal * vertical_scaling * gait.apex_vertical_scalar+ ground_normal * head_distance * gait.apex_vertical);
+	Transform calculated_drop_foot = Transform(grounded_foot.basis.rotated_local(Vector3(1, 0, 0), ease_scaling * gait.drop_angle), ground_pos + ground_normal * vertical_scaling * gait.drop_vertical_scalar + ground_normal * head_distance * gait.drop_vertical_scalar + ground_velocity.normalized() * horizontal_scaling * gait.drop_horizontal_scalar);
+
+	grounded_foot.interpolate_with(calculated_grounded_foot, gait_easing);
+	lifted_foot.interpolate_with(calculated_lifted_foot, gait_easing);
+	apex_foot.interpolate_with(calculated_apex_foot, gait_easing);
+	drop_foot.interpolate_with(calculated_drop_foot, gait_easing);
 
 	switch (loop_state) {
 		case LOOP_GROUND_IN:
@@ -271,7 +277,7 @@ void RenIKPlacement::loop(Transform head, Vector3 velocity, Vector3 left_ground_
 	step_progress = Math::fmod((step_progress + stride_speed * (gait.speed_scalar_min * (1 - loop_scaling) + gait.speed_scalar_max * loop_scaling)), 1.0f);
 
 	if (left_grounded) {
-		loop_foot(left_step, left_stand, left_stand_local, left_ground, &prev_left_ground, left_loop_state, left_grounded_stop, head, left_leg_length, left_foot_length, velocity, loop_scaling, step_progress, left_ground_pos, left_normal, gait);
+		loop_foot(left_step, left_stand, left_stand_local, left_ground, &prev_left_ground, left_loop_state, left_grounded_stop, head, left_leg_length, left_foot_length, velocity, loop_scaling, step_progress, left_ground_pos, left_normal, gait, left_grounded_foot, left_lifted_foot, left_apex_foot, left_drop_foot, left_gait_easing);
 	} else {
 		Transform left_dangle = dangle_foot(head, (spine_length + left_leg_length) * dangle_ratio, left_leg_length, left_hip_offset);
 		left_step.basis = left_step.basis.slerp(left_dangle.basis, 1.0f - (1.0f / dangle_stiffness));
@@ -279,7 +285,7 @@ void RenIKPlacement::loop(Transform head, Vector3 velocity, Vector3 left_ground_
 	}
 
 	if (right_grounded) {
-		loop_foot(right_step, right_stand, right_stand_local, right_ground, &prev_right_ground, right_loop_state, right_grounded_stop, head, right_leg_length, right_foot_length, velocity, loop_scaling, Math::fmod((step_progress + 0.5f), 1.0f), right_ground_pos, right_normal, gait);
+		loop_foot(right_step, right_stand, right_stand_local, right_ground, &prev_right_ground, right_loop_state, right_grounded_stop, head, right_leg_length, right_foot_length, velocity, loop_scaling, Math::fmod((step_progress + 0.5f), 1.0f), right_ground_pos, right_normal, gait, right_grounded_foot, right_lifted_foot, right_apex_foot, right_drop_foot, right_gait_easing);
 	} else {
 		Transform right_dangle = dangle_foot(head, (spine_length + right_leg_length) * dangle_ratio, right_leg_length, right_hip_offset);
 		target_right_foot.basis = target_right_foot.basis.slerp(right_dangle.basis, 1.0f - (1.0f / dangle_stiffness));
@@ -480,6 +486,16 @@ void RenIKPlacement::foot_place(float delta, Transform head, PhysicsDirectSpaceS
 			right_ground = nullptr;
 			prev_left_ground = nullptr;
 			prev_right_ground = nullptr;
+
+			//gait easing
+			left_grounded_foot = target_left_foot;
+			left_lifted_foot = target_left_foot;
+			left_apex_foot = target_left_foot;
+			left_drop_foot = target_left_foot;
+			right_grounded_foot = target_right_foot;
+			right_lifted_foot = target_right_foot;
+			right_apex_foot = target_right_foot;
+			right_drop_foot = target_right_foot;
 			break;
 		}
 		case STANDING_TRANSITION:
@@ -507,6 +523,16 @@ void RenIKPlacement::foot_place(float delta, Transform head, PhysicsDirectSpaceS
 				target_right_foot.basis = target_right_foot.basis.slerp(right_dangle.basis * foot_basis_offset, 1.0f - (1.0f / dangle_stiffness));
 				target_right_foot.origin = RenIKHelper::log_clamp(target_right_foot.origin, right_dangle.origin, 1.0 / dangle_stiffness);
 			}
+
+			//gait easing
+			left_grounded_foot = target_left_foot;
+			left_lifted_foot = target_left_foot;
+			left_apex_foot = target_left_foot;
+			left_drop_foot = target_left_foot;
+			right_grounded_foot = target_right_foot;
+			right_lifted_foot = target_right_foot;
+			right_apex_foot = target_right_foot;
+			right_drop_foot = target_right_foot;
 
 			break;
 		}
