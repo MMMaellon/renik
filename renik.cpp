@@ -393,11 +393,12 @@ void RenIK::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::REAL, "torso_spine_twist", PROPERTY_HINT_RANGE, "0,100,0.1"), "set_spine_twist", "get_spine_twist");
 	ADD_PROPERTY(PropertyInfo(Variant::REAL, "torso_spine_twist_start", PROPERTY_HINT_RANGE, "0,100,0.1"), "set_spine_twist_start", "get_spine_twist_start");
 
-	ADD_GROUP("Walk Settings (Advanced)", "walk_");
+	ADD_GROUP("Walk Collisions (Advanced)", "walk_");
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "walk_collision_mask", PROPERTY_HINT_LAYERS_3D_PHYSICS), "set_collision_mask", "get_collision_mask");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "walk_collide_with_areas", PROPERTY_HINT_LAYERS_3D_PHYSICS), "set_collide_with_areas", "is_collide_with_areas_enabled");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "walk_collide_with_bodies", PROPERTY_HINT_LAYERS_3D_PHYSICS), "set_collide_with_bodies", "is_collide_with_bodies_enabled");
 
+	ADD_GROUP("Forward Gait (Advanced)", "forward_");
 	ADD_PROPERTY(PropertyInfo(Variant::REAL, "forward_", PROPERTY_HINT_RANGE, "0,100,0.1"), "set_spine_twist_start", "get_spine_twist_start");
 
 	ADD_PROPERTY(PropertyInfo(Variant::REAL, "forward_speed_scalar_min", PROPERTY_HINT_RANGE, "0,100,0.1"), "set_forward_speed_scalar_min", "get_forward_speed_scalar_min");
@@ -429,6 +430,7 @@ void RenIK::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::REAL, "forward_contact_point_ease_scalar", PROPERTY_HINT_RANGE, "0,100,0.1"), "set_forward_contact_point_ease_scalar", "get_forward_contact_point_ease_scalar");
 	ADD_PROPERTY(PropertyInfo(Variant::REAL, "forward_scaling_ease", PROPERTY_HINT_RANGE, "0,100,0.1"), "set_forward_scaling_ease", "get_forward_scaling_ease");
 
+	ADD_GROUP("Backward Gait (Advanced)", "backward_");
 	ADD_PROPERTY(PropertyInfo(Variant::REAL, "backward_speed_scalar_min", PROPERTY_HINT_RANGE, "0,100,0.1"), "set_backward_speed_scalar_min", "get_backward_speed_scalar_min");
 	ADD_PROPERTY(PropertyInfo(Variant::REAL, "backward_speed_scalar_max", PROPERTY_HINT_RANGE, "0,100,0.1"), "set_backward_speed_scalar_max", "get_backward_speed_scalar_max");
 	ADD_PROPERTY(PropertyInfo(Variant::REAL, "backward_ground_time", PROPERTY_HINT_RANGE, "0,100,0.1"), "set_backward_ground_time", "get_backward_ground_time");
@@ -458,6 +460,7 @@ void RenIK::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::REAL, "backward_contact_point_ease_scalar", PROPERTY_HINT_RANGE, "0,100,0.1"), "set_backward_contact_point_ease_scalar", "get_backward_contact_point_ease_scalar");
 	ADD_PROPERTY(PropertyInfo(Variant::REAL, "backward_scaling_ease", PROPERTY_HINT_RANGE, "0,100,0.1"), "set_backward_scaling_ease", "get_backward_scaling_ease");
 
+	ADD_GROUP("Sideways Gait (Advanced)", "sideways_");
 	ADD_PROPERTY(PropertyInfo(Variant::REAL, "sideways_speed_scalar_min", PROPERTY_HINT_RANGE, "0,100,0.1"), "set_sideways_speed_scalar_min", "get_sideways_speed_scalar_min");
 	ADD_PROPERTY(PropertyInfo(Variant::REAL, "sideways_speed_scalar_max", PROPERTY_HINT_RANGE, "0,100,0.1"), "set_sideways_speed_scalar_max", "get_sideways_speed_scalar_max");
 	ADD_PROPERTY(PropertyInfo(Variant::REAL, "sideways_ground_time", PROPERTY_HINT_RANGE, "0,100,0.1"), "set_sideways_ground_time", "get_sideways_ground_time");
