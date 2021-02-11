@@ -35,7 +35,6 @@ private:
 	float twist_start = 0; //Where along the chain the twisting starts
 
 public:
-	void init();
 	void init(Vector3 p_chain_curve_direction, float p_root_influence, float p_leaf_influence, float p_twist_influence, float p_twist_start);
 	void set_root_bone(Skeleton *skeleton, BoneId p_root_bone);
 	void set_leaf_bone(Skeleton *skeleton, BoneId p_leaf_bone);
@@ -44,7 +43,6 @@ public:
 	float get_total_length();
 	Vector<RenIKChain::Joint> get_joints();
 	Transform get_relative_rest_leaf();
-	Vector3 get_root_bone_direction();
 	BoneId get_first_bone();
 	BoneId get_root_bone();
 	BoneId get_leaf_bone();
