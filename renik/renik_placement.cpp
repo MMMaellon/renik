@@ -1,5 +1,6 @@
 #include "renik_placement.h"
 #include "renik_helper.h"
+#include "core/print_string.h"
 
 #ifndef _3D_DISABLED
 
@@ -68,7 +69,7 @@ void RenIKPlacement::foot_place(float delta, Transform head, Ref<World> w3d, boo
 	PhysicsDirectSpaceState::RayResult right_raycast;
 	PhysicsDirectSpaceState::RayResult laying_raycast;
 
-	float startOffset = (spine_length * -center_of_balance_position) / sqrt(2);
+	float startOffset = ((spine_length) * -center_of_balance_position) / sqrt(2);
 	Vector3 leftStart = head.translated(Vector3(0, startOffset, startOffset) + left_hip_offset).origin;
 	Vector3 rightStart = head.translated(Vector3(0, startOffset, startOffset) + right_hip_offset).origin;
 	Vector3 leftStop = head.origin + Vector3(0, (-spine_length - left_leg_length - floor_offset) * (1 + raycast_allowance) + left_hip_offset[1], 0) + head.basis.xform(left_hip_offset);
@@ -283,29 +284,32 @@ void RenIKPlacement::loop(Transform head, Vector3 velocity, Vector3 left_ground_
 		loop_foot(right_step, right_stand, right_stand_local, right_ground, &prev_right_ground, right_loop_state, right_grounded_stop, head, right_leg_length, right_foot_length, velocity, loop_scaling, Math::fmod((step_progress + 0.5f), 1.0f), right_ground_pos, right_normal, gait);
 	} else {
 		Transform right_dangle = dangle_foot(head, (spine_length + right_leg_length) * dangle_ratio, right_leg_length, right_hip_offset);
-		target_right_foot.basis = target_right_foot.basis.slerp(right_dangle.basis, 1.0f - (1.0f / dangle_stiffness));
-		target_right_foot.origin = RenIKHelper::log_clamp(target_right_foot.origin, right_dangle.origin, 1.0 / dangle_stiffness);
+		right_step.basis = right_step.basis.slerp(right_dangle.basis, 1.0f - (1.0f / dangle_stiffness));
+		right_step.origin = RenIKHelper::log_clamp(right_step.origin, right_dangle.origin, 1.0 / dangle_stiffness);
 	}
 }
 
 void RenIKPlacement::step_direction(Vector3 forward, Vector3 side, Vector3 velocity, Vector3 left_ground, Vector3 right_ground, bool left_grounded, bool right_grounded) {
-	if (Math::abs(velocity.dot(side)) > strafe_angle_limit) {
+	Vector3 normalized_velocity = velocity.normalized();
+	Vector3 normalized_forward = forward.normalized();
+	Vector3 normalized_side = side.normalized();
+	if (Math::abs(normalized_velocity.dot(normalized_side)) > strafe_angle_limit) {
 		if (walk_state != STRAFING && walk_state != STRAFING_TRANSITION) {
 			walk_state = STRAFING_TRANSITION;
 			walk_transition_progress = stepping_transition_duration; //In units of loop progression
-			initialize_loop(velocity, left_ground, right_ground, left_grounded, right_grounded);
+			initialize_loop(normalized_velocity, left_ground, right_ground, left_grounded, right_grounded);
 		}
-	} else if (velocity.dot(forward) > 0) {
+	} else if (normalized_velocity.dot(normalized_forward) < 0) {
 		if (walk_state != BACKSTEPPING && walk_state != BACKSTEPPING_TRANSITION) {
 			walk_state = BACKSTEPPING_TRANSITION;
 			walk_transition_progress = stepping_transition_duration; //In units of loop progression
-			initialize_loop(velocity, left_ground, right_ground, left_grounded, right_grounded);
+			initialize_loop(normalized_velocity, left_ground, right_ground, left_grounded, right_grounded);
 		}
 	} else {
 		if (walk_state != STEPPING && walk_state != STEPPING_TRANSITION) {
 			walk_state = STEPPING_TRANSITION;
 			walk_transition_progress = stepping_transition_duration; //In units of loop progression
-			initialize_loop(velocity, left_ground, right_ground, left_grounded, right_grounded);
+			initialize_loop(normalized_velocity, left_ground, right_ground, left_grounded, right_grounded);
 		}
 	}
 }
@@ -390,19 +394,29 @@ void RenIKPlacement::foot_place(float delta, Transform head, PhysicsDirectSpaceS
 		}
 	} else {
 		Vector3 ground_normal = left_raycast.normal.linear_interpolate(right_raycast.normal, 0.5).normalized();
+		Vector3 left_forward = RenIKHelper::vector_rejection(left_stand.basis[2], left_raycast.normal).normalized();
+		Vector3 right_forward = RenIKHelper::vector_rejection(right_stand.basis[2], right_raycast.normal).normalized();
+		Vector3 forward = (left_forward + right_forward).normalized();
+		Vector3 upward = head.basis[1];
+		Vector3 left_upward = left_stand.basis[1];
+		Vector3 right_upward = right_stand.basis[1];
+		Vector3 feet_sideways = (left_stand.basis[0] + right_stand.basis[0]).normalized();
+		forward[0] = -forward[0]; //Flip the x for some reason
+		feet_sideways[0] = -feet_sideways[0]; //Flip the x for some reason
 		switch(walk_state){
 			case STANDING:{//brackets to stop declarations from breaking case labels
 				//test that the feet aren't twisted in weird ways
 				Vector3 left_head_forward = (head.basis * RenIKHelper::align_vectors(Vector3(0, 1, 0), head.basis.xform_inv(left_raycast.normal)))[2];
 				Vector3 right_head_forward = (head.basis * RenIKHelper::align_vectors(Vector3(0, 1, 0), head.basis.xform_inv(right_raycast.normal)))[2];
 				// left_head_forward = RenIKHelper::vector_rejection(left_head_forward, ground_normal).normalized();
-				Vector3 left_forward = RenIKHelper::vector_rejection(left_stand.basis[2], left_raycast.normal).normalized();
-				Vector3 right_forward = RenIKHelper::vector_rejection(right_stand.basis[2], right_raycast.normal).normalized();
-				Vector3 forward = left_forward.linear_interpolate(right_forward, 0.5).normalized();
-				Vector3 upward = head.basis[1];
-				Vector3 left_upward = left_stand.basis[1];
-				Vector3 right_upward = right_stand.basis[1];
-				
+				// Vector3 left_forward = RenIKHelper::vector_rejection(left_stand.basis[2], left_raycast.normal).normalized();
+				// Vector3 right_forward = RenIKHelper::vector_rejection(right_stand.basis[2], right_raycast.normal).normalized();
+				// Vector3 forward = left_forward.linear_interpolate(right_forward, 0.5).normalized();
+				// Vector3 upward = head.basis[1];
+				// Vector3 left_upward = left_stand.basis[1];
+				// Vector3 right_upward = right_stand.basis[1];
+				// Vector3 feet_sideways = left_stand.basis[0].linear_interpolate(right_stand.basis[0], 0.5).normalized();
+
 				if (left_velocity.length() > effective_min_threshold
 				|| right_velocity.length() > effective_min_threshold
 				|| (left_raycast.collider != nullptr && right_raycast.collider != nullptr && !is_balanced(target_left_foot, target_right_foot))
@@ -415,7 +429,7 @@ void RenIKPlacement::foot_place(float delta, Transform head, PhysicsDirectSpaceS
 				|| (left_raycast.collider != nullptr && left_raycast.normal.dot(left_upward) < cos(rotation_threshold) && upward.dot(left_upward) < cos(rotation_threshold))
 				|| (right_raycast.collider != nullptr && right_raycast.normal.dot(right_upward) < cos(rotation_threshold) && upward.dot(right_upward) < cos(rotation_threshold))
 				) {
-					step_direction(head.basis[2], head.basis[0], velocity, left_raycast.position, right_raycast.position, left_raycast.collider != nullptr, right_raycast.collider != nullptr);
+					step_direction(forward, feet_sideways, velocity, left_raycast.position, right_raycast.position, left_raycast.collider != nullptr, right_raycast.collider != nullptr);
 				}
 				break;
 			}
@@ -425,7 +439,7 @@ void RenIKPlacement::foot_place(float delta, Transform head, PhysicsDirectSpaceS
 				|| (left_raycast.collider != nullptr && (Spatial *)left_raycast.collider != left_ground)
 				|| (right_raycast.collider != nullptr && (Spatial *)right_raycast.collider != right_ground)
 				) {
-					step_direction(head.basis[2], head.basis[0], velocity, left_raycast.position, right_raycast.position, left_raycast.collider != nullptr, right_raycast.collider != nullptr);
+					step_direction(forward, feet_sideways, velocity, left_raycast.position, right_raycast.position, left_raycast.collider != nullptr, right_raycast.collider != nullptr);
 				}
 				break;
 			case STEPPING:
@@ -443,11 +457,11 @@ void RenIKPlacement::foot_place(float delta, Transform head, PhysicsDirectSpaceS
 					walk_state = STANDING_TRANSITION;
 					walk_transition_progress = standing_transition_duration; //In units of loop progression
 				} else {
-					step_direction(head.basis[2], head.basis[0], velocity, left_raycast.position, right_raycast.position, left_raycast.collider != nullptr, right_raycast.collider != nullptr);
+					step_direction(forward, feet_sideways, velocity, left_raycast.position, right_raycast.position, left_raycast.collider != nullptr, right_raycast.collider != nullptr);
 				}
 				break;
 			default:
-				step_direction(head.basis[2], head.basis[0], velocity, left_raycast.position, right_raycast.position, left_raycast.collider != nullptr, right_raycast.collider != nullptr);
+				step_direction(forward, feet_sideways, velocity, left_raycast.position, right_raycast.position, left_raycast.collider != nullptr, right_raycast.collider != nullptr);
 				break;
 		}
 	}

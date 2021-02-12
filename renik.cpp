@@ -22,10 +22,10 @@ const int DEFAULT_LOOP_LIMIT = 16;
 
 RenIK::RenIK() :
 		//IK DEFAULTS
-		left_shoulder_offset(Math::deg2rad(0.0), Math::deg2rad(0.0), Math::deg2rad(-20.0)),
-		right_shoulder_offset(Math::deg2rad(0.0), Math::deg2rad(0.0), Math::deg2rad(20.0)),
+		left_shoulder_offset(Math::deg2rad(0.0), Math::deg2rad(0.0), Math::deg2rad(0.0)),
+		right_shoulder_offset(Math::deg2rad(0.0), Math::deg2rad(0.0), Math::deg2rad(0.0)),
 		left_shoulder_pole_offset(Math::deg2rad(0.0), Math::deg2rad(0.0), Math::deg2rad(78.0)),
-		right_shoulder_pole_offset(Math::deg2rad(0.0), Math::deg2rad(0.0), Math::deg2rad(78.0)) {
+		right_shoulder_pole_offset(Math::deg2rad(0.0), Math::deg2rad(0.0), Math::deg2rad(-78.0)) {
 	spine_chain.instance();
 	spine_chain->init(Vector3(0, 15, -15), 0.5, 0.5, 1, 0);
 	limb_arm_left.instance();
@@ -396,8 +396,8 @@ void RenIK::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "walk_collide_with_bodies", PROPERTY_HINT_LAYERS_3D_PHYSICS), "set_collide_with_bodies", "is_collide_with_bodies_enabled");
 
 	ADD_GROUP("Forward Gait (Advanced)", "forward_");
-	ADD_PROPERTY(PropertyInfo(Variant::REAL, "forward_speed_scalar_min", PROPERTY_HINT_RANGE, "0,100,0.1"), "set_forward_speed_scalar_min", "get_forward_speed_scalar_min");
-	ADD_PROPERTY(PropertyInfo(Variant::REAL, "forward_speed_scalar_max", PROPERTY_HINT_RANGE, "0,100,0.1"), "set_forward_speed_scalar_max", "get_forward_speed_scalar_max");
+	ADD_PROPERTY(PropertyInfo(Variant::REAL, "forward_speed_scalar_min", PROPERTY_HINT_RANGE, "0,200,0.1"), "set_forward_speed_scalar_min", "get_forward_speed_scalar_min");
+	ADD_PROPERTY(PropertyInfo(Variant::REAL, "forward_speed_scalar_max", PROPERTY_HINT_RANGE, "0,200,0.1"), "set_forward_speed_scalar_max", "get_forward_speed_scalar_max");
 	ADD_PROPERTY(PropertyInfo(Variant::REAL, "forward_ground_time", PROPERTY_HINT_RANGE, "0,100,0.1"), "set_forward_ground_time", "get_forward_ground_time");
 	ADD_PROPERTY(PropertyInfo(Variant::REAL, "forward_lift_time_base", PROPERTY_HINT_RANGE, "0,100,0.1"), "set_forward_lift_time_base", "get_forward_lift_time_base");
 	ADD_PROPERTY(PropertyInfo(Variant::REAL, "forward_lift_time_scalar", PROPERTY_HINT_RANGE, "0,100,0.1"), "set_forward_lift_time_scalar", "get_forward_lift_time_scalar");
@@ -426,8 +426,8 @@ void RenIK::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::REAL, "forward_scaling_ease", PROPERTY_HINT_RANGE, "0,100,0.1"), "set_forward_scaling_ease", "get_forward_scaling_ease");
 
 	ADD_GROUP("Backward Gait (Advanced)", "backward_");
-	ADD_PROPERTY(PropertyInfo(Variant::REAL, "backward_speed_scalar_min", PROPERTY_HINT_RANGE, "0,100,0.1"), "set_backward_speed_scalar_min", "get_backward_speed_scalar_min");
-	ADD_PROPERTY(PropertyInfo(Variant::REAL, "backward_speed_scalar_max", PROPERTY_HINT_RANGE, "0,100,0.1"), "set_backward_speed_scalar_max", "get_backward_speed_scalar_max");
+	ADD_PROPERTY(PropertyInfo(Variant::REAL, "backward_speed_scalar_min", PROPERTY_HINT_RANGE, "0,200,0.1"), "set_backward_speed_scalar_min", "get_backward_speed_scalar_min");
+	ADD_PROPERTY(PropertyInfo(Variant::REAL, "backward_speed_scalar_max", PROPERTY_HINT_RANGE, "0,200,0.1"), "set_backward_speed_scalar_max", "get_backward_speed_scalar_max");
 	ADD_PROPERTY(PropertyInfo(Variant::REAL, "backward_ground_time", PROPERTY_HINT_RANGE, "0,100,0.1"), "set_backward_ground_time", "get_backward_ground_time");
 	ADD_PROPERTY(PropertyInfo(Variant::REAL, "backward_lift_time_base", PROPERTY_HINT_RANGE, "0,100,0.1"), "set_backward_lift_time_base", "get_backward_lift_time_base");
 	ADD_PROPERTY(PropertyInfo(Variant::REAL, "backward_lift_time_scalar", PROPERTY_HINT_RANGE, "0,100,0.1"), "set_backward_lift_time_scalar", "get_backward_lift_time_scalar");
@@ -456,8 +456,8 @@ void RenIK::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::REAL, "backward_scaling_ease", PROPERTY_HINT_RANGE, "0,100,0.1"), "set_backward_scaling_ease", "get_backward_scaling_ease");
 
 	ADD_GROUP("Sideways Gait (Advanced)", "sideways_");
-	ADD_PROPERTY(PropertyInfo(Variant::REAL, "sideways_speed_scalar_min", PROPERTY_HINT_RANGE, "0,100,0.1"), "set_sideways_speed_scalar_min", "get_sideways_speed_scalar_min");
-	ADD_PROPERTY(PropertyInfo(Variant::REAL, "sideways_speed_scalar_max", PROPERTY_HINT_RANGE, "0,100,0.1"), "set_sideways_speed_scalar_max", "get_sideways_speed_scalar_max");
+	ADD_PROPERTY(PropertyInfo(Variant::REAL, "sideways_speed_scalar_min", PROPERTY_HINT_RANGE, "0,200,0.1"), "set_sideways_speed_scalar_min", "get_sideways_speed_scalar_min");
+	ADD_PROPERTY(PropertyInfo(Variant::REAL, "sideways_speed_scalar_max", PROPERTY_HINT_RANGE, "0,200,0.1"), "set_sideways_speed_scalar_max", "get_sideways_speed_scalar_max");
 	ADD_PROPERTY(PropertyInfo(Variant::REAL, "sideways_ground_time", PROPERTY_HINT_RANGE, "0,100,0.1"), "set_sideways_ground_time", "get_sideways_ground_time");
 	ADD_PROPERTY(PropertyInfo(Variant::REAL, "sideways_lift_time_base", PROPERTY_HINT_RANGE, "0,100,0.1"), "set_sideways_lift_time_base", "get_sideways_lift_time_base");
 	ADD_PROPERTY(PropertyInfo(Variant::REAL, "sideways_lift_time_scalar", PROPERTY_HINT_RANGE, "0,100,0.1"), "set_sideways_lift_time_scalar", "get_sideways_lift_time_scalar");

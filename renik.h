@@ -361,6 +361,12 @@ public:
 	void set_sideways_scaling_ease(float scaling_ease);
 	float get_sideways_scaling_ease() const;
 
+	
+	// void set_floor_offset(float floor_offset);
+	// float get_floor_offset() const;
+	// void set_raycast_allowance(float raycast_allowance);
+	// float get_raycast_allowance() const;
+
 	static std::pair<float, float> trig_angles(Vector3 const &length1, Vector3 const &length2, Vector3 const &length3);
 	static Map<BoneId, Quat> solve_trig_ik(Ref<RenIKLimb> limb, Transform limb_parent_transform, Transform target);
 

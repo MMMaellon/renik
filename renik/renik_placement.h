@@ -120,21 +120,27 @@ public:
 #define OTHER_TRANSITION -6
 #define OTHER 6
 
-	Gait forward_gait = Gait(0.5, 0.75, 20, 10, 5, 10, 5, 10, 5, 10, 5, Math_PI / 2, Math_PI / 4, Math_PI / 3
-						, 0.0, 0.25, 0.5, Math_PI / 2
-						, 0.0, 0.1, Math_PI / 8
-						, 0.0, 0.05, 0.25, Math_PI / -8
-						, 0.05, 0.4, 0.85);
-	Gait backward_gait = Gait(0.5, 0.75, 20, 10, 5, 10, 5, 10, 5, 10, 5, 0, 0, 0
-						, 0.025, 0.1, 0.5, Math_PI / -8
+	Gait forward_gait = Gait(1, 0.5 //speed min speed max
+						, 5, 10, 5, 10, 5, 5, 5, 5, 0 //ground time min then base and scalar for lift time, apex in time, apex out time, and drop time
+						, Math_PI / 2, Math_PI / 4, Math_PI / 3 //tip toe distance scalar, speed scalar, and angle max
+						, 0.0, 0.4, 0.70, Math_PI / 2//lift vertical, vertical scalar, horizontal scalar, and angle
+						, 0.0, 0.1, Math_PI / 8 //apex vertical, vertical scalar, angle
+						, 0.0, 0.05, 0.25, Math_PI / -8 //drop vertical, vertical scalar, angle
+						, 0.05, 0.4, 0.85); //contact ease, ease scalar, and scaling ease
+	Gait backward_gait = Gait(0.5, 0.75
+						, 5, 5, 5, 10, 5, 10, 5, 5, 5
+						, 0, 0, 0
+						, 0.025, 0.1, 0.33, Math_PI / -8
 						, 0.1, 0.1, Math_PI / 8
-						, 0.0, 0.1, 0.1, Math_PI / 8
+						, 0.0, 0.1, 0.25, Math_PI / 8
 						, 0.1, 0.4, 0.85);
-	Gait sideways_gait = Gait(0.5, 0.75, 20, 10, 5, 10, 5, 10, 5, 10, 5, 0, 0, 0
-						, 0.05, 0.05, 0.15, 0.0
+	Gait sideways_gait = Gait(0.75, 0.75
+						, 10, 5, 5, 10, 5, 10, 5, 5, 5
+						, 0, 0, 0
+						, 0.05, 0.05, 0.2, 0.0
 						, 0.01, 0.1, Math_PI / 8
-						, 0.01, 0.05, 0.05, 0.0
-						, 0.1, 0.4, 0.5);
+						, 0.01, 0.05, 0.25, 0.0
+						, 0.1, 0.4, 0.85);
 
 	float spine_length = 1;
 	float left_leg_length = 1;
@@ -142,21 +148,21 @@ public:
 	float left_foot_length = 0.125;
 	float right_foot_length = 0.125;
 	//Hip Placement Adjustments
-	float crouch_ratio = 0.5; //Crouching means bending over at the hip while keeping the spine straight
-	float hunch_ratio = 0.75; //Hunching means bending over by arching the spine
+	float crouch_ratio = 0.4; //Crouching means bending over at the hip while keeping the spine straight
+	float hunch_ratio = 0.6; //Hunching means bending over by arching the spine
 	Vector3 hip_offset;
 	float hip_follow_head_influence = 0.25;
 
 	//Foot Placement Adjustments - Only takes effect when there are no foot targets
 	//These are values when at the slowest walk speed
 	float floor_offset = 0.05;
-	float raycast_allowance = 0.05; //how far past the max length of the limb we'll still consider close enough
+	float raycast_allowance = 0.15; //how far past the max length of the limb we'll still consider close enough
 	float min_threshold = 0.025;
 	float max_threshold = 0.05; //when all scaling stops and the legs just move faster
 	float min_transition_speed = 0.04;
 	float rotation_threshold = Math_PI / 4.0;
 	float balance_threshold = 0.03;
-	float center_of_balance_position = 0.75; //distance between hips and head that we'll call the center of balance. Usually at 25%, near the belly button
+	float center_of_balance_position = 0.5; //distance between hips and head that we'll call the center of balance. 0 is at head
 
 	float dangle_ratio = 0.9;
 	float dangle_stiffness = 3;
@@ -166,7 +172,7 @@ public:
 	Vector3 right_hip_offset;
 
 	//Everything scales logarithmically
-	float strafe_angle_limit = 0.75;
+	float strafe_angle_limit = Math::cos(Math::deg2rad(30.0));
 	float step_pace = 0.015;
 
 	Transform prev_hip; //relative to world
