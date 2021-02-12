@@ -162,9 +162,6 @@ void RenIK::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_collision_mask_bit", "bit", "value"), &RenIK::set_collision_mask_bit);
 	ClassDB::bind_method(D_METHOD("get_collision_mask_bit", "bit"), &RenIK::get_collision_mask_bit);
 
-	ClassDB::bind_method(D_METHOD("get_shoulder_influence"), &RenIK::get_shoulder_influence);
-	ClassDB::bind_method(D_METHOD("set_shoulder_influence", "influence"), &RenIK::set_shoulder_influence);
-
 	ClassDB::bind_method(D_METHOD("get_forward_speed_scalar_min"), &RenIK::get_forward_speed_scalar_min);
 	ClassDB::bind_method(D_METHOD("set_forward_speed_scalar_min", "speed_scalar_min"), &RenIK::set_forward_speed_scalar_min);
 	ClassDB::bind_method(D_METHOD("get_forward_speed_scalar_max"), &RenIK::get_forward_speed_scalar_max);
