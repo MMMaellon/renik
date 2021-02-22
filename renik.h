@@ -44,8 +44,10 @@ public:
 	void update_ik();
 	void update_placement(float delta);
 
-	void apply_ik_map(Map<BoneId, Quat> ikMap);
-	void apply_ik_map(Map<BoneId, Basis> ikMap);
+	void apply_ik_map(Map<BoneId, Quat> ik_map, Transform global_parent, Vector<BoneId> apply_order);
+	void apply_ik_map(Map<BoneId, Basis> ik_map, Transform global_parent, Vector<BoneId> apply_order);
+	Vector<BoneId> bone_id_order(Ref<RenIKChain> chain);
+	Vector<BoneId> bone_id_order(Ref<RenIKLimb> limb);
 
 	Transform get_global_parent_pose(BoneId child, Map<BoneId, Quat> ik_map, Transform map_global_parent);
 
