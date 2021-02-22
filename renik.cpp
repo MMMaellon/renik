@@ -657,13 +657,14 @@ RenIK::SpineTransforms RenIK::perform_torso_ik() {
 		}
 
 		Map<BoneId, Quat> ik_map = solve_ifabrik(spine_chain, hipGlobalTransform, headGlobalTransform, DEFAULT_THRESHOLD, DEFAULT_LOOP_LIMIT);
+		Transform inverse_skeleton = skeleton->get_global_transform().affine_inverse();
 
-		skeleton->set_bone_global_pose_override(hip, hipGlobalTransform, 1.0f);
+		skeleton->set_bone_global_pose_override(hip, inverse_skeleton * hipGlobalTransform, 1.0f);
 
-		apply_ik_map(ik_map, hipGlobalTransform, bone_id_order(spine_chain));
+		apply_ik_map(ik_map, inverse_skeleton * hipGlobalTransform, bone_id_order(spine_chain));
 
 		//Keep Hip and Head as global poses tand then apply them as global pose override
-		skeleton->set_bone_global_pose_override(head, headGlobalTransform, 1.0f);
+		skeleton->set_bone_global_pose_override(head, inverse_skeleton * headGlobalTransform, 1.0f);
 
 		//Calculate and return the parent bone position for the arms
 		Transform left_global_parent_pose = Transform();
@@ -1238,14 +1239,28 @@ void RenIK::set_foot_right_bone_by_name(String p_bone) {
 	}
 }
 
-void RenIK::set_head_bone(BoneId p_bone) {
-	head = p_bone;
-	spine_chain->set_leaf_bone(skeleton, p_bone);
+void RenIK::calculate_hip_offset() {
 	placement.spine_length = spine_chain->get_total_length();
 	//calc rest offset of hips
 	if (head >= 0 && head < skeleton->get_bone_count() && hip >= 0 && hip < skeleton->get_bone_count()) {
-		placement.hip_offset = skeleton->get_bone_global_pose(hip).origin - skeleton->get_bone_global_pose(head).origin;
+		Transform delta = skeleton->get_bone_rest(head);
+		BoneId bone_parent = skeleton->get_bone_parent(head);
+		while (bone_parent != hip) {
+			delta = skeleton->get_bone_rest(bone_parent) * delta;
+			bone_parent = skeleton->get_bone_parent(bone_parent);
+		}
+		while (bone_parent >= 0) {
+			delta = Transform(skeleton->get_bone_rest(bone_parent).basis) * delta;
+			bone_parent = skeleton->get_bone_parent(bone_parent);
+		}
+		placement.hip_offset = -delta.origin;
 	}
+}
+
+void RenIK::set_head_bone(BoneId p_bone) {
+	head = p_bone;
+	spine_chain->set_leaf_bone(skeleton, p_bone);
+	calculate_hip_offset();
 }
 
 void RenIK::set_hand_left_bone(BoneId p_bone) {
@@ -1261,12 +1276,7 @@ void RenIK::set_hand_right_bone(BoneId p_bone) {
 void RenIK::set_hip_bone(BoneId p_bone) {
 	hip = p_bone;
 	spine_chain->set_root_bone(skeleton, p_bone);
-	placement.spine_length = spine_chain->get_total_length();
-
-	//calc rest offset of hips
-	if (head >= 0 && head < skeleton->get_bone_count() && hip >= 0 && hip < skeleton->get_bone_count()) {
-		placement.hip_offset = skeleton->get_bone_global_pose(hip).origin - skeleton->get_bone_global_pose(head).origin;
-	}
+	calculate_hip_offset();
 }
 
 void RenIK::set_foot_left_bone(BoneId p_bone) {

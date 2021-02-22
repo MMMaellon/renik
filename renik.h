@@ -432,6 +432,7 @@ private:
 	bool leftFootTrackerEnabled = true;
 	bool rightFootTrackerEnabled = true;
 
+	void calculate_hip_offset();
 	Vector<BoneId> calculate_bone_chain(BoneId root, BoneId leaf);
 };
 
