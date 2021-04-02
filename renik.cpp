@@ -702,7 +702,7 @@ void RenIK::perform_hand_left_ik(Transform global_parent) {
 			}
 			// root = skeleton->get_global_transform() * skeleton->get_bone_global_pose(rootBone);
 		}
-		apply_ik_map(solve_trig_ik_redux(limb_arm_left, root, hand_left_target_spatial->get_global_transform()), global_parent, bone_id_order(limb_arm_left));
+		apply_ik_map(solve_trig_ik_redux(limb_arm_left, root, hand_left_target_spatial->get_global_transform()), root, bone_id_order(limb_arm_left));
 	}
 }
 
@@ -728,7 +728,7 @@ void RenIK::perform_hand_right_ik(Transform global_parent) {
 			}
 			// root = skeleton->get_global_transform() * skeleton->get_bone_global_pose(rootBone);
 		}
-		apply_ik_map(solve_trig_ik_redux(limb_arm_right, root, hand_right_target_spatial->get_global_transform()), global_parent, bone_id_order(limb_arm_right));
+		apply_ik_map(solve_trig_ik_redux(limb_arm_right, root, hand_right_target_spatial->get_global_transform()), root, bone_id_order(limb_arm_right));
 	}
 }
 
