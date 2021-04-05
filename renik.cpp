@@ -649,14 +649,14 @@ Transform RenIK::get_global_parent_pose(BoneId child, Map<BoneId, Quat> ik_map, 
 RenIK::SpineTransforms RenIK::perform_torso_ik() {
 	if (head_target_spatial && skeleton && spine_chain->is_valid()) {
 		Transform headGlobalTransform = head_target_spatial->get_global_transform();
-		Transform hipGlobalTransform = hip_target_spatial ? hip_target_spatial->get_global_transform() : placement.interpolated_hip;
+		Transform hipGlobalTransform = (hip_target_spatial ? hip_target_spatial->get_global_transform() : placement.interpolated_hip) * skeleton->get_bone_rest(hip).basis;
 		Vector3 delta = hipGlobalTransform.origin + hipGlobalTransform.basis.xform(spine_chain->get_joints()[0].relative_prev) - headGlobalTransform.origin;
 		float fullLength = spine_chain->get_total_length();
 		if (delta.length() > fullLength) {
 			hipGlobalTransform.set_origin(headGlobalTransform.origin + (delta.normalized() * fullLength) - hipGlobalTransform.basis.xform(spine_chain->get_joints()[0].relative_prev));
 		}
 
-		Map<BoneId, Quat> ik_map = solve_ifabrik(spine_chain, hipGlobalTransform, headGlobalTransform, DEFAULT_THRESHOLD, DEFAULT_LOOP_LIMIT);
+		Map<BoneId, Quat> ik_map = solve_ifabrik(spine_chain, hipGlobalTransform * skeleton->get_bone_rest(hip).basis.inverse(), headGlobalTransform, DEFAULT_THRESHOLD, DEFAULT_LOOP_LIMIT);
 		Transform inverse_skeleton = skeleton->get_global_transform().affine_inverse();
 
 		skeleton->set_bone_global_pose_override(hip, inverse_skeleton * hipGlobalTransform, 1.0f);
