@@ -14,7 +14,13 @@ public:
 	BoneId lower_id = -1;
 	BoneId upper_id = -1;
 
+	void update(Skeleton* skeleton);
+
+	Transform get_full_rest(Skeleton* skeleton, BoneId p_tip_bone_id, BoneId p_root_bone_id);
+
 	void set_leaf(Skeleton *skeleton, BoneId p_leaf_id);
+	void set_lower(Skeleton* skeleton, BoneId p_lower_id);
+	void set_upper(Skeleton* skeleton, BoneId p_upper_id);
 	BoneId get_leaf_bone();
 	BoneId get_lower_bone();
 	BoneId get_upper_bone();

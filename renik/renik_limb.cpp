@@ -13,23 +13,48 @@ void RenIKLimb::init(float p_upper_twist_offset, float p_lower_twist_offset, flo
 	target_position_influence = p_target_position_influence;
 }
 
-void RenIKLimb::set_leaf(Skeleton *skeleton, BoneId p_leaf_id) {
-	leaf_id = p_leaf_id;
+Transform RenIKLimb::get_full_rest(Skeleton* skeleton, BoneId p_tip_bone_id, BoneId p_root_bone_id) {
+	Transform cumulative_rest;
+	BoneId current_bone_id = p_tip_bone_id;
+	while (current_bone_id != -1 && current_bone_id != p_root_bone_id) {
+		cumulative_rest = skeleton->get_bone_rest(current_bone_id) * cumulative_rest;
+		current_bone_id = skeleton->get_bone_parent(current_bone_id);
+	}
+
+	return cumulative_rest;
+}
+
+void RenIKLimb::update(Skeleton* skeleton) {
 	if (skeleton && leaf_id >= 0) {
-		lower_id = skeleton->get_bone_parent(leaf_id);
+		lower_id = lower_id >= 0 ? lower_id : skeleton->get_bone_parent(leaf_id);
 		if (lower_id >= 0) {
-			upper_id = skeleton->get_bone_parent(lower_id);
+			upper_id = upper_id >= 0 ? upper_id : skeleton->get_bone_parent(lower_id);
 			if (upper_id >= 0) {
-				leaf = skeleton->get_bone_rest(leaf_id);
-				lower = skeleton->get_bone_rest(lower_id);
+				leaf = get_full_rest(skeleton, leaf_id, lower_id);
+				lower = get_full_rest(skeleton, lower_id, upper_id);
 				upper = skeleton->get_bone_rest(upper_id);
 			}
 		}
 	}
 }
 
+void RenIKLimb::set_leaf(Skeleton *skeleton, BoneId p_leaf_id) {
+	leaf_id = p_leaf_id;
+	update(skeleton);
+}
+
+void RenIKLimb::set_upper(Skeleton* skeleton, BoneId p_upper_id) {
+	upper_id = p_upper_id;
+	update(skeleton);
+}
+
+void RenIKLimb::set_lower(Skeleton* skeleton, BoneId p_lower_id) {
+	lower_id = p_lower_id;
+	update(skeleton);
+}
+
 bool RenIKLimb::is_valid() {
-	return upper_id >= 0; //upper id can only exist if leaf_id and lower_id exist
+	return upper_id >= 0 && lower_id >= 0 && leaf_id >= 0;
 }
 
 BoneId RenIKLimb::get_leaf_bone() {

@@ -67,18 +67,45 @@ public:
 	void set_skeleton(Node *p_path);
 
 	void set_head_bone_by_name(String p_bone);
+
 	void set_hand_left_bone_by_name(String p_bone);
+	void set_lower_arm_left_bone_by_name(String p_bone);
+	void set_upper_arm_left_bone_by_name(String p_bone);
+	
 	void set_hand_right_bone_by_name(String p_bone);
+	void set_lower_arm_right_bone_by_name(String p_bone);
+	void set_upper_arm_right_bone_by_name(String p_bone);
+	
 	void set_hip_bone_by_name(String p_bone);
+	
 	void set_foot_left_bone_by_name(String p_bone);
+	void set_lower_leg_left_bone_by_name(String p_bone);
+	void set_upper_leg_left_bone_by_name(String p_bone);
+	
 	void set_foot_right_bone_by_name(String p_bone);
+	void set_lower_leg_right_bone_by_name(String p_bone);
+	void set_upper_leg_right_bone_by_name(String p_bone);
 
 	void set_head_bone(BoneId p_bone);
+	
 	void set_hand_left_bone(BoneId p_bone);
+	void set_lower_arm_left_bone(BoneId p_bone);
+	void set_upper_arm_left_bone(BoneId p_bone);
+
 	void set_hand_right_bone(BoneId p_bone);
+	void set_lower_arm_right_bone(BoneId p_bone);
+	void set_upper_arm_right_bone(BoneId p_bone);
+
+
 	void set_hip_bone(BoneId p_bone);
+
 	void set_foot_left_bone(BoneId p_bone);
+	void set_lower_leg_left_bone(BoneId p_bone);
+	void set_upper_leg_left_bone(BoneId p_bone);
+
 	void set_foot_right_bone(BoneId p_bone);
+	void set_lower_leg_right_bone(BoneId p_bone);
+	void set_upper_leg_right_bone(BoneId p_bone);
 
 	int64_t get_hip_bone();
 	int64_t get_head_bone();
@@ -89,10 +116,22 @@ public:
 
 	String get_hip_bone_name();
 	String get_head_bone_name();
+
 	String get_hand_left_bone_name();
+	String get_lower_arm_left_bone_name();
+	String get_upper_arm_left_bone_name();
+	
 	String get_hand_right_bone_name();
+	String get_lower_arm_right_bone_name();
+	String get_upper_arm_right_bone_name();
+	
 	String get_foot_left_bone_name();
+	String get_lower_leg_left_bone_name();
+	String get_upper_leg_left_bone_name();
+	
 	String get_foot_right_bone_name();
+	String get_lower_leg_right_bone_name();
+	String get_upper_leg_right_bone_name();
 
 	void set_head_target_path(NodePath p_path);
 	void set_hand_left_target_path(NodePath p_path);
@@ -401,10 +440,22 @@ private:
 	RenIKPlacement placement;
 	String head_bone_name;
 	String hip_bone_name;
+
 	String hand_left_bone_name;
+	String lower_left_arm_bone_name;
+	String upper_left_arm_bone_name;
+
 	String hand_right_bone_name;
+	String lower_right_arm_bone_name;
+	String upper_right_arm_bone_name;
+
 	String foot_left_bone_name;
+	String lower_left_leg_bone_name;
+	String upper_left_leg_bone_name;
+
 	String foot_right_bone_name;
+	String lower_right_leg_bone_name;
+	String upper_right_leg_bone_name;
 
 	BoneId hip = -1;
 	BoneId head = -1;
