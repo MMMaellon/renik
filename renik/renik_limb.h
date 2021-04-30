@@ -21,7 +21,7 @@ public:
 	void update(Skeleton* skeleton);
 
 	Transform get_extra_bones(Skeleton *skeleton, BoneId p_root_bone_id, BoneId p_tip_bone_id);
-	Vector<BoneId> RenIKLimb::get_extra_bone_ids(Skeleton *skeleton, BoneId p_root_bone_id, BoneId p_tip_bone_id);
+	Vector<BoneId> get_extra_bone_ids(Skeleton *skeleton, BoneId p_root_bone_id, BoneId p_tip_bone_id);
 
 	void set_leaf(Skeleton *skeleton, BoneId p_leaf_id);
 	void set_lower(Skeleton* skeleton, BoneId p_lower_id);

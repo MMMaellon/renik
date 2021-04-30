@@ -381,7 +381,7 @@ void RenIKPlacement::foot_place(float delta, Transform head, PhysicsDirectSpaceS
 	}
 
 	float effective_min_threshold = min_threshold * ((left_leg_length + right_leg_length) / 2) / step_pace;
-	if (!left_raycast.collider && !right_raycast.collider && !laying_raycast.collider || fall_override) {
+	if ((!left_raycast.collider && !right_raycast.collider && !laying_raycast.collider) || fall_override) {
 		//If none of the raycasts hit anything then there isn't any ground to stand on
 		walk_state = FALLING;
 		walk_transition_progress = 0;
