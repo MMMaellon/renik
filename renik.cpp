@@ -1279,9 +1279,9 @@ void RenIK::set_skeleton_path(NodePath p_path) {
 	}
 }
 void RenIK::set_skeleton(Node *p_node) {
-	skeleton_path = p_node->get_path();
 	Skeleton *new_node = Object::cast_to<Skeleton>(p_node);
 	if (new_node != nullptr) {
+		skeleton_path = get_path_to(new_node);
 
 		if(skeleton != nullptr){
 			reset_all_bones();
@@ -1446,7 +1446,7 @@ void RenIK::set_head_bone(BoneId p_bone) {
 
 void RenIK::set_hand_left_bone(BoneId p_bone) {
 	limb_arm_left->set_leaf(skeleton, p_bone);
-	if(lower_left_arm_bone_name.empty()){
+	if(lower_left_arm_bone_name.empty() && skeleton){
 		set_lower_arm_left_bone(skeleton->get_bone_parent(p_bone));
 	}
 	left_shoulder_enabled = skeleton && limb_arm_left->is_valid_in_skeleton(skeleton) && !spine_chain->contains_bone(skeleton, skeleton->get_bone_parent(limb_arm_left->get_lower_bone()));
@@ -1454,7 +1454,7 @@ void RenIK::set_hand_left_bone(BoneId p_bone) {
 
 void RenIK::set_lower_arm_left_bone(BoneId p_bone) {
 	limb_arm_left->set_lower(skeleton, p_bone);
-	if (lower_left_arm_bone_name.empty())
+	if (lower_left_arm_bone_name.empty() && skeleton)
 	{
 		set_upper_arm_left_bone(skeleton->get_bone_parent(p_bone));
 	}
@@ -1468,7 +1468,7 @@ void RenIK::set_upper_arm_left_bone(BoneId p_bone) {
 
 void RenIK::set_hand_right_bone(BoneId p_bone) {
 	limb_arm_right->set_leaf(skeleton, p_bone);
-	if (lower_right_arm_bone_name.empty())
+	if (lower_right_arm_bone_name.empty() && skeleton)
 	{
 		set_lower_arm_right_bone(skeleton->get_bone_parent(p_bone));
 	}
@@ -1477,7 +1477,7 @@ void RenIK::set_hand_right_bone(BoneId p_bone) {
 
 void RenIK::set_lower_arm_right_bone(BoneId p_bone) {
 	limb_arm_right->set_lower(skeleton, p_bone);
-	if (upper_right_arm_bone_name.empty())
+	if (upper_right_arm_bone_name.empty() && skeleton)
 	{
 		set_upper_arm_right_bone(skeleton->get_bone_parent(p_bone));
 	}
@@ -1500,7 +1500,7 @@ void RenIK::set_hip_bone(BoneId p_bone) {
 
 void RenIK::set_foot_left_bone(BoneId p_bone) {
 	limb_leg_left->set_leaf(skeleton, p_bone);
-	if (lower_left_leg_bone_name.empty())
+	if (lower_left_leg_bone_name.empty() && skeleton)
 	{
 		set_lower_leg_left_bone(skeleton->get_bone_parent(p_bone));
 	}
@@ -1510,7 +1510,7 @@ void RenIK::set_foot_left_bone(BoneId p_bone) {
 
 void RenIK::set_lower_leg_left_bone(BoneId p_bone) {
 	limb_leg_left->set_lower(skeleton, p_bone);
-	if (upper_left_leg_bone_name.empty())
+	if (upper_left_leg_bone_name.empty() && skeleton)
 	{
 		set_upper_leg_left_bone(skeleton->get_bone_parent(p_bone));
 	}
@@ -1526,7 +1526,7 @@ void RenIK::set_upper_leg_left_bone(BoneId p_bone) {
 
 void RenIK::set_foot_right_bone(BoneId p_bone) {
 	limb_leg_right->set_leaf(skeleton, p_bone);
-	if (lower_right_leg_bone_name.empty())
+	if (lower_right_leg_bone_name.empty() && skeleton)
 	{
 		set_lower_leg_right_bone(skeleton->get_bone_parent(p_bone));
 	}
@@ -1536,7 +1536,7 @@ void RenIK::set_foot_right_bone(BoneId p_bone) {
 
 void RenIK::set_lower_leg_right_bone(BoneId p_bone) {
 	limb_leg_right->set_lower(skeleton, p_bone);
-	if (upper_right_leg_bone_name.empty())
+	if (upper_right_leg_bone_name.empty() && skeleton)
 	{
 		set_upper_leg_right_bone(skeleton->get_bone_parent(p_bone));
 	}
