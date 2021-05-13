@@ -110,10 +110,22 @@ public:
 
 	int64_t get_hip_bone();
 	int64_t get_head_bone();
+
 	int64_t get_hand_left_bone();
+	int64_t get_lower_arm_left_bone();
+	int64_t get_upper_arm_left_bone();
+
 	int64_t get_hand_right_bone();
+	int64_t get_lower_arm_right_bone();
+	int64_t get_upper_arm_right_bone();
+
 	int64_t get_foot_left_bone();
+	int64_t get_lower_leg_left_bone();
+	int64_t get_upper_leg_left_bone();
+
 	int64_t get_foot_right_bone();
+	int64_t get_lower_leg_right_bone();
+	int64_t get_upper_leg_right_bone();
 
 	String get_hip_bone_name();
 	String get_head_bone_name();
