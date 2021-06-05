@@ -1204,7 +1204,7 @@ Map<BoneId, Quaternion> RenIK::solve_ifabrik(Ref<RenIKChain> chain, Transform ro
 		}
 
 		//Convert everything to quaternions and store it in the map
-		Quaternion parentRot = root.get_basis().get_quaternion();
+		Quaternion parentRot = root.get_basis().get_rotation_quaternion();
 		Vector3 parentPos = trueRoot.origin;
 		Quaternion prevTwist;
 		globalJointPoints.push_back(target.origin);
