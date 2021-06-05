@@ -689,7 +689,7 @@ void RenIK::update_placement(float delta) {
 	}
 }
 
-void RenIK::apply_ik_map(Map<BoneId, Quat> ik_map, Transform global_parent, Vector<BoneId> apply_order)
+void RenIK::apply_ik_map(Map<BoneId, Quaternion> ik_map, Transform global_parent, Vector<BoneId> apply_order)
 {
 	if (skeleton)
 	{
@@ -725,7 +725,7 @@ void RenIK::apply_ik_map(Map<BoneId, Basis> ik_map, Transform global_parent, Vec
 	}
 }
 
-Transform RenIK::get_global_parent_pose(BoneId child, Map<BoneId, Quat> ik_map, Transform map_global_parent) {
+Transform RenIK::get_global_parent_pose(BoneId child, Map<BoneId, Quaternion> ik_map, Transform map_global_parent) {
 	Transform full_transform;
 	BoneId parent_id = skeleton->get_bone_parent(child);
 	while (parent_id >= 0) {
@@ -758,7 +758,7 @@ RenIK::SpineTransforms RenIK::perform_torso_ik() {
 			hipGlobalTransform.set_origin(headGlobalTransform.origin + (delta.normalized() * fullLength) - hipGlobalTransform.basis.xform(spine_chain->get_joints()[0].relative_prev));
 		}
 
-		Map<BoneId, Quat> ik_map = solve_ifabrik(spine_chain, hipGlobalTransform * skeleton->get_bone_rest(hip).basis.inverse(), headGlobalTransform, DEFAULT_THRESHOLD, DEFAULT_LOOP_LIMIT);
+		Map<BoneId, Quaternion> ik_map = solve_ifabrik(spine_chain, hipGlobalTransform * skeleton->get_bone_rest(hip).basis.inverse(), headGlobalTransform, DEFAULT_THRESHOLD, DEFAULT_LOOP_LIMIT);
 		Transform inverse_skeleton = skeleton->get_global_transform().affine_inverse();
 
 		skeleton->set_bone_global_pose_override(hip, inverse_skeleton * hipGlobalTransform, 1.0f);
@@ -797,10 +797,10 @@ void RenIK::perform_hand_left_ik(Transform global_parent) {
 				// }
 				root = root * skeleton->get_bone_rest(rootBone);
 				Vector3 targetVector = root.affine_inverse().xform(hand_left_target_spatial->get_global_transform().origin);
-				Quat offsetQuat = Quat(left_shoulder_offset);
-				Quat poleOffset = Quat(left_shoulder_pole_offset);
-				Quat poleOffsetScaled = poleOffset.slerp(Quat(), 1 - shoulder_influence);
-				Quat quatAlignToTarget = poleOffsetScaled * RenIKHelper::align_vectors(Vector3(0, 1, 0), poleOffset.inverse().xform(offsetQuat.inverse().xform(targetVector))).slerp(Quat(), 1 - shoulder_influence);
+				Quaternion offsetQuat = Quaternion(left_shoulder_offset);
+				Quaternion poleOffset = Quaternion(left_shoulder_pole_offset);
+				Quaternion poleOffsetScaled = poleOffset.slerp(Quaternion(), 1 - shoulder_influence);
+				Quaternion quatAlignToTarget = poleOffsetScaled * RenIKHelper::align_vectors(Vector3(0, 1, 0), poleOffset.inverse().xform(offsetQuat.inverse().xform(targetVector))).slerp(Quaternion(), 1 - shoulder_influence);
 				Transform customPose = Transform(offsetQuat * quatAlignToTarget, Vector3());
 				skeleton->set_bone_global_pose_override(rootBone, root * customPose, 1.0f);
 				root = root * customPose;
@@ -824,10 +824,10 @@ void RenIK::perform_hand_right_ik(Transform global_parent) {
 				// }
 				root = root * skeleton->get_bone_rest(rootBone);
 				Vector3 targetVector = root.affine_inverse().xform(hand_right_target_spatial->get_global_transform().origin);
-				Quat offsetQuat = Quat(right_shoulder_offset);
-				Quat poleOffset = Quat(right_shoulder_pole_offset);
-				Quat poleOffsetScaled = poleOffset.slerp(Quat(), 1 - shoulder_influence);
-				Quat quatAlignToTarget = poleOffsetScaled * RenIKHelper::align_vectors(Vector3(0, 1, 0), poleOffset.inverse().xform(offsetQuat.inverse().xform(targetVector))).slerp(Quat(), 1 - shoulder_influence);
+				Quaternion offsetQuat = Quaternion(right_shoulder_offset);
+				Quaternion poleOffset = Quaternion(right_shoulder_pole_offset);
+				Quaternion poleOffsetScaled = poleOffset.slerp(Quaternion(), 1 - shoulder_influence);
+				Quaternion quatAlignToTarget = poleOffsetScaled * RenIKHelper::align_vectors(Vector3(0, 1, 0), poleOffset.inverse().xform(offsetQuat.inverse().xform(targetVector))).slerp(Quaternion(), 1 - shoulder_influence);
 				Transform customPose = Transform(offsetQuat * quatAlignToTarget, Vector3());
 				skeleton->set_bone_global_pose_override(rootBone, root * customPose, 1.0f);
 				root = root * customPose;
@@ -926,16 +926,16 @@ Vector<BoneId> RenIK::bone_id_order(Ref<RenIKLimb> limb) {
 	return ret;
 }
 
-Map<BoneId, Quat> RenIK::solve_trig_ik(Ref<RenIKLimb> limb, Transform root, Transform target) {
-	Map<BoneId, Quat> map;
+Map<BoneId, Quaternion> RenIK::solve_trig_ik(Ref<RenIKLimb> limb, Transform root, Transform target) {
+	Map<BoneId, Quaternion> map;
 
 	if (limb->is_valid()) { //There's no way to find a valid upperId if any of the other Id's are invalid, so we only check upperId
 		Vector3 upperVector = limb->get_lower().get_origin();
 		Vector3 lowerVector = limb->get_leaf().get_origin();
-		Quat upperRest = limb->get_upper().get_basis().get_rotation_quat();
-		Quat lowerRest = limb->get_lower().get_basis().get_rotation_quat();
-		Quat upper = upperRest.inverse();
-		Quat lower = lowerRest.inverse();
+		Quaternion upperRest = limb->get_upper().get_basis().get_rotation_quaternion();
+		Quaternion lowerRest = limb->get_lower().get_basis().get_rotation_quaternion();
+		Quaternion upper = upperRest.inverse();
+		Quaternion lower = lowerRest.inverse();
 		//The true root of the limb is the point where the upper bone starts
 		Transform trueRoot = root.translated(limb->get_upper().get_origin());
 		Transform diff = root.affine_inverse() * trueRoot;
@@ -959,22 +959,22 @@ Map<BoneId, Quat> RenIK::solve_trig_ik(Ref<RenIKLimb> limb, Transform root, Tran
 		float upperAngle = RenIKHelper::safe_acos((upperLength2 + targetDistance2 - lowerLength2) / (2 * upperLength * targetDistance));
 		float lowerAngle = RenIKHelper::safe_acos((upperLength2 + lowerLength2 - targetDistance2) / (2 * upperLength * lowerLength)) - Math_PI;
 		Vector3 bendAxis = RenIKHelper::get_perpendicular_vector(upperVector); //TODO figure out how to set this automatically to the right axis
-		Quat upperBend = Quat(bendAxis, upperAngle);
-		Quat lowerBend = Quat(bendAxis, lowerAngle);
+		Quaternion upperBend = Quaternion(bendAxis, upperAngle);
+		Quaternion lowerBend = Quaternion(bendAxis, lowerAngle);
 		upper = upper * upperBend;
 		lower = lower * lowerBend;
 		//Then we roll the limb based on the target position
 		Vector3 targetRestPosition = upperVector.normalized() * (upperLength + lowerLength);
 		Vector3 rollVector = upperBend.inverse().xform(upperVector).normalized();
 		float positionalRollAmount = limb->target_position_influence.dot(targetRestPosition - targetVector);
-		Quat positionRoll = Quat(rollVector, positionalRollAmount);
+		Quaternion positionRoll = Quaternion(rollVector, positionalRollAmount);
 		upper = upper.normalized() * positionRoll;
 		//And the target rotation
 
-		Quat leafRest = limb->get_leaf().get_basis().get_rotation_quat();
-		Quat armCombined = (upperRest * upper * lowerRest * lower).normalized();
-		Quat targetQuat = localTarget.get_basis().get_rotation_quat() * leafRest;
-		Quat leaf = ((armCombined * leafRest).inverse() * targetQuat).normalized();
+		Quaternion leafRest = limb->get_leaf().get_basis().get_rotation_quaternion();
+		Quaternion armCombined = (upperRest * upper * lowerRest * lower).normalized();
+		Quaternion targetQuat = localTarget.get_basis().get_rotation_quaternion() * leafRest;
+		Quaternion leaf = ((armCombined * leafRest).inverse() * targetQuat).normalized();
 		// if we had a plane along the roll vector we can project the leaf and lower limb on it to see which direction we need to roll to reduce the angle between the two
 		Vector3 restVector = (armCombined).xform(lowerVector).normalized();
 		Vector3 leafVector = leaf.xform(restVector).normalized();
@@ -986,19 +986,19 @@ Map<BoneId, Quat> RenIK::solve_trig_ik(Ref<RenIKLimb> limb, Transform root, Tran
 		if (check > 0) {
 			directionalRollAmount *= -1;
 		}
-		Quat directionalRoll = Quat(rollVector, directionalRollAmount);
+		Quaternion directionalRoll = Quaternion(rollVector, directionalRollAmount);
 		upper = upper * directionalRoll;
 
 		armCombined = (upperRest * upper * lowerRest * lower).normalized();
 		leaf = ((armCombined * leafRest).inverse() * targetQuat).normalized();
 		//And finally add the twisting
-		// old way: Quat lowerTwist = (align_vectors(lowerVector, leafRest.xform(leaf.xform(lowerVector))).inverse() * (leafRest * leaf)).slerp(Quat(), 1 - limb->lower_limb_twist).normalized();
+		// old way: Quaternion lowerTwist = (align_vectors(lowerVector, leafRest.xform(leaf.xform(lowerVector))).inverse() * (leafRest * leaf)).slerp(Quaternion(), 1 - limb->lower_limb_twist).normalized();
 		Vector3 twist = (leafRest * leaf).get_euler();
-		Quat lowerTwist = Quat((leafRest * leaf).get_euler() * lowerVector.normalized() * (limb->lower_limb_twist));
+		Quaternion lowerTwist = Quaternion((leafRest * leaf).get_euler() * lowerVector.normalized() * (limb->lower_limb_twist));
 		lower = lower * lowerTwist;
 		leaf = (lowerTwist * leafRest).inverse() * leafRest * leaf;
 
-		Quat upperTwist = Quat(twist * upperVector.normalized() * (limb->upper_limb_twist * limb->lower_limb_twist));
+		Quaternion upperTwist = Quaternion(twist * upperVector.normalized() * (limb->upper_limb_twist * limb->lower_limb_twist));
 		upper = upper * upperTwist;
 		lower = (upperTwist * lowerRest).inverse() * lowerRest * lower;
 
@@ -1139,14 +1139,14 @@ Map<BoneId, Transform> RenIK::solve_trig_ik_redux(Ref<RenIKLimb> limb, Transform
 	return map;
 }
 
-Map<BoneId, Quat> RenIK::solve_ifabrik(Ref<RenIKChain> chain, Transform root, Transform target, float threshold, int loopLimit) {
-	Map<BoneId, Quat> map;
+Map<BoneId, Quaternion> RenIK::solve_ifabrik(Ref<RenIKChain> chain, Transform root, Transform target, float threshold, int loopLimit) {
+	Map<BoneId, Quaternion> map;
 	if (chain->is_valid()) { //if the chain is valid there's at least one joint in the chain and there's one bone between it and the root
 		Vector<RenIKChain::Joint> joints = chain->get_joints(); //just so I don't have to call it all the time
 		Transform trueRoot = root.translated(joints[0].relative_prev);
 		Transform targetDelta = target * chain->get_relative_rest_leaf().affine_inverse(); //how the change in the target would affect the chain if the chain was parented to the target instead of the root
 		Transform trueRelativeTarget = trueRoot.affine_inverse() * target;
-		Quat alignToTarget = RenIKHelper::align_vectors(chain->get_relative_rest_leaf().origin - joints[0].relative_prev, trueRelativeTarget.origin);
+		Quaternion alignToTarget = RenIKHelper::align_vectors(chain->get_relative_rest_leaf().origin - joints[0].relative_prev, trueRelativeTarget.origin);
 		float heightDiff = (chain->get_relative_rest_leaf().origin - joints[0].relative_prev).length() - trueRelativeTarget.origin.length();
 		heightDiff = heightDiff < 0 ? 0 : heightDiff;
 		Transform prebentRoot = Transform(trueRoot.basis * alignToTarget, trueRoot.origin).translated((chain->chain_curve_direction * chain->get_total_length() * heightDiff) - joints[0].relative_prev); //The angle root is rotated to point at the target;
@@ -1204,13 +1204,13 @@ Map<BoneId, Quat> RenIK::solve_ifabrik(Ref<RenIKChain> chain, Transform root, Tr
 		}
 
 		//Convert everything to quaternions and store it in the map
-		Quat parentRot = root.get_basis().get_quat();
+		Quaternion parentRot = root.get_basis().get_quaternion();
 		Vector3 parentPos = trueRoot.origin;
-		Quat prevTwist;
+		Quaternion prevTwist;
 		globalJointPoints.push_back(target.origin);
 		for (int i = 0; i < joints.size(); i++) { //the last one's rotation is defined by the leaf position not a joint so we skip it
-			Quat pose = RenIKHelper::align_vectors(Vector3(0, 1, 0), Transform(parentRot * joints[i].rotation, parentPos).affine_inverse().xform(globalJointPoints[i])); //offset by one because joints has one extra element
-			Quat twist = Quat(Vector3(0, 1, 0), maxTwist * joints[i].twist_influence);
+			Quaternion pose = RenIKHelper::align_vectors(Vector3(0, 1, 0), Transform(parentRot * joints[i].rotation, parentPos).affine_inverse().xform(globalJointPoints[i])); //offset by one because joints has one extra element
+			Quaternion twist = Quaternion(Vector3(0, 1, 0), maxTwist * joints[i].twist_influence);
 			pose = prevTwist.inverse() * joints[i].rotation * pose * twist;
 			prevTwist = twist;
 			map.insert(joints[i].id, pose);
@@ -1220,7 +1220,7 @@ Map<BoneId, Quat> RenIK::solve_ifabrik(Ref<RenIKChain> chain, Transform root, Tr
 
 		// parentRot = parentRot * joints[0].rotation;
 		// parent.translate(joints[0].relative_prev);
-		// Quat pose = align_vectors(axis, Transform(parentRot, parent.origin).affine_inverse().xform(target.origin)); //offset by one because joints has one extra element
+		// Quaternion pose = align_vectors(axis, Transform(parentRot, parent.origin).affine_inverse().xform(target.origin)); //offset by one because joints has one extra element
 		// map.insert(joints[0].id, pose);
 		// parentRot = parentRot * pose;
 	}
@@ -1868,8 +1868,8 @@ Vector3 RenIK::get_arm_pole_offset() {
 	return Vector3(Math::rad2deg(v[0]), Math::rad2deg(v[1]), Math::rad2deg(v[2]));
 }
 void RenIK::set_arm_pole_offset(Vector3 euler) {
-	Quat q = Quat(Vector3(Math::deg2rad(euler[0]), Math::deg2rad(euler[1]), Math::deg2rad(euler[2])));
-	Quat q2 = Quat(Vector3(Math::deg2rad(euler[0]), Math::deg2rad(-euler[1]), Math::deg2rad(-euler[2])));
+	Quaternion q = Quaternion(Vector3(Math::deg2rad(euler[0]), Math::deg2rad(euler[1]), Math::deg2rad(euler[2])));
+	Quaternion q2 = Quaternion(Vector3(Math::deg2rad(euler[0]), Math::deg2rad(-euler[1]), Math::deg2rad(-euler[2])));
 	limb_arm_left->pole_offset = q;
 	limb_arm_right->pole_offset = q2;
 }
@@ -1943,8 +1943,8 @@ Vector3 RenIK::get_leg_pole_offset() {
 	return Vector3(Math::rad2deg(v[0]), Math::rad2deg(v[1]), Math::rad2deg(v[2]));
 }
 void RenIK::set_leg_pole_offset(Vector3 euler) {
-	Quat q = Quat(Vector3(Math::deg2rad(euler[0]), Math::deg2rad(euler[1]), Math::deg2rad(euler[2])));
-	Quat q2 = Quat(Vector3(Math::deg2rad(euler[0]), Math::deg2rad(-euler[1]), Math::deg2rad(-euler[2])));
+	Quaternion q = Quaternion(Vector3(Math::deg2rad(euler[0]), Math::deg2rad(euler[1]), Math::deg2rad(euler[2])));
+	Quaternion q2 = Quaternion(Vector3(Math::deg2rad(euler[0]), Math::deg2rad(-euler[1]), Math::deg2rad(-euler[2])));
 	limb_leg_left->pole_offset = q;
 	limb_leg_right->pole_offset = q2;
 }

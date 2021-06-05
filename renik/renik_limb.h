@@ -43,7 +43,7 @@ public:
 	float twist_inflection_point_offset = 0; //When the limb snaps from twisting in the positive direction to twisting in the negative direction
 	float twist_overflow = 0; //How much past the inflection point we go before snapping
 
-	Quat pole_offset; /*ADVANCED - Moving the limb 180 degrees from rest tends to be a bit unpredictable
+	Quaternion pole_offset; /*ADVANCED - Moving the limb 180 degrees from rest tends to be a bit unpredictable
 		as there is a pole in the forward vector sphere at that spot.
 		This offsets the rest position so that the pole is in a place where the limb is unlikely to go*/
 
@@ -62,7 +62,7 @@ struct RenIKLimbSubSection : public Resource
 {
 	GDCLASS(RenIKLimbSubSection, Resource);
 
-	Quat rest_rotation;
+	Quaternion rest_rotation;
 	BoneId id = -1;
 
 	RenIKLimbSubSection *prev = nullptr;
@@ -92,7 +92,7 @@ struct RenIKMultiLimb : public Resource
 	float inflection_point_offset = 0;
 	float inflection_overflow = 0;
 
-	Quat pole_offset;
+	Quaternion pole_offset;
 	Vector3 target_position_influence;
 	float target_rotation_influence;
 	void init(Skeleton * skeleton, BoneId p_root_bone, BoneId p_leaf_bone); //create sections and calc all imaginary bones

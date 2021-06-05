@@ -44,13 +44,13 @@ public:
 	void update_ik();
 	void update_placement(float delta);
 
-	void apply_ik_map(Map<BoneId, Quat> ik_map, Transform global_parent, Vector<BoneId> apply_order);
+	void apply_ik_map(Map<BoneId, Quaternion> ik_map, Transform global_parent, Vector<BoneId> apply_order);
 	void apply_ik_map(Map<BoneId, Basis> ik_map, Transform global_parent, Vector<BoneId> apply_order);
 	void apply_ik_map(Map<BoneId, Transform> ik_map, Transform global_parent, Vector<BoneId> apply_order);
 	Vector<BoneId> bone_id_order(Ref<RenIKChain> chain);
 	Vector<BoneId> bone_id_order(Ref<RenIKLimb> limb);
 
-	Transform get_global_parent_pose(BoneId child, Map<BoneId, Quat> ik_map, Transform map_global_parent);
+	Transform get_global_parent_pose(BoneId child, Map<BoneId, Quaternion> ik_map, Transform map_global_parent);
 
 	SpineTransforms perform_torso_ik();
 	void perform_hand_left_ik(Transform global_parent);
@@ -423,13 +423,13 @@ public:
 	// float get_raycast_allowance() const;
 
 	static std::pair<float, float> trig_angles(Vector3 const &length1, Vector3 const &length2, Vector3 const &length3);
-	static Map<BoneId, Quat> solve_trig_ik(Ref<RenIKLimb> limb, Transform limb_parent_transform, Transform target);
+	static Map<BoneId, Quaternion> solve_trig_ik(Ref<RenIKLimb> limb, Transform limb_parent_transform, Transform target);
 
 	static Map<BoneId, Transform> solve_trig_ik_redux(Ref<RenIKLimb> limb, Transform limb_parent_transform, Transform target);
 
-	static Map<BoneId, Quat> solve_ifabrik(Ref<RenIKChain> chain, Transform chain_parent_transform, Transform target, float threshold, int loopLimit);
+	static Map<BoneId, Quaternion> solve_ifabrik(Ref<RenIKChain> chain, Transform chain_parent_transform, Transform target, float threshold, int loopLimit);
 
-	//static Map<BoneId, Quat> reduce_chain_to_trig_ik(Ref<RenIKChain> chain, Transform chain_parent_transform, Transform target, float bias = 0.5f, float bend_offset = 0.0f);
+	//static Map<BoneId, Quaternion> reduce_chain_to_trig_ik(Ref<RenIKChain> chain, Transform chain_parent_transform, Transform target, float bias = 0.5f, float bend_offset = 0.0f);
 
 private:
 	//Setup -------------------------

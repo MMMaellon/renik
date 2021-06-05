@@ -49,7 +49,7 @@ void RenIKChain::init_chain(Skeleton *skeleton) {
 			RenIKChain::Joint j;
 			j.id = chain[i];
 			Transform boneTransform = skeleton->get_bone_rest(j.id);
-			j.rotation = boneTransform.basis.get_rotation_quat();
+			j.rotation = boneTransform.basis.get_rotation_quaternion();
 			j.relative_prev = totalRotation.xform_inv(boneTransform.origin);
 			j.prev_distance = j.relative_prev.length();
 
