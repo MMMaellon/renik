@@ -102,8 +102,8 @@ struct Gait {
 	}
 };
 
-struct RenIKPlacement : public Reference {
-	GDCLASS(RenIKPlacement, Reference);
+struct RenIKPlacement : public RefCounted {
+	GDCLASS(RenIKPlacement, RefCounted);
 
 public:
 #define FALLING 0
