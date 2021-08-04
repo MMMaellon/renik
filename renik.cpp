@@ -40,15 +40,15 @@ RenIK::RenIK() :
 		right_shoulder_offset(Math::deg2rad(0.0), Math::deg2rad(0.0), Math::deg2rad(0.0)),
 		left_shoulder_pole_offset(Math::deg2rad(0.0), Math::deg2rad(0.0), Math::deg2rad(78.0)),
 		right_shoulder_pole_offset(Math::deg2rad(0.0), Math::deg2rad(0.0), Math::deg2rad(-78.0)) {
-	spine_chain.instance();
+	spine_chain.instantiate();
 	spine_chain->init(Vector3(0, 15, -15), 0.5, 0.5, 1, 0);
-	limb_arm_left.instance();
+	limb_arm_left.instantiate();
 	limb_arm_left->init(0, 0, Math::deg2rad(70.0), 0.5, 0.66666, Math::deg2rad(20.0), Math::deg2rad(45.0), 0.33, Vector3(Math::deg2rad(15.0), 0, Math::deg2rad(60.0)), Vector3(2.0, -1.5, -1.0));
-	limb_arm_right.instance();
+	limb_arm_right.instantiate();
 	limb_arm_right->init(0, 0, Math::deg2rad(-70.0), 0.5, 0.66666, Math::deg2rad(-20.0), Math::deg2rad(45.0), 0.33, Vector3(Math::deg2rad(15.0), 0, Math::deg2rad(-60.0)), Vector3(2.0, 1.5, 1.0));
-	limb_leg_left.instance();
+	limb_leg_left.instantiate();
 	limb_leg_left->init(0, 0, 0, 0.25, 0.25, 0, Math::deg2rad(45.0), 0.5, Vector3(0, 0, Math_PI), Vector3());
-	limb_leg_right.instance();
+	limb_leg_right.instantiate();
 	limb_leg_right->init(0, 0, 0, 0.25, 0.25, 0, Math::deg2rad(45.0), 0.5, Vector3(0, 0, -Math_PI), Vector3());
 };
 
