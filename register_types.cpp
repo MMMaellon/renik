@@ -1,6 +1,6 @@
 #include "register_types.h"
 
-#include "core/class_db.h"
+#include "core/object/class_db.h"
 #include "renik.h"
 #include "renik/renik_limb.h"
 #include "renik/renik_chain.h"

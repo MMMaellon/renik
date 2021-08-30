@@ -1,39 +1,39 @@
 #ifndef RENIK_LIMB_H
 #define RENIK_LIMB_H
 
-#include <scene/3d/skeleton.h>
+#include <scene/3d/skeleton_3d.h>
 
 struct RenIKLimb : public Resource {
 	GDCLASS(RenIKLimb, Resource);
 
 public:
-	Transform upper;
-	Transform lower;
-	Transform leaf;
-	Transform upper_extra_bones;//extra bones between upper and lower
-	Transform lower_extra_bones; //extra bones between lower and leaf
+	Transform3D upper;
+	Transform3D lower;
+	Transform3D leaf;
+	Transform3D upper_extra_bones;//extra bones between upper and lower
+	Transform3D lower_extra_bones; //extra bones between lower and leaf
 	Vector<BoneId> upper_extra_bone_ids;
 	Vector<BoneId> lower_extra_bone_ids;
 	BoneId leaf_id = -1;
 	BoneId lower_id = -1;
 	BoneId upper_id = -1;
 
-	void update(Skeleton* skeleton);
+	void update(Skeleton3D* skeleton);
 
-	Transform get_extra_bones(Skeleton *skeleton, BoneId p_root_bone_id, BoneId p_tip_bone_id);
-	Vector<BoneId> get_extra_bone_ids(Skeleton *skeleton, BoneId p_root_bone_id, BoneId p_tip_bone_id);
+	Transform3D get_extra_bones(Skeleton3D *skeleton, BoneId p_root_bone_id, BoneId p_tip_bone_id);
+	Vector<BoneId> get_extra_bone_ids(Skeleton3D *skeleton, BoneId p_root_bone_id, BoneId p_tip_bone_id);
 
-	void set_leaf(Skeleton *skeleton, BoneId p_leaf_id);
-	void set_lower(Skeleton* skeleton, BoneId p_lower_id);
-	void set_upper(Skeleton* skeleton, BoneId p_upper_id);
+	void set_leaf(Skeleton3D *skeleton, BoneId p_leaf_id);
+	void set_lower(Skeleton3D* skeleton, BoneId p_lower_id);
+	void set_upper(Skeleton3D* skeleton, BoneId p_upper_id);
 	BoneId get_leaf_bone();
 	BoneId get_lower_bone();
 	BoneId get_upper_bone();
 	bool is_valid();
-	bool is_valid_in_skeleton(Skeleton *skeleton);
-	Transform get_upper();
-	Transform get_lower();
-	Transform get_leaf();
+	bool is_valid_in_skeleton(Skeleton3D *skeleton);
+	Transform3D get_upper();
+	Transform3D get_lower();
+	Transform3D get_leaf();
 
 	float upper_twist_offset = 0;
 	float lower_twist_offset = 0;
@@ -74,8 +74,8 @@ struct RenIKLimbSubSection : public Resource
 	float joint_bend_direction_offset = 0; //change the axis of the joint bend without changing the twist of the bone
 	float twist_offset = 0; //change the twist of the bone without changing the axis along which the joint bends
 
-	void update(Skeleton *skeleton);
-	void set(Skeleton *skeleton, BoneId p_bone_id);
+	void update(Skeleton3D *skeleton);
+	void set(Skeleton3D *skeleton, BoneId p_bone_id);
 	bool is_valid();
 	void init(float p_twist_offset, float p_roll_offset, float p_twist, float p_twist_inflection_point_offset, float p_twist_overflow, float p_target_rotation_influence, Vector3 p_pole_offset, Vector3 p_target_position_influence);
 };
@@ -95,7 +95,7 @@ struct RenIKMultiLimb : public Resource
 	Quaternion pole_offset;
 	Vector3 target_position_influence;
 	float target_rotation_influence;
-	void init(Skeleton * skeleton, BoneId p_root_bone, BoneId p_leaf_bone); //create sections and calc all imaginary bones
+	void init(Skeleton3D * skeleton, BoneId p_root_bone, BoneId p_leaf_bone); //create sections and calc all imaginary bones
 };
 
 #endif

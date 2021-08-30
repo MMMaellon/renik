@@ -1,10 +1,10 @@
 #ifndef RENIK_PLACEMENT_H
 #define RENIK_PLACEMENT_H
 
-#include "servers/physics_server.h"
-#include <core/engine.h>
+#include "servers/physics_server_3d.h"
+#include <core/config/engine.h>
 #include <scene/main/node.h>
-#include <scene/3d/spatial.h>
+#include <scene/3d/node_3d.h>
 
 struct Gait {
 	float speed_scalar_min = 1;
@@ -175,18 +175,18 @@ public:
 	float strafe_angle_limit = Math::cos(Math::deg2rad(30.0));
 	float step_pace = 0.015;
 
-	Transform prev_hip; //relative to world
-	Transform prev_left_foot; //relative to world
-	Transform prev_right_foot; //relative to world
+	Transform3D prev_hip; //relative to world
+	Transform3D prev_left_foot; //relative to world
+	Transform3D prev_right_foot; //relative to world
 
-	Transform target_hip; //relative to world
-	Transform target_left_foot; //relative to world
-	Transform target_right_foot; //relative to world
+	Transform3D target_hip; //relative to world
+	Transform3D target_left_foot; //relative to world
+	Transform3D target_right_foot; //relative to world
 
 	// Saracen: these are used between the physics updates to provide smooth local interpolation of leg movement.
-	Transform interpolated_hip;
-	Transform interpolated_left_foot;
-	Transform interpolated_right_foot;
+	Transform3D interpolated_hip;
+	Transform3D interpolated_left_foot;
+	Transform3D interpolated_right_foot;
 
 	const Basis foot_basis_offset = Basis(Vector3(-1, 0, 0), Vector3(0, -1, 0), Vector3(0, 0, 1));
 
@@ -195,9 +195,9 @@ public:
 	void save_previous_transforms();
 	void interpolate_transforms(float fraction, bool update_hips, bool update_feet);
 
-	void hip_place(float delta, Transform head, Transform left_foot, Transform right_foot, float twist, bool instant);
-	void foot_place(float delta, Transform head, Ref<World> w3d, bool instant);
-	void foot_place(float delta, Transform head, PhysicsDirectSpaceState::RayResult left_raycast, PhysicsDirectSpaceState::RayResult right_raycast, PhysicsDirectSpaceState::RayResult laying_raycast, bool instant);
+	void hip_place(float delta, Transform3D head, Transform3D left_foot, Transform3D right_foot, float twist, bool instant);
+	void foot_place(float delta, Transform3D head, Ref<World3D> w3d, bool instant);
+	void foot_place(float delta, Transform3D head, PhysicsDirectSpaceState3D::RayResult left_raycast, PhysicsDirectSpaceState3D::RayResult right_raycast, PhysicsDirectSpaceState3D::RayResult laying_raycast, bool instant);
 	//All used in leg trace
 	void set_falling(bool falling);
 	void set_collision_mask_bit(int p_bit, bool p_value);
@@ -227,17 +227,17 @@ private:
     bool collide_with_bodies = true;
 
 	//Standing
-	Transform left_stand;
-	Transform right_stand;
-	Transform left_stand_local;//local to ground
-	Transform right_stand_local; //local to ground
-	Spatial *left_ground = nullptr;
-	Spatial *right_ground = nullptr;
-	Spatial *prev_left_ground = nullptr;
-	Spatial *prev_right_ground = nullptr;
+	Transform3D left_stand;
+	Transform3D right_stand;
+	Transform3D left_stand_local;//local to ground
+	Transform3D right_stand_local; //local to ground
+	Node3D *left_ground = nullptr;
+	Node3D *right_ground = nullptr;
+	Node3D *prev_left_ground = nullptr;
+	Node3D *prev_right_ground = nullptr;
 	//Stepping
-	Transform left_step;
-	Transform right_step;
+	Transform3D left_step;
+	Transform3D right_step;
 	Vector3 left_grounded_stop;
 	Vector3 right_grounded_stop;
 	const float standing_transition_duration = 0.25;
@@ -248,12 +248,12 @@ private:
 	float loop_scaling = 0;
 
 	//helpers
-	bool is_balanced(Transform left, Transform right);
-	void stand_foot(Transform foot, Transform &stand, Transform &stand_local, Spatial *ground);
-	Transform dangle_foot(Transform head, float distance, float leg_length, Vector3 hip_offset);
+	bool is_balanced(Transform3D left, Transform3D right);
+	void stand_foot(Transform3D foot, Transform3D &stand, Transform3D &stand_local, Node3D *ground);
+	Transform3D dangle_foot(Transform3D head, float distance, float leg_length, Vector3 hip_offset);
 	void initialize_loop(Vector3 velocity, Vector3 left_ground, Vector3 right_ground, bool left_grounded, bool right_grounded);
-	void loop(Transform head, Vector3 velocity, Vector3 left_ground_pos, Vector3 left_normal, Vector3 right_ground_pos, Vector3 right_normal, bool left_grounded, bool right_grounded, Gait gait);
-	void loop_foot(Transform &step, Transform &stand, Transform &stand_local, Spatial *ground, Spatial **prev_ground, int &loop_state, Vector3 &grounded_stop, Transform head, float leg_length, float foot_length, Vector3 velocity, float loop_scaling, float step_progress, Vector3 ground_pos, Vector3 ground_normal, Gait gait);
+	void loop(Transform3D head, Vector3 velocity, Vector3 left_ground_pos, Vector3 left_normal, Vector3 right_ground_pos, Vector3 right_normal, bool left_grounded, bool right_grounded, Gait gait);
+	void loop_foot(Transform3D &step, Transform3D &stand, Transform3D &stand_local, Node3D *ground, Node3D **prev_ground, int &loop_state, Vector3 &grounded_stop, Transform3D head, float leg_length, float foot_length, Vector3 velocity, float loop_scaling, float step_progress, Vector3 ground_pos, Vector3 ground_normal, Gait gait);
 	void step_direction(Vector3 forward, Vector3 side, Vector3 velocity, Vector3 left_ground, Vector3 right_ground, bool left_grounded, bool right_grounded);
 	int get_loop_state(float loop_state_scaling, float loop_progress, float &loop_state_progress, Gait gait);
 };

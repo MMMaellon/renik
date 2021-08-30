@@ -1,6 +1,6 @@
 #include "renik_placement.h"
 #include "renik_helper.h"
-#include "core/print_string.h"
+#include "core/string/print_string.h"
 
 #ifndef _3D_DISABLED
 
@@ -20,19 +20,19 @@ void RenIKPlacement::interpolate_transforms(float fraction, bool update_hips, bo
 	}
 }
 
-void RenIKPlacement::hip_place(float delta, Transform head, Transform left_foot, Transform right_foot, float twist, bool instant) {
+void RenIKPlacement::hip_place(float delta, Transform3D head, Transform3D left_foot, Transform3D right_foot, float twist, bool instant) {
 	Vector3 left_middle = (left_foot.translated(Vector3(0, 0, left_foot_length / 2))).origin;
 	Vector3 right_middle = (right_foot.translated(Vector3(0, 0, right_foot_length / 2))).origin;
 	float left_distance = left_middle.distance_squared_to(head.origin);
 	float right_distance = right_middle.distance_squared_to(head.origin);
-	Vector3 foot_median = left_middle.linear_interpolate(right_middle, 0.5);
+	Vector3 foot_median = left_middle.lerp(right_middle, 0.5);
 	Vector3 foot = left_distance > right_distance ? left_middle : right_middle;
 	Vector3 foot_direction = (foot - head.origin).project(foot_median - head.origin);
 
 	target_hip.basis = RenIKHelper::align_vectors(Vector3(0, -1, 0), foot_direction);
 	Vector3 head_forward = head.basis.inverse()[2];
 	Vector3 feet_forward = (left_foot.interpolate_with(right_foot, 0.5)).basis[2];
-	Vector3 hip_forward = feet_forward.linear_interpolate(head_forward, 0.5);
+	Vector3 hip_forward = feet_forward.lerp(head_forward, 0.5);
 
 	Vector3 hip_y = -foot_direction.normalized();
 	Vector3 hip_z = RenIKHelper::vector_rejection(hip_forward.normalized(), hip_y).normalized();
@@ -43,7 +43,7 @@ void RenIKPlacement::hip_place(float delta, Transform head, Transform left_foot,
 	float extra_hip_distance = hip_offset.length() - crouch_distance;
 	Vector3 follow_hip_direction = target_hip.basis.xform_inv(head.basis.xform(hip_offset));
 
-	Vector3 effective_hip_direction = hip_offset.linear_interpolate(follow_hip_direction, hip_follow_head_influence).normalized();
+	Vector3 effective_hip_direction = hip_offset.lerp(follow_hip_direction, hip_follow_head_influence).normalized();
 
 	target_hip.origin = head.origin;
 	target_hip.translate(crouch_distance * effective_hip_direction.normalized());
@@ -59,15 +59,15 @@ void RenIKPlacement::hip_place(float delta, Transform head, Transform left_foot,
 /*foot_place requires raycasting unless a raycast result is provided.
 	Raycasting needs to happen inside of a physics update
 */
-void RenIKPlacement::foot_place(float delta, Transform head, Ref<World> w3d, bool instant) {
+void RenIKPlacement::foot_place(float delta, Transform3D head, Ref<World3D> w3d, bool instant) {
 	ERR_FAIL_COND(w3d.is_null());
 
-	PhysicsDirectSpaceState *dss = PhysicsServer::get_singleton()->space_get_direct_state(w3d->get_space());
+	PhysicsDirectSpaceState3D *dss = PhysicsServer3D::get_singleton()->space_get_direct_state(w3d->get_space());
 	ERR_FAIL_COND(!dss);
 
-	PhysicsDirectSpaceState::RayResult left_raycast;
-	PhysicsDirectSpaceState::RayResult right_raycast;
-	PhysicsDirectSpaceState::RayResult laying_raycast;
+	PhysicsDirectSpaceState3D::RayResult left_raycast;
+	PhysicsDirectSpaceState3D::RayResult right_raycast;
+	PhysicsDirectSpaceState3D::RayResult laying_raycast;
 
 	float startOffset = ((spine_length) * -center_of_balance_position) / sqrt(2);
 	Vector3 leftStart = head.translated(Vector3(0, startOffset, startOffset) + left_hip_offset).origin;
@@ -96,8 +96,8 @@ void RenIKPlacement::foot_place(float delta, Transform head, Ref<World> w3d, boo
 	foot_place(delta, head, left_raycast, right_raycast, laying_raycast, instant);
 }
 
-Transform RenIKPlacement::dangle_foot(Transform head, float distance, float leg_length, Vector3 hip_offset) {
-	Transform foot;
+Transform3D RenIKPlacement::dangle_foot(Transform3D head, float distance, float leg_length, Vector3 hip_offset) {
+	Transform3D foot;
 	Basis upright_head = RenIKHelper::align_vectors(Vector3(0, 1, 0), head.basis[1]).slerp(Quaternion(), 1 - dangle_follow_head);
 	Vector3 dangle_vector = Vector3(0, spine_length + leg_length, 0) - hip_offset;
 	Basis dangle_basis = head.basis * upright_head;
@@ -168,7 +168,7 @@ int RenIKPlacement::get_loop_state(float loop_state_scaling, float loop_progress
 	return state;
 }
 
-void RenIKPlacement::loop_foot(Transform &step, Transform &stand, Transform &stand_local, Spatial *ground, Spatial **prev_ground, int &loop_state, Vector3 &grounded_stop, Transform head, float leg_length, float foot_length, Vector3 velocity, float loop_scaling, float step_progress, Vector3 ground_pos, Vector3 ground_normal, Gait gait)
+void RenIKPlacement::loop_foot(Transform3D &step, Transform3D &stand, Transform3D &stand_local, Node3D *ground, Node3D **prev_ground, int &loop_state, Vector3 &grounded_stop, Transform3D head, float leg_length, float foot_length, Vector3 velocity, float loop_scaling, float step_progress, Vector3 ground_pos, Vector3 ground_normal, Gait gait)
 {
 	Quaternion upright_foot = RenIKHelper::align_vectors(Vector3(0,1,0), head.basis.xform_inv(ground_normal));
 	bool twisted = false;
@@ -186,10 +186,10 @@ void RenIKPlacement::loop_foot(Transform &step, Transform &stand, Transform &sta
 	float ease_scaling = loop_scaling * loop_scaling * loop_scaling * loop_scaling;//ease the growth a little
 	float vertical_scaling = head_distance * ease_scaling;
 	float horizontal_scaling = leg_length * ease_scaling;
-	Transform grounded_foot = Transform(head.basis * upright_foot, ground_pos);
-	Transform lifted_foot = Transform(grounded_foot.basis.rotated_local(Vector3(1, 0, 0), ease_scaling * gait.lift_angle), ground_pos + ground_normal * vertical_scaling * gait.lift_vertical_scalar + ground_normal * head_distance * gait.lift_vertical - ground_velocity.normalized() * horizontal_scaling * gait.lift_horizontal_scalar);
-	Transform apex_foot = Transform(grounded_foot.basis.rotated_local(Vector3(1, 0, 0), ease_scaling * gait.apex_angle), ground_pos + ground_normal * vertical_scaling * gait.apex_vertical_scalar+ ground_normal * head_distance * gait.apex_vertical);
-	Transform drop_foot = Transform(grounded_foot.basis.rotated_local(Vector3(1, 0, 0), ease_scaling * gait.drop_angle), ground_pos + ground_normal * vertical_scaling * gait.drop_vertical_scalar + ground_normal * head_distance * gait.drop_vertical_scalar + ground_velocity.normalized() * horizontal_scaling * gait.drop_horizontal_scalar);
+	Transform3D grounded_foot = Transform3D(head.basis * upright_foot, ground_pos);
+	Transform3D lifted_foot = Transform3D(grounded_foot.basis.rotated_local(Vector3(1, 0, 0), ease_scaling * gait.lift_angle), ground_pos + ground_normal * vertical_scaling * gait.lift_vertical_scalar + ground_normal * head_distance * gait.lift_vertical - ground_velocity.normalized() * horizontal_scaling * gait.lift_horizontal_scalar);
+	Transform3D apex_foot = Transform3D(grounded_foot.basis.rotated_local(Vector3(1, 0, 0), ease_scaling * gait.apex_angle), ground_pos + ground_normal * vertical_scaling * gait.apex_vertical_scalar+ ground_normal * head_distance * gait.apex_vertical);
+	Transform3D drop_foot = Transform3D(grounded_foot.basis.rotated_local(Vector3(1, 0, 0), ease_scaling * gait.drop_angle), ground_pos + ground_normal * vertical_scaling * gait.drop_vertical_scalar + ground_normal * head_distance * gait.drop_vertical_scalar + ground_velocity.normalized() * horizontal_scaling * gait.drop_horizontal_scalar);
 
 	switch (loop_state) {
 		case LOOP_GROUND_IN:
@@ -200,7 +200,7 @@ void RenIKPlacement::loop_foot(Transform &step, Transform &stand, Transform &sta
 			} else if(ground != nullptr){
 				*prev_ground = ground;
 				stand = grounded_foot;
-				Transform ground_global = ground->get_global_transform();
+				Transform3D ground_global = ground->get_global_transform();
 				ground_global.basis.orthonormalize();
 				stand_local = ground_global.affine_inverse() * stand;
 			} else {
@@ -209,7 +209,7 @@ void RenIKPlacement::loop_foot(Transform &step, Transform &stand, Transform &sta
 			step = stand;
 
 			float step_distance = step.origin.distance_to(ground_pos) / leg_length;
-			Transform lean_offset;
+			Transform3D lean_offset;
 			float tip_toe_angle = step_distance * gait.tip_toe_distance_scalar + horizontal_scaling * gait.tip_toe_speed_scalar;
 			tip_toe_angle = tip_toe_angle > gait.tip_toe_angle_max ? gait.tip_toe_angle_max : tip_toe_angle;
 			lean_offset.origin = Vector3(0, foot_length * sin(tip_toe_angle), 0);
@@ -222,7 +222,7 @@ void RenIKPlacement::loop_foot(Transform &step, Transform &stand, Transform &sta
 		}
 		case LOOP_LIFT:{
 			float step_distance = step.origin.distance_to(ground_pos) / leg_length;
-			Transform lean_offset;
+			Transform3D lean_offset;
 			float tip_toe_angle = step_distance * gait.tip_toe_distance_scalar + horizontal_scaling * gait.tip_toe_speed_scalar;
 			tip_toe_angle = tip_toe_angle > gait.tip_toe_angle_max ? gait.tip_toe_angle_max : tip_toe_angle;
 
@@ -249,7 +249,7 @@ void RenIKPlacement::loop_foot(Transform &step, Transform &stand, Transform &sta
 		stand.origin = ground_pos;
 		stand.basis = grounded_foot.basis;
 		if (ground != nullptr) {
-			Transform ground_global = ground->get_global_transform();
+			Transform3D ground_global = ground->get_global_transform();
 			ground_global.basis.orthonormalize();
 			stand_local = ground_global.affine_inverse() * stand;
 		}
@@ -258,12 +258,12 @@ void RenIKPlacement::loop_foot(Transform &step, Transform &stand, Transform &sta
 		} else {
 			float contact_easing = gait.contact_point_ease + gait.contact_point_ease_scalar * loop_scaling;
 			contact_easing = contact_easing > 1 ? 1 : contact_easing;
-			grounded_stop = grounded_stop.linear_interpolate(ground_pos, contact_easing);
+			grounded_stop = grounded_stop.lerp(ground_pos, contact_easing);
 		}
 	}
 }
 
-void RenIKPlacement::loop(Transform head, Vector3 velocity, Vector3 left_ground_pos, Vector3 left_normal, Vector3 right_ground_pos, Vector3 right_normal, bool left_grounded, bool right_grounded, Gait gait) {
+void RenIKPlacement::loop(Transform3D head, Vector3 velocity, Vector3 left_ground_pos, Vector3 left_normal, Vector3 right_ground_pos, Vector3 right_normal, bool left_grounded, bool right_grounded, Gait gait) {
 	float stride_speed = step_pace * velocity.length() / ((left_leg_length + right_leg_length) / 2);
 	stride_speed = log( 1 + stride_speed);
 	stride_speed = stride_speed > max_threshold ? max_threshold : stride_speed;
@@ -275,7 +275,7 @@ void RenIKPlacement::loop(Transform head, Vector3 velocity, Vector3 left_ground_
 	if (left_grounded) {
 		loop_foot(left_step, left_stand, left_stand_local, left_ground, &prev_left_ground, left_loop_state, left_grounded_stop, head, left_leg_length, left_foot_length, velocity, loop_scaling, step_progress, left_ground_pos, left_normal, gait);
 	} else {
-		Transform left_dangle = dangle_foot(head, (spine_length + left_leg_length) * dangle_ratio, left_leg_length, left_hip_offset);
+		Transform3D left_dangle = dangle_foot(head, (spine_length + left_leg_length) * dangle_ratio, left_leg_length, left_hip_offset);
 		left_step.basis = left_step.basis.slerp(left_dangle.basis, 1.0f - (1.0f / dangle_stiffness));
 		left_step.origin = RenIKHelper::log_clamp(left_step.origin, left_dangle.origin, 1.0 / dangle_stiffness);
 	}
@@ -283,7 +283,7 @@ void RenIKPlacement::loop(Transform head, Vector3 velocity, Vector3 left_ground_
 	if (right_grounded) {
 		loop_foot(right_step, right_stand, right_stand_local, right_ground, &prev_right_ground, right_loop_state, right_grounded_stop, head, right_leg_length, right_foot_length, velocity, loop_scaling, Math::fmod((step_progress + 0.5f), 1.0f), right_ground_pos, right_normal, gait);
 	} else {
-		Transform right_dangle = dangle_foot(head, (spine_length + right_leg_length) * dangle_ratio, right_leg_length, right_hip_offset);
+		Transform3D right_dangle = dangle_foot(head, (spine_length + right_leg_length) * dangle_ratio, right_leg_length, right_hip_offset);
 		right_step.basis = right_step.basis.slerp(right_dangle.basis, 1.0f - (1.0f / dangle_stiffness));
 		right_step.origin = RenIKHelper::log_clamp(right_step.origin, right_dangle.origin, 1.0 / dangle_stiffness);
 	}
@@ -314,8 +314,8 @@ void RenIKPlacement::step_direction(Vector3 forward, Vector3 side, Vector3 veloc
 	}
 }
 
-void RenIKPlacement::stand_foot(Transform foot, Transform &stand, Transform &stand_local, Spatial *ground) {
-	Transform ground_global = ground->get_global_transform();
+void RenIKPlacement::stand_foot(Transform3D foot, Transform3D &stand, Transform3D &stand_local, Node3D *ground) {
+	Transform3D ground_global = ground->get_global_transform();
 	ground_global.basis.orthonormalize();
 	stand = ground_global * stand_local;
 	stand.basis.orthonormalize();
@@ -360,12 +360,12 @@ and 1.0 is the end of part 6.
 The progress from 0.0 to 1.0 happens smoothly and linearly with movement speed.
 What range of numbers represents each part of the loop changes dynamically with movement speed.
 */
-void RenIKPlacement::foot_place(float delta, Transform head, PhysicsDirectSpaceState::RayResult left_raycast, PhysicsDirectSpaceState::RayResult right_raycast, PhysicsDirectSpaceState::RayResult laying_raycast, bool instant) {
+void RenIKPlacement::foot_place(float delta, Transform3D head, PhysicsDirectSpaceState3D::RayResult left_raycast, PhysicsDirectSpaceState3D::RayResult right_raycast, PhysicsDirectSpaceState3D::RayResult laying_raycast, bool instant) {
 	//Step 1: Find the proper state
 	//Note we always enter transition states when possible
 
-	left_ground = (Spatial *)left_raycast.collider;
-	right_ground = (Spatial *)right_raycast.collider;
+	left_ground = (Node3D *)left_raycast.collider;
+	right_ground = (Node3D *)right_raycast.collider;
 	Vector3 velocity = (head.origin - prevHead) / delta;
 	Vector3 left_velocity;
 	Vector3 right_velocity;
@@ -393,7 +393,7 @@ void RenIKPlacement::foot_place(float delta, Transform head, PhysicsDirectSpaceS
 			walk_transition_progress = laying_transition_duration; //In units of loop progression
 		}
 	} else {
-		Vector3 ground_normal = left_raycast.normal.linear_interpolate(right_raycast.normal, 0.5).normalized();
+		Vector3 ground_normal = left_raycast.normal.lerp(right_raycast.normal, 0.5).normalized();
 		Vector3 left_forward = RenIKHelper::vector_rejection(left_stand.basis[2], left_raycast.normal).normalized();
 		Vector3 right_forward = RenIKHelper::vector_rejection(right_stand.basis[2], right_raycast.normal).normalized();
 		Vector3 forward = (left_forward + right_forward).normalized();
@@ -411,19 +411,19 @@ void RenIKPlacement::foot_place(float delta, Transform head, PhysicsDirectSpaceS
 				// left_head_forward = RenIKHelper::vector_rejection(left_head_forward, ground_normal).normalized();
 				// Vector3 left_forward = RenIKHelper::vector_rejection(left_stand.basis[2], left_raycast.normal).normalized();
 				// Vector3 right_forward = RenIKHelper::vector_rejection(right_stand.basis[2], right_raycast.normal).normalized();
-				// Vector3 forward = left_forward.linear_interpolate(right_forward, 0.5).normalized();
+				// Vector3 forward = left_forward.lerp(right_forward, 0.5).normalized();
 				// Vector3 upward = head.basis[1];
 				// Vector3 left_upward = left_stand.basis[1];
 				// Vector3 right_upward = right_stand.basis[1];
-				// Vector3 feet_sideways = left_stand.basis[0].linear_interpolate(right_stand.basis[0], 0.5).normalized();
+				// Vector3 feet_sideways = left_stand.basis[0].lerp(right_stand.basis[0], 0.5).normalized();
 
 				if (left_velocity.length() > effective_min_threshold
 				|| right_velocity.length() > effective_min_threshold
 				|| (left_raycast.collider != nullptr && right_raycast.collider != nullptr && !is_balanced(target_left_foot, target_right_foot))
 				|| (left_raycast.collider != nullptr && left_stand.origin.distance_squared_to(left_raycast.position) > balance_threshold * (left_leg_length + right_leg_length) / 2)
 				|| (right_raycast.collider != nullptr && right_stand.origin.distance_squared_to(right_raycast.position) > balance_threshold * (left_leg_length + right_leg_length) / 2)
-				|| (left_raycast.collider != nullptr && (Spatial *)left_raycast.collider != left_ground)
-				|| (right_raycast.collider != nullptr && (Spatial *)right_raycast.collider != right_ground)
+				|| (left_raycast.collider != nullptr && (Node3D *)left_raycast.collider != left_ground)
+				|| (right_raycast.collider != nullptr && (Node3D *)right_raycast.collider != right_ground)
 				|| left_head_forward.dot(left_forward) < cos(rotation_threshold)
 				|| right_head_forward.dot(right_forward) < cos(rotation_threshold)
 				|| (left_raycast.collider != nullptr && left_raycast.normal.dot(left_upward) < cos(rotation_threshold) && upward.dot(left_upward) < cos(rotation_threshold))
@@ -436,8 +436,8 @@ void RenIKPlacement::foot_place(float delta, Transform head, PhysicsDirectSpaceS
 			case STANDING_TRANSITION:
 				if (left_velocity.length() > effective_min_threshold
 				|| right_velocity.length() > effective_min_threshold
-				|| (left_raycast.collider != nullptr && (Spatial *)left_raycast.collider != left_ground)
-				|| (right_raycast.collider != nullptr && (Spatial *)right_raycast.collider != right_ground)
+				|| (left_raycast.collider != nullptr && (Node3D *)left_raycast.collider != left_ground)
+				|| (right_raycast.collider != nullptr && (Node3D *)right_raycast.collider != right_ground)
 				) {
 					step_direction(forward, feet_sideways, velocity, left_raycast.position, right_raycast.position, left_raycast.collider != nullptr, right_raycast.collider != nullptr);
 				}
@@ -475,8 +475,8 @@ void RenIKPlacement::foot_place(float delta, Transform head, PhysicsDirectSpaceS
 	//Step 2: Place foot based on state
 	switch(walk_state){
 		case FALLING:{
-			Transform left_dangle = dangle_foot(head, (spine_length + left_leg_length) * dangle_ratio, left_leg_length, left_hip_offset);
-			Transform right_dangle = dangle_foot(head, (spine_length + right_leg_length) * dangle_ratio, right_leg_length, right_hip_offset);
+			Transform3D left_dangle = dangle_foot(head, (spine_length + left_leg_length) * dangle_ratio, left_leg_length, left_hip_offset);
+			Transform3D right_dangle = dangle_foot(head, (spine_length + right_leg_length) * dangle_ratio, right_leg_length, right_hip_offset);
 
 			target_left_foot.basis = target_left_foot.basis.slerp(left_dangle.basis * foot_basis_offset, 1.0f - (1.0f / dangle_stiffness));
 			target_left_foot.origin = RenIKHelper::log_clamp(target_left_foot.origin, left_dangle.origin, 1.0 / dangle_stiffness);
@@ -505,20 +505,20 @@ void RenIKPlacement::foot_place(float delta, Transform head, PhysicsDirectSpaceS
 			effective_transition_progress = effective_transition_progress <= 1 ? effective_transition_progress : 1.0;
 			if (left_ground != nullptr) {
 				stand_foot(target_left_foot, left_stand, left_stand_local, left_ground);
-				target_left_foot = Transform(left_stand.basis * foot_basis_offset, left_stand.origin).interpolate_with(target_left_foot, effective_transition_progress);
+				target_left_foot = Transform3D(left_stand.basis * foot_basis_offset, left_stand.origin).interpolate_with(target_left_foot, effective_transition_progress);
 				left_grounded_stop = left_stand.origin;
 			} else {
-				Transform left_dangle = dangle_foot(head, (spine_length + left_leg_length) * dangle_ratio, left_leg_length, left_hip_offset);
+				Transform3D left_dangle = dangle_foot(head, (spine_length + left_leg_length) * dangle_ratio, left_leg_length, left_hip_offset);
 				target_left_foot.basis = target_left_foot.basis.slerp(left_dangle.basis * foot_basis_offset, 1.0f - (1.0f / dangle_stiffness));
 				target_left_foot.origin = RenIKHelper::log_clamp(target_left_foot.origin, left_dangle.origin, 1.0 / dangle_stiffness);
 			}
 
 			if (right_ground != nullptr) {
 				stand_foot(target_right_foot, right_stand, right_stand_local, right_ground);
-				target_right_foot = Transform(right_stand.basis * foot_basis_offset, right_stand.origin).interpolate_with(target_right_foot, effective_transition_progress);
+				target_right_foot = Transform3D(right_stand.basis * foot_basis_offset, right_stand.origin).interpolate_with(target_right_foot, effective_transition_progress);
 				right_grounded_stop = right_stand.origin;
 			} else {
-				Transform right_dangle = dangle_foot(head, (spine_length + right_leg_length) * dangle_ratio, right_leg_length, right_hip_offset);
+				Transform3D right_dangle = dangle_foot(head, (spine_length + right_leg_length) * dangle_ratio, right_leg_length, right_hip_offset);
 				target_right_foot.basis = target_right_foot.basis.slerp(right_dangle.basis * foot_basis_offset, 1.0f - (1.0f / dangle_stiffness));
 				target_right_foot.origin = RenIKHelper::log_clamp(target_right_foot.origin, right_dangle.origin, 1.0 / dangle_stiffness);
 			}
@@ -529,8 +529,8 @@ void RenIKPlacement::foot_place(float delta, Transform head, PhysicsDirectSpaceS
 			float effective_transition_progress = walk_transition_progress / stepping_transition_duration;
 			effective_transition_progress = effective_transition_progress <= 1 ? effective_transition_progress : 1.0;
 			loop(head, velocity, left_raycast.position, left_raycast.normal, right_raycast.position, right_raycast.normal, left_raycast.collider != nullptr, right_raycast.collider != nullptr, forward_gait);
-			target_left_foot = Transform(left_step.basis * foot_basis_offset, left_step.origin).interpolate_with(target_left_foot, effective_transition_progress);
-			target_right_foot = Transform(right_step.basis * foot_basis_offset, right_step.origin).interpolate_with(target_right_foot, effective_transition_progress);
+			target_left_foot = Transform3D(left_step.basis * foot_basis_offset, left_step.origin).interpolate_with(target_left_foot, effective_transition_progress);
+			target_right_foot = Transform3D(right_step.basis * foot_basis_offset, right_step.origin).interpolate_with(target_right_foot, effective_transition_progress);
 			break;
 		}
 		case BACKSTEPPING_TRANSITION:
@@ -538,8 +538,8 @@ void RenIKPlacement::foot_place(float delta, Transform head, PhysicsDirectSpaceS
 			float effective_transition_progress = walk_transition_progress / stepping_transition_duration;
 			effective_transition_progress = effective_transition_progress <= 1 ? effective_transition_progress : 1.0;
 			loop(head, velocity, left_raycast.position, left_raycast.normal, right_raycast.position, right_raycast.normal, left_raycast.collider != nullptr, right_raycast.collider != nullptr, backward_gait);
-			target_left_foot = Transform(left_step.basis * foot_basis_offset, left_step.origin).interpolate_with(target_left_foot, effective_transition_progress);
-			target_right_foot = Transform(right_step.basis * foot_basis_offset, right_step.origin).interpolate_with(target_right_foot, effective_transition_progress);
+			target_left_foot = Transform3D(left_step.basis * foot_basis_offset, left_step.origin).interpolate_with(target_left_foot, effective_transition_progress);
+			target_right_foot = Transform3D(right_step.basis * foot_basis_offset, right_step.origin).interpolate_with(target_right_foot, effective_transition_progress);
 			break;
 		}
 		case STRAFING_TRANSITION:
@@ -547,8 +547,8 @@ void RenIKPlacement::foot_place(float delta, Transform head, PhysicsDirectSpaceS
 			float effective_transition_progress = walk_transition_progress / stepping_transition_duration;
 			effective_transition_progress = effective_transition_progress <= 1 ? effective_transition_progress : 1.0;
 			loop(head, velocity, left_raycast.position, left_raycast.normal, right_raycast.position, right_raycast.normal, left_raycast.collider != nullptr, right_raycast.collider != nullptr, sideways_gait);
-			target_left_foot = Transform(left_step.basis * foot_basis_offset, left_step.origin).interpolate_with(target_left_foot, effective_transition_progress);
-			target_right_foot = Transform(right_step.basis * foot_basis_offset, right_step.origin).interpolate_with(target_right_foot, effective_transition_progress);
+			target_left_foot = Transform3D(left_step.basis * foot_basis_offset, left_step.origin).interpolate_with(target_left_foot, effective_transition_progress);
+			target_right_foot = Transform3D(right_step.basis * foot_basis_offset, right_step.origin).interpolate_with(target_right_foot, effective_transition_progress);
 			break;
 		}
 		case LAYING_TRANSITION:
@@ -569,7 +569,7 @@ void RenIKPlacement::foot_place(float delta, Transform head, PhysicsDirectSpaceS
 	prevHead = head.origin;
 }
 
-bool RenIKPlacement::is_balanced(Transform left, Transform right) {
+bool RenIKPlacement::is_balanced(Transform3D left, Transform3D right) {
 
 	Vector3 relative_right = left.xform_inv(right.origin);
 	Vector3 relative_left = right.xform_inv(left.origin);

@@ -8,7 +8,7 @@ void RenIKChain::init(Vector3 p_chain_curve_direction, float p_root_influence, f
 	twist_start = p_twist_start;
 }
 
-void RenIKChain::init_chain(Skeleton *skeleton) {
+void RenIKChain::init_chain(Skeleton3D *skeleton) {
 	joints.clear();
 	total_length = 0;
 	if (skeleton && root_bone >= 0 && leaf_bone >= 0 && root_bone < skeleton->get_bone_count() && leaf_bone < skeleton->get_bone_count()) {
@@ -18,14 +18,14 @@ void RenIKChain::init_chain(Skeleton *skeleton) {
 		float last_length;
 		rest_leaf = skeleton->get_bone_rest(leaf_bone);
 		while (bone != root_bone) {
-			Transform rest_pose = skeleton->get_bone_rest(bone);
+			Transform3D rest_pose = skeleton->get_bone_rest(bone);
 			rest_leaf = rest_pose * rest_leaf.orthonormalized();
 			last_length = rest_pose.origin.length();
 			total_length += last_length;
 			if (bone < 0) { //invalid chain
 				total_length = 0;
 				first_bone = -1;
-				rest_leaf = Transform();
+				rest_leaf = Transform3D();
 				return;
 			}
 			chain.push_back(bone);
@@ -38,7 +38,7 @@ void RenIKChain::init_chain(Skeleton *skeleton) {
 		if (total_length <= 0) { //invalid chain
 			total_length = 0;
 			first_bone = -1;
-			rest_leaf = Transform();
+			rest_leaf = Transform3D();
 			return;
 		}
 
@@ -48,7 +48,7 @@ void RenIKChain::init_chain(Skeleton *skeleton) {
 		for (int i = chain.size() - 1; i >= 0; i--) {
 			RenIKChain::Joint j;
 			j.id = chain[i];
-			Transform boneTransform = skeleton->get_bone_rest(j.id);
+			Transform3D boneTransform = skeleton->get_bone_rest(j.id);
 			j.rotation = boneTransform.basis.get_rotation_quaternion();
 			j.relative_prev = totalRotation.xform_inv(boneTransform.origin);
 			j.prev_distance = j.relative_prev.length();
@@ -63,7 +63,7 @@ void RenIKChain::init_chain(Skeleton *skeleton) {
 			j.leaf_influence = effectiveLeafInfluence > 1 ? 1 : effectiveLeafInfluence;
 			j.twist_influence = effectiveTwistInfluence > 1 ? 1 : effectiveTwistInfluence;
 
-			if (!joints.empty()) {
+			if (!joints.is_empty()) {
 				RenIKChain::Joint oldJ = joints[joints.size() - 1];
 				oldJ.relative_next = -j.relative_prev;
 				oldJ.next_distance = j.prev_distance;
@@ -72,7 +72,7 @@ void RenIKChain::init_chain(Skeleton *skeleton) {
 			joints.push_back(j);
 			totalRotation = (totalRotation * boneTransform.basis).orthonormalized();
 		}
-		if (!joints.empty()) {
+		if (!joints.is_empty()) {
 			RenIKChain::Joint oldJ = joints[joints.size() - 1];
 			oldJ.relative_next = -skeleton->get_bone_rest(leaf_bone).origin;
 			oldJ.next_distance = oldJ.relative_next.length();
@@ -81,17 +81,17 @@ void RenIKChain::init_chain(Skeleton *skeleton) {
 	}
 }
 
-void RenIKChain::set_root_bone(Skeleton *skeleton, BoneId p_root_bone) {
+void RenIKChain::set_root_bone(Skeleton3D *skeleton, BoneId p_root_bone) {
 	root_bone = p_root_bone;
 	init_chain(skeleton);
 }
-void RenIKChain::set_leaf_bone(Skeleton *skeleton, BoneId p_leaf_bone) {
+void RenIKChain::set_leaf_bone(Skeleton3D *skeleton, BoneId p_leaf_bone) {
 	leaf_bone = p_leaf_bone;
 	init_chain(skeleton);
 }
 
 bool RenIKChain::is_valid() {
-	return !joints.empty();
+	return !joints.is_empty();
 }
 
 float RenIKChain::get_total_length() {
@@ -102,7 +102,7 @@ Vector<RenIKChain::Joint> RenIKChain::get_joints() {
 	return joints;
 }
 
-Transform RenIKChain::get_relative_rest_leaf() {
+Transform3D RenIKChain::get_relative_rest_leaf() {
 	return rest_leaf;
 }
 
@@ -122,7 +122,7 @@ float RenIKChain::get_root_stiffness() {
 	return root_influence;
 }
 
-void RenIKChain::set_root_stiffness(Skeleton *skeleton, float stiffness) {
+void RenIKChain::set_root_stiffness(Skeleton3D *skeleton, float stiffness) {
 	root_influence = stiffness;
 	init_chain(skeleton);
 }
@@ -131,7 +131,7 @@ float RenIKChain::get_leaf_stiffness() {
 	return leaf_influence;
 }
 
-void RenIKChain::set_leaf_stiffness(Skeleton *skeleton, float stiffness) {
+void RenIKChain::set_leaf_stiffness(Skeleton3D *skeleton, float stiffness) {
 	leaf_influence = stiffness;
 	init_chain(skeleton);
 }
@@ -140,7 +140,7 @@ float RenIKChain::get_twist() {
 	return twist_influence;
 }
 
-void RenIKChain::set_twist(Skeleton *skeleton, float p_twist) {
+void RenIKChain::set_twist(Skeleton3D *skeleton, float p_twist) {
 	twist_influence = p_twist;
 	init_chain(skeleton);
 }
@@ -149,12 +149,12 @@ float RenIKChain::get_twist_start() {
 	return twist_start;
 }
 
-void RenIKChain::set_twist_start(Skeleton *skeleton, float p_twist_start) {
+void RenIKChain::set_twist_start(Skeleton3D *skeleton, float p_twist_start) {
 	twist_start = p_twist_start;
 	init_chain(skeleton);
 }
 
-bool RenIKChain::contains_bone(Skeleton *skeleton, BoneId bone) {
+bool RenIKChain::contains_bone(Skeleton3D *skeleton, BoneId bone) {
 	if (skeleton) {
 		BoneId spineBone = leaf_bone;
 		while (spineBone >= 0) {

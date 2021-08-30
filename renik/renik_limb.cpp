@@ -13,9 +13,9 @@ void RenIKLimb::init(float p_upper_twist_offset, float p_lower_twist_offset, flo
 	target_position_influence = p_target_position_influence;
 }
 
-Transform RenIKLimb::get_extra_bones(Skeleton *skeleton, BoneId p_root_bone_id, BoneId p_tip_bone_id)
+Transform3D RenIKLimb::get_extra_bones(Skeleton3D *skeleton, BoneId p_root_bone_id, BoneId p_tip_bone_id)
 {
-	Transform cumulative_rest;
+	Transform3D cumulative_rest;
 	BoneId current_bone_id = p_tip_bone_id;
 	while (current_bone_id != -1 && current_bone_id != p_root_bone_id)
 	{
@@ -29,7 +29,7 @@ Transform RenIKLimb::get_extra_bones(Skeleton *skeleton, BoneId p_root_bone_id, 
 
 	return cumulative_rest;
 }
-Vector<BoneId> RenIKLimb::get_extra_bone_ids(Skeleton *skeleton, BoneId p_root_bone_id, BoneId p_tip_bone_id)
+Vector<BoneId> RenIKLimb::get_extra_bone_ids(Skeleton3D *skeleton, BoneId p_root_bone_id, BoneId p_tip_bone_id)
 {
 	Vector<BoneId> output;
 	BoneId current_bone_id = p_tip_bone_id;
@@ -46,7 +46,7 @@ Vector<BoneId> RenIKLimb::get_extra_bone_ids(Skeleton *skeleton, BoneId p_root_b
 	return output;
 }
 
-void RenIKLimb::update(Skeleton* skeleton) {
+void RenIKLimb::update(Skeleton3D* skeleton) {
 	if (skeleton != nullptr && leaf_id >= 0) {
 		lower_id = lower_id >= 0 ? lower_id : skeleton->get_bone_parent(leaf_id);
 		if (lower_id >= 0) {
@@ -70,17 +70,17 @@ void RenIKLimb::update(Skeleton* skeleton) {
 	}
 }
 
-void RenIKLimb::set_leaf(Skeleton *skeleton, BoneId p_leaf_id) {
+void RenIKLimb::set_leaf(Skeleton3D *skeleton, BoneId p_leaf_id) {
 	leaf_id = p_leaf_id;
 	update(skeleton);
 }
 
-void RenIKLimb::set_upper(Skeleton* skeleton, BoneId p_upper_id) {
+void RenIKLimb::set_upper(Skeleton3D* skeleton, BoneId p_upper_id) {
 	upper_id = p_upper_id;
 	update(skeleton);
 }
 
-void RenIKLimb::set_lower(Skeleton* skeleton, BoneId p_lower_id) {
+void RenIKLimb::set_lower(Skeleton3D* skeleton, BoneId p_lower_id) {
 	lower_id = p_lower_id;
 	update(skeleton);
 }
@@ -90,7 +90,7 @@ bool RenIKLimb::is_valid()
 	return upper_id >= 0 && lower_id >= 0 && leaf_id >= 0;
 }
 
-bool RenIKLimb::is_valid_in_skeleton(Skeleton *skeleton)
+bool RenIKLimb::is_valid_in_skeleton(Skeleton3D *skeleton)
 {
 	bool valid = false;
 	if(skeleton == nullptr || upper_id < 0 || lower_id < 0 || leaf_id < 0 || upper_id >= skeleton->get_bone_count() || lower_id >= skeleton->get_bone_count() || leaf_id >= skeleton->get_bone_count()){
@@ -116,12 +116,12 @@ BoneId RenIKLimb::get_lower_bone() {
 BoneId RenIKLimb::get_upper_bone() {
 	return upper_id;
 }
-Transform RenIKLimb::get_upper() {
+Transform3D RenIKLimb::get_upper() {
 	return upper;
 }
-Transform RenIKLimb::get_lower() {
+Transform3D RenIKLimb::get_lower() {
 	return lower;
 }
-Transform RenIKLimb::get_leaf() {
+Transform3D RenIKLimb::get_leaf() {
 	return leaf;
 }
