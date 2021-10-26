@@ -36,9 +36,9 @@ Vector3 RenIKHelper::vector_rejection(Vector3 v, Vector3 normal) {
 	return v - proj;
 }
 
-Quat RenIKHelper::align_vectors(Vector3 a, Vector3 b, float influence) {
+Quaternion RenIKHelper::align_vectors(Vector3 a, Vector3 b, float influence) {
 	if(a.length_squared() == 0 || b.length_squared() == 0){
-		return Quat();
+		return Quaternion();
 	}
 	a.normalize();
 	b.normalize();
@@ -49,9 +49,9 @@ Quat RenIKHelper::align_vectors(Vector3 a, Vector3 b, float influence) {
 		if (perpendicular.length_squared() == 0) {
 			perpendicular = get_perpendicular_vector(a);
 		}
-		return Quat(perpendicular.normalized().normalized(), angleDiff).normalized();//lmao look at this double normalization bullshit
+		return Quaternion(perpendicular.normalized().normalized(), angleDiff).normalized();//lmao look at this double normalization bullshit
 	} else {
-		return Quat();
+		return Quaternion();
 	}
 }
 
@@ -60,10 +60,10 @@ float RenIKHelper::smoothCurve(float number, float modifier) {
 }
 
 Basis RenIKHelper::log_clamp(Basis basis, Basis target, float looseness) {
-	return Basis(log_clamp(basis.get_rotation_quat(), target.get_rotation_quat(), looseness));
+	return Basis(log_clamp(basis.get_rotation_quaternion(), target.get_rotation_quaternion(), looseness));
 }
 
-Quat RenIKHelper::log_clamp(Quat quat, Quat target, float looseness) {
+Quaternion RenIKHelper::log_clamp(Quaternion quat, Quaternion target, float looseness) {
 	quat.x = log_clamp(quat.x, target.x, looseness);
 	quat.y = log_clamp(quat.y, target.y, looseness);
 	quat.z = log_clamp(quat.z, target.z, looseness);

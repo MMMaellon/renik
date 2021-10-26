@@ -8,7 +8,7 @@ struct RenIKChain : public Resource {
 
 public:
 	struct Joint {
-		Quat rotation;
+		Quaternion rotation;
 		BoneId id;
 		Vector3 relative_prev;
 		Vector3 relative_next;

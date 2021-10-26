@@ -98,7 +98,7 @@ void RenIKPlacement::foot_place(float delta, Transform head, Ref<World> w3d, boo
 
 Transform RenIKPlacement::dangle_foot(Transform head, float distance, float leg_length, Vector3 hip_offset) {
 	Transform foot;
-	Basis upright_head = RenIKHelper::align_vectors(Vector3(0, 1, 0), head.basis[1]).slerp(Quat(), 1 - dangle_follow_head);
+	Basis upright_head = RenIKHelper::align_vectors(Vector3(0, 1, 0), head.basis[1]).slerp(Quaternion(), 1 - dangle_follow_head);
 	Vector3 dangle_vector = Vector3(0, spine_length + leg_length, 0) - hip_offset;
 	Basis dangle_basis = head.basis * upright_head;
 	foot.basis = dangle_basis * Basis(Vector3(1, 0, 0), dangle_angle);
@@ -170,10 +170,10 @@ int RenIKPlacement::get_loop_state(float loop_state_scaling, float loop_progress
 
 void RenIKPlacement::loop_foot(Transform &step, Transform &stand, Transform &stand_local, Spatial *ground, Spatial **prev_ground, int &loop_state, Vector3 &grounded_stop, Transform head, float leg_length, float foot_length, Vector3 velocity, float loop_scaling, float step_progress, Vector3 ground_pos, Vector3 ground_normal, Gait gait)
 {
-	Quat upright_foot = RenIKHelper::align_vectors(Vector3(0,1,0), head.basis.xform_inv(ground_normal));
+	Quaternion upright_foot = RenIKHelper::align_vectors(Vector3(0,1,0), head.basis.xform_inv(ground_normal));
 	bool twisted = false;
 	if(ground_normal.dot(head.basis[1]) < cos(rotation_threshold) && ground_normal.dot(Vector3(0,1,0)) < cos(rotation_threshold)){
-		upright_foot = Quat();
+		upright_foot = Quaternion();
 		twisted = true;
 	}
 	Vector3 ground_velocity = RenIKHelper::vector_rejection(velocity, ground_normal);
