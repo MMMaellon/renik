@@ -109,16 +109,19 @@ void RenIKPlacement::foot_place(float delta, Transform3D head, Ref<World3D> w3d,
               0) +
       head.basis.xform(right_hip_offset);
 
-  bool left_collided = dss->intersect_ray(
-      leftStart, leftStop, left_raycast, Set<RID>(), collision_mask,
-      collide_with_bodies, collide_with_areas);
-  bool right_collided = dss->intersect_ray(
-      rightStart, rightStop, right_raycast, Set<RID>(), collision_mask,
-      collide_with_bodies, collide_with_areas);
-  bool laying_down = dss->intersect_ray(
-      head.origin, head.origin - Vector3(0, spine_length + floor_offset, 0),
-      laying_raycast, Set<RID>(), collision_mask, collide_with_bodies,
-      collide_with_areas);
+  PhysicsDirectSpaceState3D::RayParameters ray_query_parameters;
+  ray_query_parameters.from = leftStart;
+  ray_query_parameters.to = leftStop;
+  ray_query_parameters.collision_mask = collision_mask;
+  ray_query_parameters.collide_with_areas = collide_with_areas;
+  ray_query_parameters.collide_with_bodies = collide_with_bodies;
+  bool left_collided = dss->intersect_ray(ray_query_parameters, left_raycast);
+  ray_query_parameters.from = rightStart;
+  ray_query_parameters.to = rightStop;
+  bool right_collided = dss->intersect_ray(ray_query_parameters, right_raycast);
+  ray_query_parameters.from = head.origin;
+  ray_query_parameters.to = head.origin - Vector3(0, spine_length + floor_offset, 0);
+  bool laying_down = dss->intersect_ray(ray_query_parameters, laying_raycast);
   if (!left_collided) {
     left_raycast.collider = nullptr;
   }
