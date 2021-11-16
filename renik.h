@@ -50,8 +50,6 @@ public:
                     Vector<BoneId> apply_order);
   void apply_ik_map(Map<BoneId, Basis> ik_map, Transform3D global_parent,
                     Vector<BoneId> apply_order);
-  void apply_ik_map(Map<BoneId, Transform3D> ik_map, Transform3D global_parent,
-                    Vector<BoneId> apply_order);
   Vector<BoneId> bone_id_order(Ref<RenIKChain> chain);
   Vector<BoneId> bone_id_order(Ref<RenIKLimb> limb);
 
@@ -435,7 +433,7 @@ public:
   solve_trig_ik(Ref<RenIKLimb> limb, Transform3D limb_parent_transform,
                 Transform3D target);
 
-  static Map<BoneId, Transform3D>
+  static Map<BoneId, Basis>
   solve_trig_ik_redux(Ref<RenIKLimb> limb, Transform3D limb_parent_transform,
                       Transform3D target);
 

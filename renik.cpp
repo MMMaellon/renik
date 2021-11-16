@@ -1413,21 +1413,9 @@ void RenIK::apply_ik_map(Map<BoneId, Quaternion> ik_map,
   if (skeleton) {
     Transform3D global_pose = global_parent;
     for (int i = 0; i < apply_order.size(); i++) {
-      global_pose *= Transform3D(ik_map[apply_order[i]], skeleton->get_bone_rest(apply_order[i]).get_origin());
-      skeleton->set_bone_global_pose_override(apply_order[i], global_pose, 1.0);
-    }
-  }
-}
-
-void RenIK::apply_ik_map(Map<BoneId, Transform3D> ik_map,
-                         Transform3D global_parent,
-                         Vector<BoneId> apply_order) {
-  if (skeleton) {
-    Transform3D global_pose = global_parent;
-    for (int i = 0; i < apply_order.size(); i++) {
-      global_pose *=
-          skeleton->get_bone_rest(apply_order[i]) * ik_map[apply_order[i]];
-      skeleton->set_bone_global_pose_override(apply_order[i], global_pose, 1.0);
+      global_pose *= skeleton->get_bone_rest(apply_order[i]) *
+                     Transform3D(ik_map[apply_order[i]]);
+      skeleton->set_bone_global_pose_override(apply_order[i], global_pose, 1.0, true);
     }
   }
 }
@@ -1437,8 +1425,9 @@ void RenIK::apply_ik_map(Map<BoneId, Basis> ik_map, Transform3D global_parent,
   if (skeleton) {
     Transform3D global_pose = global_parent;
     for (int i = 0; i < apply_order.size(); i++) {
-      global_pose *= Transform3D(ik_map[apply_order[i]], skeleton->get_bone_rest(apply_order[i]).get_origin());
-      skeleton->set_bone_global_pose_override(apply_order[i], global_pose, 1.0);
+      global_pose *= skeleton->get_bone_rest(apply_order[i]) *
+                     Transform3D(ik_map[apply_order[i]]);
+      skeleton->set_bone_global_pose_override(apply_order[i], global_pose, 1.0, true);
     }
   }
 }
@@ -1451,11 +1440,13 @@ Transform3D RenIK::get_global_parent_pose(BoneId child,
   while (parent_id >= 0) {
     if (ik_map.has(parent_id)) {
       BoneId super_parent = parent_id;
-      full_transform = Transform3D(ik_map[super_parent], skeleton->get_bone_rest(super_parent).get_origin()) * full_transform;
+      full_transform = skeleton->get_bone_rest(super_parent) *
+                       Transform3D(ik_map[super_parent]) * full_transform;
       while (skeleton->get_bone_parent(super_parent) >= 0) {
         super_parent = skeleton->get_bone_parent(super_parent);
         if (ik_map.has(super_parent)) {
-          full_transform = Transform3D(ik_map[super_parent], skeleton->get_bone_rest(super_parent).get_origin()) * full_transform;
+          full_transform = skeleton->get_bone_rest(super_parent) *
+                           Transform3D(ik_map[super_parent]) * full_transform;
         } else {
           full_transform = map_global_parent * full_transform;
           break;
@@ -1474,8 +1465,8 @@ RenIK::SpineTransforms RenIK::perform_torso_ik() {
         head_target_spatial->get_global_transform();
     Transform3D hipGlobalTransform =
         (hip_target_spatial ? hip_target_spatial->get_global_transform()
-                            : placement.interpolated_hip);
-        // * skeleton->get_bone_rest(hip).basis;
+                            : placement.interpolated_hip) *
+        skeleton->get_bone_rest(hip).basis;
     Vector3 delta = hipGlobalTransform.origin +
                     hipGlobalTransform.basis.xform(
                         spine_chain->get_joints()[0].relative_prev) -
@@ -1490,13 +1481,13 @@ RenIK::SpineTransforms RenIK::perform_torso_ik() {
 
     Map<BoneId, Quaternion> ik_map = solve_ifabrik(
         spine_chain,
-        hipGlobalTransform,
+        hipGlobalTransform * skeleton->get_bone_rest(hip).basis.inverse(),
         headGlobalTransform, DEFAULT_THRESHOLD, DEFAULT_LOOP_LIMIT);
     Transform3D inverse_skeleton =
         skeleton->get_global_transform().affine_inverse();
 
     skeleton->set_bone_global_pose_override(
-        hip, inverse_skeleton * hipGlobalTransform, 1.0f);
+        hip, inverse_skeleton * hipGlobalTransform, 1.0f, true);
 
     apply_ik_map(ik_map, inverse_skeleton * hipGlobalTransform,
                  bone_id_order(spine_chain));
@@ -1504,7 +1495,7 @@ RenIK::SpineTransforms RenIK::perform_torso_ik() {
     // Keep Hip and Head as global poses tand then apply them as global pose
     // override
     skeleton->set_bone_global_pose_override(
-        head, inverse_skeleton * headGlobalTransform, 1.0f);
+        head, inverse_skeleton * headGlobalTransform, 1.0f, true);
 
     // Calculate and return the parent bone position for the arms
     Transform3D left_global_parent_pose = Transform3D();
@@ -1535,6 +1526,7 @@ void RenIK::perform_hand_left_ik(Transform3D global_parent) {
         // if (shoulderParent >= 0) {
         // 	root = root * skeleton->get_bone_global_pose(shoulderParent);
         // }
+        root = root * skeleton->get_bone_rest(rootBone);
         Vector3 targetVector = root.affine_inverse().xform(
             hand_left_target_spatial->get_global_transform().origin);
         Quaternion offsetQuat = Quaternion(left_shoulder_offset);
@@ -1550,7 +1542,7 @@ void RenIK::perform_hand_left_ik(Transform3D global_parent) {
         Transform3D customPose =
             Transform3D(offsetQuat * quatAlignToTarget, Vector3());
         skeleton->set_bone_global_pose_override(rootBone, root * customPose,
-                                                1.0f);
+                                                1.0f, true);
         root = root * customPose;
       }
       // root = skeleton->get_global_transform() *
@@ -1575,6 +1567,7 @@ void RenIK::perform_hand_right_ik(Transform3D global_parent) {
         // if (shoulderParent >= 0) {
         // 	root = root * skeleton->get_bone_global_pose(shoulderParent);
         // }
+        root = root * skeleton->get_bone_rest(rootBone);
         Vector3 targetVector = root.affine_inverse().xform(
             hand_right_target_spatial->get_global_transform().origin);
         Quaternion offsetQuat = Quaternion(right_shoulder_offset);
@@ -1590,7 +1583,7 @@ void RenIK::perform_hand_right_ik(Transform3D global_parent) {
         Transform3D customPose =
             Transform3D(offsetQuat * quatAlignToTarget, Vector3());
         skeleton->set_bone_global_pose_override(rootBone, root * customPose,
-                                                1.0f);
+                                                1.0f, true);
         root = root * customPose;
       }
       // root = skeleton->get_global_transform() *
@@ -1851,10 +1844,10 @@ std::pair<float, float> RenIK::trig_angles(Vector3 const &side1,
   return std::make_pair(angle1, angle2);
 }
 
-Map<BoneId, Transform3D> RenIK::solve_trig_ik_redux(Ref<RenIKLimb> limb,
+Map<BoneId, Basis> RenIK::solve_trig_ik_redux(Ref<RenIKLimb> limb,
                                                     Transform3D root,
                                                     Transform3D target) {
-  Map<BoneId, Transform3D> map;
+  Map<BoneId, Basis> map;
   if (limb->is_valid()) {
     // The true root of the limb is the point where the upper bone starts
     Transform3D trueRoot = root.translated(limb->get_upper().get_origin());
@@ -1987,24 +1980,24 @@ Map<BoneId, Transform3D> RenIK::solve_trig_ik_redux(Ref<RenIKLimb> limb,
     lowerBasis.rotate_local(Vector3(0, 1, 0), lowerTwist);
     lowerBasis.rotate(Vector3(0, 1, 0), -upperTwist);
 
-    Transform3D upperTransform = Transform3D(
+	Basis upperTransform = (
         (full_upper.get_basis().inverse() * upperBasis).orthonormalized());
-    Transform3D lowerTransform = Transform3D(
+	Basis lowerTransform = (
         (full_lower.get_basis().inverse() * lowerBasis).orthonormalized());
-    Transform3D leafTransform =
-        Transform3D(limb->get_leaf().get_basis().inverse() *
+	Basis leafTransform =
+        (limb->get_leaf().get_basis().inverse() *
                     (upperBasis * lowerBasis).inverse() *
                     localTarget.get_basis() * limb->get_leaf().get_basis());
     map[limb->get_upper_bone()] = upperTransform;
     for (int i = 0; i < limb->upper_extra_bone_ids.size(); i++) {
-      map[limb->upper_extra_bone_ids[i]] = Transform3D();
+      map[limb->upper_extra_bone_ids[i]] = Basis();
     }
 
     map[limb->get_lower_bone()] =
         lowerTransform; // limb->upper_extra_bones.affine_inverse() *
                         // (full_lower.get_basis().inverse() * lowerBasis);
     for (int i = 0; i < limb->lower_extra_bone_ids.size(); i++) {
-      map[limb->lower_extra_bone_ids[i]] = Transform3D();
+      map[limb->lower_extra_bone_ids[i]] = Basis();
     }
 
     map[limb->get_leaf_bone()] = leafTransform;
