@@ -1722,7 +1722,6 @@ Map<BoneId, Quaternion> RenIK::solve_trig_ik(Ref<RenIKLimb> limb,
     Quaternion lower = lowerRest.inverse();
     // The true root of the limb is the point where the upper bone starts
     Transform3D trueRoot = root.translated(limb->get_upper().get_origin());
-    Transform3D diff = root.affine_inverse() * trueRoot;
     Transform3D localTarget = trueRoot.affine_inverse() * target;
 
     // First we offset the pole
@@ -2102,8 +2101,6 @@ Map<BoneId, Quaternion> RenIK::solve_ifabrik(Ref<RenIKChain> chain,
             .xform(trueRelativeTarget.basis.xform(Vector3(1, 0, 0)));
     Vector3 restX =
         chain->get_relative_rest_leaf().basis.xform(Vector3(1, 0, 0));
-    Vector3 restZ =
-        chain->get_relative_rest_leaf().basis.xform(Vector3(0, 0, 1));
     float maxTwist = leafX.angle_to(restX);
     if (leafX.cross(restX).dot(Vector3(0, 1, 0)) > 0) {
       maxTwist *= -1;
@@ -2156,8 +2153,6 @@ Vector<BoneId> RenIK::calculate_bone_chain(BoneId root, BoneId leaf) {
       chain.push_back(leaf);
     } else {
       chain.reverse();
-      int first = chain[0];
-      int last = chain[chain.size() - 1];
     }
   }
   return chain;
