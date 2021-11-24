@@ -98,7 +98,6 @@ bool RenIKLimb::is_valid() {
 }
 
 bool RenIKLimb::is_valid_in_skeleton(Skeleton3D *skeleton) {
-  bool valid = false;
   if (skeleton == nullptr || upper_id < 0 || lower_id < 0 || leaf_id < 0 ||
       upper_id >= skeleton->get_bone_count() ||
       lower_id >= skeleton->get_bone_count() ||

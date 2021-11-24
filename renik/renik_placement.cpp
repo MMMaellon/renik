@@ -574,8 +574,6 @@ void RenIKPlacement::foot_place(
           laying_transition_duration; // In units of loop progression
     }
   } else {
-    Vector3 ground_normal =
-        left_raycast.normal.lerp(right_raycast.normal, 0.5).normalized();
     Vector3 left_forward =
         RenIKHelper::vector_rejection(left_stand.basis[2], left_raycast.normal)
             .normalized();
@@ -731,10 +729,6 @@ void RenIKPlacement::foot_place(
   }
   case STANDING_TRANSITION:
   case STANDING: {
-    float left_distance = head.origin.distance_to(
-        right_raycast
-            .position); // dangle foot according to where the other foot is
-    float right_distance = head.origin.distance_to(left_raycast.position);
     float effective_transition_progress =
         walk_transition_progress / standing_transition_duration;
     effective_transition_progress = effective_transition_progress <= 1
