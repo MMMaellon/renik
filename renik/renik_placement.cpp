@@ -248,11 +248,9 @@ void RenIKPlacement::loop_foot(Transform3D &step, Transform3D &stand,
                                Vector3 ground_normal, Gait gait) {
   Quaternion upright_foot = RenIKHelper::align_vectors(
       Vector3(0, 1, 0), head.basis.xform_inv(ground_normal));
-  bool twisted = false;
   if (ground_normal.dot(head.basis[1]) < cos(rotation_threshold) &&
       ground_normal.dot(Vector3(0, 1, 0)) < cos(rotation_threshold)) {
     upright_foot = Quaternion();
-    twisted = true;
   }
   Vector3 ground_velocity =
       RenIKHelper::vector_rejection(velocity, ground_normal);
