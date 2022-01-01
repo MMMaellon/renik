@@ -39,8 +39,8 @@
 namespace TestRenIK {
 
 /*
-Testing the small helper functions, we'll test the Fabrik algorithm, the quaternion rotation
-algorithms, and some basic foot placement logic.
+Testing the small helper functions, we'll test the Fabrik algorithm, the
+quaternion rotation algorithms, and some basic foot placement logic.
 */
 TEST_CASE("[Modules][RENIK] math") {
   Quaternion rightAngle =
@@ -61,14 +61,20 @@ TEST_CASE("[Modules][RENIK] math") {
   CHECK_MESSAGE(Math::is_equal_approx(
                     Vector3(1, 0, 0).angle_to(Vector3(0, 1, 1)), Math_PI / 2),
                 "math 3");
-  CHECK_MESSAGE(Math::is_equal_approx(Vector3(1, 0, 0).angle_to(Vector3(1, 1, 0)), Math_PI / 4,
+  CHECK_MESSAGE(Math::is_equal_approx(
+                    Vector3(1, 0, 0).angle_to(Vector3(1, 1, 0)), Math_PI / 4),
                 "math 4");
-  CHECK_MESSAGE(Math::is_equal_approx(Vector3(1, 0, 0).angle_to(Vector3(-1, 0, 0)) , Math_PI),
+  CHECK_MESSAGE(Math::is_equal_approx(
+                    Vector3(1, 0, 0).angle_to(Vector3(-1, 0, 0)), Math_PI),
                 "math 5");
-  CHECK_MESSAGE(Math::is_equal_approx(Vector3(1, 0, 0).angle_to(Vector3(-1, -1, 0)) , Math_PI * .75),
-                "math 6");
-  CHECK_MESSAGE(Math::is_equal_approx(Vector3(3, 7, -13).angle_to(Vector3(-14, -12, -10)) , 1.558139),
-                "math 7");
+  CHECK_MESSAGE(
+      Math::is_equal_approx(Vector3(1, 0, 0).angle_to(Vector3(-1, -1, 0)),
+                            Math_PI * .75),
+      "math 6");
+  CHECK_MESSAGE(
+      Math::is_equal_approx(Vector3(3, 7, -13).angle_to(Vector3(-14, -12, -10)),
+                            1.558139),
+      "math 7");
 }
 
 } // namespace TestRenIK
