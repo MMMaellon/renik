@@ -52,28 +52,33 @@ TEST_CASE("[Modules][RENIK] math") {
       RenIKHelper::align_vectors(Vector3(1, 0, 0), Vector3(0.5, 0, 0));
   Quaternion noRotationCheck = Quaternion(Vector3(0, 0, 1), 0);
   CHECK_MESSAGE(noRotation == noRotationCheck, "align_vectors 2");
-  CHECK_MESSAGE(Math::is_equal_approx(
-                    Vector3(1, 0, 0).angle_to(Vector3(0, 1, 0)), Math_PI / 2),
-                "math 1");
-  CHECK_MESSAGE(Math::is_equal_approx(
-                    Vector3(1, 0, 0).angle_to(Vector3(0, 0, 1)), Math_PI / 2),
-                "math 2");
-  CHECK_MESSAGE(Math::is_equal_approx(
-                    Vector3(1, 0, 0).angle_to(Vector3(0, 1, 1)), Math_PI / 2),
-                "math 3");
-  CHECK_MESSAGE(Math::is_equal_approx(
-                    Vector3(1, 0, 0).angle_to(Vector3(1, 1, 0)), Math_PI / 4),
-                "math 4");
-  CHECK_MESSAGE(Math::is_equal_approx(
-                    Vector3(1, 0, 0).angle_to(Vector3(-1, 0, 0)), Math_PI),
-                "math 5");
+  CHECK_MESSAGE(
+      Math::is_equal_approx(Vector3(1, 0, 0).angle_to(Vector3(0, 1, 0)),
+                            (float)Math_PI / 2.f),
+      "math 1");
+  CHECK_MESSAGE(
+      Math::is_equal_approx(Vector3(1, 0, 0).angle_to(Vector3(0, 0, 1)),
+                            (float)Math_PI / 2.f),
+      "math 2");
+  CHECK_MESSAGE(
+      Math::is_equal_approx(Vector3(1, 0, 0).angle_to(Vector3(0, 1, 1)),
+                            (float)Math_PI / 2.f),
+      "math 3");
+  CHECK_MESSAGE(
+      Math::is_equal_approx(Vector3(1, 0, 0).angle_to(Vector3(1, 1, 0)),
+                            (float)Math_PI / 4.f),
+      "math 4");
+  CHECK_MESSAGE(
+      Math::is_equal_approx(Vector3(1, 0, 0).angle_to(Vector3(-1, 0, 0)),
+                            (float)Math_PI),
+      "math 5");
   CHECK_MESSAGE(
       Math::is_equal_approx(Vector3(1, 0, 0).angle_to(Vector3(-1, -1, 0)),
-                            Math_PI * .75),
+                            (float)Math_PI * .75f),
       "math 6");
   CHECK_MESSAGE(
       Math::is_equal_approx(Vector3(3, 7, -13).angle_to(Vector3(-14, -12, -10)),
-                            1.558139),
+                            1.558139f),
       "math 7");
 }
 
