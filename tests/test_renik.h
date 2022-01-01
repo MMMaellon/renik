@@ -55,19 +55,22 @@ TEST_CASE("[Modules][RENIK] math") {
   Quaternion noRotationCheck = Quaternion(Vector3(0, 0, 1), 0);
   CHECK_MESSAGE(noRotation == noRotationCheck,
                 String("align_vectors 2").utf8().ptr());
-  CHECK_MESSAGE(Vector3(1, 0, 0).angle_to(Vector3(0, 1, 0)), Math_PI / 2,
+  CHECK_MESSAGE(Math::is_equal_approx(
+                    Vector3(1, 0, 0).angle_to(Vector3(0, 1, 0)), Math_PI / 2),
                 String("math 1").utf8().ptr());
-  CHECK_MESSAGE(Vector3(1, 0, 0).angle_to(Vector3(0, 0, 1)), Math_PI / 2,
+  CHECK_MESSAGE(Math::is_equal_approx(
+                    Vector3(1, 0, 0).angle_to(Vector3(0, 0, 1)), Math_PI / 2),
                 String("math 2").utf8().ptr());
-  CHECK_MESSAGE(Vector3(1, 0, 0).angle_to(Vector3(0, 1, 1)), Math_PI / 2,
+  CHECK_MESSAGE(Math::is_equal_approx(
+                    Vector3(1, 0, 0).angle_to(Vector3(0, 1, 1)), Math_PI / 2),
                 String("math 3").utf8().ptr());
-  CHECK_MESSAGE(Vector3(1, 0, 0).angle_to(Vector3(1, 1, 0)), Math_PI / 4,
+  CHECK_MESSAGE(Math::is_equal_approx(Vector3(1, 0, 0).angle_to(Vector3(1, 1, 0)), Math_PI / 4,
                 String("math 4").utf8().ptr());
-  CHECK_MESSAGE(Vector3(1, 0, 0).angle_to(Vector3(-1, 0, 0)), Math_PI,
+  CHECK_MESSAGE(Math::is_equal_approx(Vector3(1, 0, 0).angle_to(Vector3(-1, 0, 0)) , Math_PI),
                 String("math 5").utf8().ptr());
-  CHECK_MESSAGE(Vector3(1, 0, 0).angle_to(Vector3(-1, -1, 0)), Math_PI * .75,
+  CHECK_MESSAGE(Math::is_equal_approx(Vector3(1, 0, 0).angle_to(Vector3(-1, -1, 0)) , Math_PI * .75),
                 String("math 6").utf8().ptr());
-  CHECK_MESSAGE(Vector3(3, 7, -13).angle_to(Vector3(-14, -12, -10)), 1.558139,
+  CHECK_MESSAGE(Math::is_equal_approx(Vector3(3, 7, -13).angle_to(Vector3(-14, -12, -10)) , 1.558139),
                 String("math 7").utf8().ptr());
 }
 
