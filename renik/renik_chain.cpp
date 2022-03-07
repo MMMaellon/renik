@@ -19,7 +19,7 @@ void RenIKChain::init_chain(Skeleton3D *skeleton) {
     BoneId bone = skeleton->get_bone_parent(leaf_bone);
     // generate the chain of bones
     Vector<BoneId> chain;
-    float last_length;
+    float last_length = 0.0f;
     rest_leaf = skeleton->get_bone_rest(leaf_bone);
     while (bone != root_bone) {
       Transform3D rest_pose = skeleton->get_bone_rest(bone);
