@@ -1563,8 +1563,8 @@ void RenIK::perform_hand_right_ik(Transform3D global_parent) {
 	Transform3D root;
     if (rootBone >= 0) {
       if (right_shoulder_enabled) {
-        Transform3D root = skeleton->get_bone_rest(rootBone);
-        Vector3 targetVector = root.affine_inverse().xform(
+        Transform3D new_root = skeleton->get_bone_rest(rootBone);
+        Vector3 targetVector = new_root.affine_inverse().xform(
             hand_right_target_spatial->get_global_transform().origin);
         Quaternion offsetQuat = Quaternion(right_shoulder_offset);
         Quaternion poleOffset = Quaternion(right_shoulder_pole_offset);
@@ -1580,7 +1580,7 @@ void RenIK::perform_hand_right_ik(Transform3D global_parent) {
             Transform3D(offsetQuat * quatAlignToTarget, Vector3());
         skeleton->set_bone_local_pose_override(rootBone, root * customPose,
                                                 1.0f, true);
-        root = root * customPose;
+        root = new_root * customPose;
       }
     }
 	root = skeleton->get_global_transform() * global_parent * root;
