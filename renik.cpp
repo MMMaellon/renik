@@ -2327,7 +2327,7 @@ void RenIK::set_upper_leg_right_bone_by_name(String p_bone) {
 void RenIK::calculate_hip_offset() {
   placement.spine_length = spine_chain->get_total_length();
   // calc rest offset of hips
-  if (head >= 0 && head < skeleton->get_bone_count() && hip >= 0 &&
+  if (skeleton && head >= 0 && head < skeleton->get_bone_count() && hip >= 0 &&
       hip < skeleton->get_bone_count()) {
     Transform3D delta = skeleton->get_bone_rest(head);
     BoneId bone_parent = skeleton->get_bone_parent(head);
