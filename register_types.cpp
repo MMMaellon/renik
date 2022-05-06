@@ -23,7 +23,7 @@ void initialize_renik_module(ModuleInitializationLevel p_level) {
 #endif
 }
 
-void uninitialized_renik_module(ModuleInitializationLevel p_level) {
+void uninitialize_renik_module(ModuleInitializationLevel p_level) {
   if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
     return;
   }
