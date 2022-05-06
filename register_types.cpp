@@ -9,7 +9,10 @@
 #include "renTest\renTest.h"
 #endif
 
-void register_renik_types() {
+void initialize_renik_module(ModuleInitializationLevel p_level) {
+  if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
+    return;
+  }
   ClassDB::register_class<RenIK>();
   ClassDB::register_class<RenIKLimb>();
   ClassDB::register_class<RenIKChain>();
@@ -20,6 +23,8 @@ void register_renik_types() {
 #endif
 }
 
-void unregister_renik_types() {
-  // Nothing to do here in this example.
+void uninitialized_renik_module(ModuleInitializationLevel p_level) {
+  if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
+    return;
+  }
 }
