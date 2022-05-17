@@ -1407,7 +1407,7 @@ void RenIK::update_placement(float delta) {
   }
 }
 
-Transform3D RenIK::apply_ik_map(Map<BoneId, Quaternion> ik_map,
+Transform3D RenIK::apply_ik_map(HashMap<BoneId, Quaternion> ik_map,
                                 Transform3D global_parent,
                                 Vector<BoneId> apply_order) {
   Transform3D rel_transform;
@@ -1423,7 +1423,7 @@ Transform3D RenIK::apply_ik_map(Map<BoneId, Quaternion> ik_map,
   return rel_transform;
 }
 
-void RenIK::apply_ik_map(Map<BoneId, Basis> ik_map, Transform3D global_parent,
+void RenIK::apply_ik_map(HashMap<BoneId, Basis> ik_map, Transform3D global_parent,
                          Vector<BoneId> apply_order) {
   if (skeleton) {
     for (int i = 0; i < apply_order.size(); i++) {
@@ -1436,7 +1436,7 @@ void RenIK::apply_ik_map(Map<BoneId, Basis> ik_map, Transform3D global_parent,
 }
 
 Transform3D RenIK::get_global_parent_pose(BoneId child,
-                                          Map<BoneId, Quaternion> ik_map,
+                                          HashMap<BoneId, Quaternion> ik_map,
                                           Transform3D map_global_parent) {
   Transform3D full_transform;
   BoneId parent_id = skeleton->get_bone_parent(child);
@@ -1482,7 +1482,7 @@ RenIK::SpineTransforms RenIK::perform_torso_ik() {
               spine_chain->get_joints()[0].relative_prev));
     }
 
-    Map<BoneId, Quaternion> ik_map = solve_ifabrik(
+    HashMap<BoneId, Quaternion> ik_map = solve_ifabrik(
         spine_chain,
         hipGlobalTransform * skeleton->get_bone_rest(hip).basis.inverse(),
         headGlobalTransform, DEFAULT_THRESHOLD, DEFAULT_LOOP_LIMIT);
@@ -1680,10 +1680,10 @@ Vector<BoneId> RenIK::bone_id_order(Ref<RenIKLimb> limb) {
   return ret;
 }
 
-Map<BoneId, Quaternion> RenIK::solve_trig_ik(Ref<RenIKLimb> limb,
+HashMap<BoneId, Quaternion> RenIK::solve_trig_ik(Ref<RenIKLimb> limb,
                                              Transform3D root,
                                              Transform3D target) {
-  Map<BoneId, Quaternion> map;
+    HashMap<BoneId, Quaternion> map;
 
   if (limb->is_valid()) { // There's no way to find a valid upperId if any of
                           // the other Id's are invalid, so we only check
@@ -1819,10 +1819,10 @@ std::pair<float, float> RenIK::trig_angles(Vector3 const &side1,
   return std::make_pair(angle1, angle2);
 }
 
-Map<BoneId, Basis> RenIK::solve_trig_ik_redux(Ref<RenIKLimb> limb,
+HashMap<BoneId, Basis> RenIK::solve_trig_ik_redux(Ref<RenIKLimb> limb,
                                               Transform3D root,
                                               Transform3D target) {
-  Map<BoneId, Basis> map;
+  HashMap<BoneId, Basis> map;
   if (limb->is_valid()) {
     // The true root of the limb is the point where the upper bone starts
     Transform3D trueRoot = root.translated(limb->get_upper().get_origin());
@@ -1980,11 +1980,11 @@ Map<BoneId, Basis> RenIK::solve_trig_ik_redux(Ref<RenIKLimb> limb,
   return map;
 }
 
-Map<BoneId, Quaternion> RenIK::solve_ifabrik(Ref<RenIKChain> chain,
+HashMap<BoneId, Quaternion> RenIK::solve_ifabrik(Ref<RenIKChain> chain,
                                              Transform3D root,
                                              Transform3D target,
                                              float threshold, int loopLimit) {
-  Map<BoneId, Quaternion> map;
+  HashMap<BoneId, Quaternion> map;
   if (chain->is_valid()) { // if the chain is valid there's at least one joint
                            // in the chain and there's one bone between it and
                            // the root

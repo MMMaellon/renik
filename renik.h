@@ -46,15 +46,15 @@ public:
   void update_ik();
   void update_placement(float delta);
 
-  Transform3D apply_ik_map(Map<BoneId, Quaternion> ik_map, Transform3D global_parent,
+  Transform3D apply_ik_map(HashMap<BoneId, Quaternion> ik_map, Transform3D global_parent,
                     Vector<BoneId> apply_order);
-  void apply_ik_map(Map<BoneId, Basis> ik_map, Transform3D global_parent,
+  void apply_ik_map(HashMap<BoneId, Basis> ik_map, Transform3D global_parent,
                     Vector<BoneId> apply_order);
   Vector<BoneId> bone_id_order(Ref<RenIKChain> chain);
   Vector<BoneId> bone_id_order(Ref<RenIKLimb> limb);
 
   Transform3D get_global_parent_pose(BoneId child,
-                                     Map<BoneId, Quaternion> ik_map,
+                                     HashMap<BoneId, Quaternion> ik_map,
                                      Transform3D map_global_parent);
 
   SpineTransforms perform_torso_ik();
@@ -429,19 +429,19 @@ public:
   static std::pair<float, float> trig_angles(Vector3 const &length1,
                                              Vector3 const &length2,
                                              Vector3 const &length3);
-  static Map<BoneId, Quaternion>
+  static HashMap<BoneId, Quaternion>
   solve_trig_ik(Ref<RenIKLimb> limb, Transform3D limb_parent_transform,
                 Transform3D target);
 
-  static Map<BoneId, Basis>
+  static HashMap<BoneId, Basis>
   solve_trig_ik_redux(Ref<RenIKLimb> limb, Transform3D limb_parent_transform,
                       Transform3D target);
 
-  static Map<BoneId, Quaternion>
+  static HashMap<BoneId, Quaternion>
   solve_ifabrik(Ref<RenIKChain> chain, Transform3D chain_parent_transform,
                 Transform3D target, float threshold, int loopLimit);
 
-  // static Map<BoneId, Quaternion> reduce_chain_to_trig_ik(Ref<RenIKChain>
+  // static HashMap<BoneId, Quaternion> reduce_chain_to_trig_ik(Ref<RenIKChain>
   // chain, Transform3D chain_parent_transform, Transform3D target, float bias =
   // 0.5f, float bend_offset = 0.0f);
 
