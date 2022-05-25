@@ -46,7 +46,7 @@ public:
   void update_ik();
   void update_placement(float delta);
 
-  void apply_ik_map(HashMap<BoneId, Quaternion> ik_map, Transform3D global_parent,
+  Transform3D apply_ik_map(HashMap<BoneId, Quaternion> ik_map, Transform3D global_parent,
                     Vector<BoneId> apply_order);
   void apply_ik_map(HashMap<BoneId, Basis> ik_map, Transform3D global_parent,
                     Vector<BoneId> apply_order);
