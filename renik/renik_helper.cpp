@@ -87,8 +87,4 @@ float RenIKHelper::log_clamp(float value, float target, float looseness) {
   float effectiveLooseness = difference >= 0 ? looseness : looseness * -1;
   return target +
          effectiveLooseness * log(1 + (difference / effectiveLooseness));
-  // if (looseness > 0) {
-  // 	return target + effectiveLooseness * log(1 + (difference /
-  // effectiveLooseness)); } else { 	return target;
-  // }
 }
