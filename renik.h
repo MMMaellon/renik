@@ -58,10 +58,10 @@ public:
                                      Transform3D map_global_parent);
 
   SpineTransforms perform_torso_ik();
-  void perform_hand_left_ik(Transform3D global_parent);
-  void perform_hand_right_ik(Transform3D global_parent);
-  void perform_foot_left_ik(Transform3D global_parent);
-  void perform_foot_right_ik(Transform3D global_parent);
+  void perform_hand_left_ik(Transform3D global_parent, Transform3D target);
+  void perform_hand_right_ik(Transform3D global_parent, Transform3D target);
+  void perform_foot_left_ik(Transform3D global_parent, Transform3D target);
+  void perform_foot_right_ik(Transform3D global_parent, Transform3D target);
   void reset_chain(Ref<RenIKChain> chain);
   void reset_limb(Ref<RenIKLimb> limb);
 
