@@ -1698,7 +1698,7 @@ HashMap<BoneId, Quaternion> RenIK::solve_trig_ik(Ref<RenIKLimb> limb,
     Quaternion upper = upperRest.inverse();
     Quaternion lower = lowerRest.inverse();
     // The true root of the limb is the point where the upper bone starts
-    Transform3D trueRoot = root.translated(limb->get_upper().get_origin());
+    Transform3D trueRoot = root.translated_local(limb->get_upper().get_origin());
     Transform3D localTarget = trueRoot.affine_inverse() * target;
 
     // First we offset the pole
@@ -1826,13 +1826,13 @@ HashMap<BoneId, Basis> RenIK::solve_trig_ik_redux(Ref<RenIKLimb> limb,
   HashMap<BoneId, Basis> map;
   if (limb->is_valid()) {
     // The true root of the limb is the point where the upper bone starts
-    Transform3D trueRoot = root.translated(limb->get_upper().get_origin());
+    Transform3D trueRoot = root.translated_local(limb->get_upper().get_origin());
     Transform3D localTarget = trueRoot.affine_inverse() * target;
 
     Transform3D full_upper = limb->get_upper();
-    //.translated(Vector3(0, limb->upper_extra_bones.origin.length(), 0));
+    //.translated_local(Vector3(0, limb->upper_extra_bones.origin.length(), 0));
     Transform3D full_lower = limb->get_lower();
-    //.translated(Vector3(0, limb->lower_extra_bones.origin.length(), 0));
+    //.translated_local(Vector3(0, limb->lower_extra_bones.origin.length(), 0));
 
     // The Triangle
     Vector3 upperVector =
@@ -1991,7 +1991,7 @@ HashMap<BoneId, Quaternion> RenIK::solve_ifabrik(Ref<RenIKChain> chain,
                            // the root
     Vector<RenIKChain::Joint> joints =
         chain->get_joints(); // just so I don't have to call it all the time
-    Transform3D trueRoot = root.translated(joints[0].relative_prev);
+    Transform3D trueRoot = root.translated_local(joints[0].relative_prev);
     Transform3D targetDelta =
         target *
         chain->get_relative_rest_leaf()
@@ -2009,7 +2009,7 @@ HashMap<BoneId, Quaternion> RenIK::solve_ifabrik(Ref<RenIKChain> chain,
     heightDiff = heightDiff < 0 ? 0 : heightDiff;
     Transform3D prebentRoot =
         Transform3D(trueRoot.basis * alignToTarget, trueRoot.origin)
-            .translated((chain->chain_curve_direction *
+            .translated_local((chain->chain_curve_direction *
                          chain->get_total_length() * heightDiff) -
                         joints[0].relative_prev); // The angle root is rotated
                                                   // to point at the target;

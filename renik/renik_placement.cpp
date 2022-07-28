@@ -27,9 +27,9 @@ void RenIKPlacement::hip_place(float delta, Transform3D head,
                                Transform3D left_foot, Transform3D right_foot,
                                float twist, bool instant) {
   Vector3 left_middle =
-      (left_foot.translated(Vector3(0, 0, left_foot_length / 2))).origin;
+      (left_foot.translated_local(Vector3(0, 0, left_foot_length / 2))).origin;
   Vector3 right_middle =
-      (right_foot.translated(Vector3(0, 0, right_foot_length / 2))).origin;
+      (right_foot.translated_local(Vector3(0, 0, right_foot_length / 2))).origin;
   float left_distance = left_middle.distance_squared_to(head.origin);
   float right_distance = right_middle.distance_squared_to(head.origin);
   Vector3 foot_median = left_middle.lerp(right_middle, 0.5);
@@ -59,9 +59,9 @@ void RenIKPlacement::hip_place(float delta, Transform3D head,
           .normalized();
 
   target_hip.origin = head.origin;
-  target_hip.translate(crouch_distance * effective_hip_direction.normalized());
+  target_hip.translate_local(crouch_distance * effective_hip_direction.normalized());
   if (extra_hip_distance > 0) {
-    target_hip.translate(
+    target_hip.translate_local(
         Vector3(0, 0, -extra_hip_distance * (1 / hunch_ratio)));
   }
 
@@ -88,10 +88,10 @@ void RenIKPlacement::foot_place(float delta, Transform3D head, Ref<World3D> w3d,
 
   float startOffset = ((spine_length) * -center_of_balance_position) / sqrt(2);
   Vector3 leftStart =
-      head.translated(Vector3(0, startOffset, startOffset) + left_hip_offset)
+      head.translated_local(Vector3(0, startOffset, startOffset) + left_hip_offset)
           .origin;
   Vector3 rightStart =
-      head.translated(Vector3(0, startOffset, startOffset) + right_hip_offset)
+      head.translated_local(Vector3(0, startOffset, startOffset) + right_hip_offset)
           .origin;
   Vector3 leftStop = head.origin +
                      Vector3(0,
