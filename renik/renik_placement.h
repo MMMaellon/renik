@@ -185,7 +185,7 @@ public:
   Transform3D interpolated_right_foot;
 
   const Basis foot_basis_offset =
-      Basis(Vector3(-1, 0, 0), Vector3(0, -1, 0), Vector3(0, 0, 1));
+      Basis(Vector3(1, 0, 0), Vector3(0, 1, 0), Vector3(0, 0, 1));
 
   RenIKPlacement() {}
 

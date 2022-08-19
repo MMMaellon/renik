@@ -70,9 +70,9 @@ void RenIKLimb::update(Skeleton3D *skeleton) {
         lower_extra_bone_ids = get_extra_bone_ids(skeleton, lower_id, leaf_id);
         upper_extra_bone_ids = get_extra_bone_ids(skeleton, upper_id, lower_id);
 
-        leaf = skeleton->get_bone_rest(leaf_id);
-        lower = skeleton->get_bone_rest(lower_id);
-        upper = skeleton->get_bone_rest(upper_id);
+        leaf = Transform3D(Basis(), skeleton->get_bone_rest(leaf_id).get_origin());
+        lower = Transform3D(Basis(), skeleton->get_bone_rest(lower_id).get_origin());
+        upper = Transform3D(Basis(), skeleton->get_bone_rest(upper_id).get_origin());
       }
     }
   }
