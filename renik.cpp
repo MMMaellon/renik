@@ -1508,7 +1508,7 @@ RenIK::SpineTransforms RenIK::perform_torso_ik() {
     // override
 	Quaternion neckQuaternion = Quaternion();
     int parent_bone = skeleton->get_bone_parent(head);
-	while (parent_bone != -1 && parent_bone != hip) {
+	while (parent_bone != -1) {
       neckQuaternion = skeleton->get_bone_pose_rotation(parent_bone) * neckQuaternion;
       parent_bone = skeleton->get_bone_parent(parent_bone);
 	}
