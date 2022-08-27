@@ -38,31 +38,31 @@ const int DEFAULT_LOOP_LIMIT = 16;
 
 RenIK::RenIK()
     : // IK DEFAULTS
-      left_shoulder_offset(Math::deg2rad(0.0), Math::deg2rad(0.0),
-                           Math::deg2rad(0.0)),
-      right_shoulder_offset(Math::deg2rad(0.0), Math::deg2rad(0.0),
-                            Math::deg2rad(0.0)),
-      left_shoulder_pole_offset(Math::deg2rad(0.0), Math::deg2rad(0.0),
-                                Math::deg2rad(78.0)),
-      right_shoulder_pole_offset(Math::deg2rad(0.0), Math::deg2rad(0.0),
-                                 Math::deg2rad(-78.0)) {
+      left_shoulder_offset(Math::deg_to_rad(0.0), Math::deg_to_rad(0.0),
+                           Math::deg_to_rad(0.0)),
+      right_shoulder_offset(Math::deg_to_rad(0.0), Math::deg_to_rad(0.0),
+                            Math::deg_to_rad(0.0)),
+      left_shoulder_pole_offset(Math::deg_to_rad(0.0), Math::deg_to_rad(0.0),
+                                Math::deg_to_rad(78.0)),
+      right_shoulder_pole_offset(Math::deg_to_rad(0.0), Math::deg_to_rad(0.0),
+                                 Math::deg_to_rad(-78.0)) {
   spine_chain.instantiate();
   spine_chain->init(Vector3(0, 15, -15), 0.5, 0.5, 1, 0);
   limb_arm_left.instantiate();
-  limb_arm_left->init(0, 0, Math::deg2rad(70.0), 0.5, 0.66666,
-                      Math::deg2rad(20.0), Math::deg2rad(45.0), 0.33,
-                      Vector3(Math::deg2rad(15.0), 0, Math::deg2rad(60.0)),
+  limb_arm_left->init(0, 0, Math::deg_to_rad(70.0), 0.5, 0.66666,
+                      Math::deg_to_rad(20.0), Math::deg_to_rad(45.0), 0.33,
+                      Vector3(Math::deg_to_rad(15.0), 0, Math::deg_to_rad(60.0)),
                       Vector3(2.0, -1.5, -1.0));
   limb_arm_right.instantiate();
-  limb_arm_right->init(0, 0, Math::deg2rad(-70.0), 0.5, 0.66666,
-                       Math::deg2rad(-20.0), Math::deg2rad(45.0), 0.33,
-                       Vector3(Math::deg2rad(15.0), 0, Math::deg2rad(-60.0)),
+  limb_arm_right->init(0, 0, Math::deg_to_rad(-70.0), 0.5, 0.66666,
+                       Math::deg_to_rad(-20.0), Math::deg_to_rad(45.0), 0.33,
+                       Vector3(Math::deg_to_rad(15.0), 0, Math::deg_to_rad(-60.0)),
                        Vector3(2.0, 1.5, 1.0));
   limb_leg_left.instantiate();
-  limb_leg_left->init(0, 0, 0, 0.25, 0.25, 0, Math::deg2rad(45.0), 0.5,
+  limb_leg_left->init(0, 0, 0, 0.25, 0.25, 0, Math::deg_to_rad(45.0), 0.5,
                       Vector3(0, 0, Math_PI), Vector3());
   limb_leg_right.instantiate();
-  limb_leg_right->init(0, 0, 0, 0.25, 0.25, 0, Math::deg2rad(45.0), 0.5,
+  limb_leg_right->init(0, 0, 0, 0.25, 0.25, 0, Math::deg_to_rad(45.0), 0.5,
                        Vector3(0, 0, -Math_PI), Vector3());
 };
 
@@ -2738,25 +2738,25 @@ void RenIK::set_foot_right_target_path(NodePath p_path) {
   }
 }
 float RenIK::get_arm_upper_twist_offset() {
-  return Math::rad2deg(limb_arm_left->upper_twist_offset);
+  return Math::rad_to_deg(limb_arm_left->upper_twist_offset);
 }
 void RenIK::set_arm_upper_twist_offset(float degrees) {
-  limb_arm_left->upper_twist_offset = Math::deg2rad(degrees);
-  limb_arm_right->upper_twist_offset = Math::deg2rad(-degrees);
+  limb_arm_left->upper_twist_offset = Math::deg_to_rad(degrees);
+  limb_arm_right->upper_twist_offset = Math::deg_to_rad(-degrees);
 }
 float RenIK::get_arm_lower_twist_offset() {
-  return Math::rad2deg(limb_arm_left->lower_twist_offset);
+  return Math::rad_to_deg(limb_arm_left->lower_twist_offset);
 }
 void RenIK::set_arm_lower_twist_offset(float degrees) {
-  limb_arm_left->lower_twist_offset = Math::deg2rad(degrees);
-  limb_arm_right->lower_twist_offset = Math::deg2rad(-degrees);
+  limb_arm_left->lower_twist_offset = Math::deg_to_rad(degrees);
+  limb_arm_right->lower_twist_offset = Math::deg_to_rad(-degrees);
 }
 float RenIK::get_arm_roll_offset() {
-  return Math::rad2deg(limb_arm_left->roll_offset);
+  return Math::rad_to_deg(limb_arm_left->roll_offset);
 }
 void RenIK::set_arm_roll_offset(float degrees) {
-  limb_arm_left->roll_offset = Math::deg2rad(degrees);
-  limb_arm_right->roll_offset = Math::deg2rad(-degrees);
+  limb_arm_left->roll_offset = Math::deg_to_rad(degrees);
+  limb_arm_right->roll_offset = Math::deg_to_rad(-degrees);
 }
 float RenIK::get_arm_upper_limb_twist() {
   return limb_arm_left->upper_limb_twist * 100;
@@ -2773,31 +2773,31 @@ void RenIK::set_arm_lower_limb_twist(float ratio) {
   limb_arm_right->lower_limb_twist = ratio / 100.0;
 }
 float RenIK::get_arm_twist_inflection_point_offset() {
-  return Math::rad2deg(limb_arm_left->twist_inflection_point_offset);
+  return Math::rad_to_deg(limb_arm_left->twist_inflection_point_offset);
 }
 void RenIK::set_arm_twist_inflection_point_offset(float degrees) {
-  limb_arm_left->twist_inflection_point_offset = Math::deg2rad(degrees);
-  limb_arm_right->twist_inflection_point_offset = Math::deg2rad(-degrees);
+  limb_arm_left->twist_inflection_point_offset = Math::deg_to_rad(degrees);
+  limb_arm_right->twist_inflection_point_offset = Math::deg_to_rad(-degrees);
 }
 float RenIK::get_arm_twist_overflow() {
-  return Math::rad2deg(limb_arm_left->twist_overflow);
+  return Math::rad_to_deg(limb_arm_left->twist_overflow);
 }
 void RenIK::set_arm_twist_overflow(float degrees) {
-  limb_arm_left->twist_overflow = Math::deg2rad(degrees);
-  limb_arm_right->twist_overflow = Math::deg2rad(degrees);
+  limb_arm_left->twist_overflow = Math::deg_to_rad(degrees);
+  limb_arm_right->twist_overflow = Math::deg_to_rad(degrees);
 }
 
 Vector3 RenIK::get_arm_pole_offset() {
   Vector3 v = limb_arm_left->pole_offset.get_euler();
-  return Vector3(Math::rad2deg(v[0]), Math::rad2deg(v[1]), Math::rad2deg(v[2]));
+  return Vector3(Math::rad_to_deg(v[0]), Math::rad_to_deg(v[1]), Math::rad_to_deg(v[2]));
 }
 void RenIK::set_arm_pole_offset(Vector3 euler) {
   Quaternion q =
-      Quaternion(Vector3(Math::deg2rad(euler[0]), Math::deg2rad(euler[1]),
-                         Math::deg2rad(euler[2])));
+      Quaternion(Vector3(Math::deg_to_rad(euler[0]), Math::deg_to_rad(euler[1]),
+                         Math::deg_to_rad(euler[2])));
   Quaternion q2 =
-      Quaternion(Vector3(Math::deg2rad(euler[0]), Math::deg2rad(-euler[1]),
-                         Math::deg2rad(-euler[2])));
+      Quaternion(Vector3(Math::deg_to_rad(euler[0]), Math::deg_to_rad(-euler[1]),
+                         Math::deg_to_rad(-euler[2])));
   limb_arm_left->pole_offset = q;
   limb_arm_right->pole_offset = q2;
 }
@@ -2818,25 +2818,25 @@ void RenIK::set_arm_target_rotation_influence(float influence) {
 }
 
 float RenIK::get_leg_upper_twist_offset() {
-  return Math::rad2deg(limb_leg_left->upper_twist_offset);
+  return Math::rad_to_deg(limb_leg_left->upper_twist_offset);
 }
 void RenIK::set_leg_upper_twist_offset(float degrees) {
-  limb_leg_left->upper_twist_offset = Math::deg2rad(degrees);
-  limb_leg_right->upper_twist_offset = Math::deg2rad(-degrees);
+  limb_leg_left->upper_twist_offset = Math::deg_to_rad(degrees);
+  limb_leg_right->upper_twist_offset = Math::deg_to_rad(-degrees);
 }
 float RenIK::get_leg_lower_twist_offset() {
-  return Math::rad2deg(limb_leg_left->lower_twist_offset);
+  return Math::rad_to_deg(limb_leg_left->lower_twist_offset);
 }
 void RenIK::set_leg_lower_twist_offset(float degrees) {
-  limb_leg_left->lower_twist_offset = Math::deg2rad(degrees);
-  limb_leg_right->lower_twist_offset = Math::deg2rad(-degrees);
+  limb_leg_left->lower_twist_offset = Math::deg_to_rad(degrees);
+  limb_leg_right->lower_twist_offset = Math::deg_to_rad(-degrees);
 }
 float RenIK::get_leg_roll_offset() {
-  return Math::rad2deg(limb_leg_left->roll_offset);
+  return Math::rad_to_deg(limb_leg_left->roll_offset);
 }
 void RenIK::set_leg_roll_offset(float degrees) {
-  limb_leg_left->roll_offset = Math::deg2rad(degrees);
-  limb_leg_right->roll_offset = Math::deg2rad(-degrees);
+  limb_leg_left->roll_offset = Math::deg_to_rad(degrees);
+  limb_leg_right->roll_offset = Math::deg_to_rad(-degrees);
 }
 float RenIK::get_leg_upper_limb_twist() {
   return limb_leg_left->upper_limb_twist * 100;
@@ -2853,31 +2853,31 @@ void RenIK::set_leg_lower_limb_twist(float ratio) {
   limb_leg_right->lower_limb_twist = ratio / 100.0;
 }
 float RenIK::get_leg_twist_inflection_point_offset() {
-  return Math::rad2deg(limb_leg_left->twist_inflection_point_offset);
+  return Math::rad_to_deg(limb_leg_left->twist_inflection_point_offset);
 }
 void RenIK::set_leg_twist_inflection_point_offset(float degrees) {
-  limb_leg_left->twist_inflection_point_offset = Math::deg2rad(degrees);
-  limb_leg_right->twist_inflection_point_offset = Math::deg2rad(-degrees);
+  limb_leg_left->twist_inflection_point_offset = Math::deg_to_rad(degrees);
+  limb_leg_right->twist_inflection_point_offset = Math::deg_to_rad(-degrees);
 }
 float RenIK::get_leg_twist_overflow() {
-  return Math::rad2deg(limb_leg_left->twist_overflow);
+  return Math::rad_to_deg(limb_leg_left->twist_overflow);
 }
 void RenIK::set_leg_twist_overflow(float degrees) {
-  limb_leg_left->twist_overflow = Math::deg2rad(degrees);
-  limb_leg_right->twist_overflow = Math::deg2rad(degrees);
+  limb_leg_left->twist_overflow = Math::deg_to_rad(degrees);
+  limb_leg_right->twist_overflow = Math::deg_to_rad(degrees);
 }
 
 Vector3 RenIK::get_leg_pole_offset() {
   Vector3 v = limb_leg_left->pole_offset.get_euler();
-  return Vector3(Math::rad2deg(v[0]), Math::rad2deg(v[1]), Math::rad2deg(v[2]));
+  return Vector3(Math::rad_to_deg(v[0]), Math::rad_to_deg(v[1]), Math::rad_to_deg(v[2]));
 }
 void RenIK::set_leg_pole_offset(Vector3 euler) {
   Quaternion q =
-      Quaternion(Vector3(Math::deg2rad(euler[0]), Math::deg2rad(euler[1]),
-                         Math::deg2rad(euler[2])));
+      Quaternion(Vector3(Math::deg_to_rad(euler[0]), Math::deg_to_rad(euler[1]),
+                         Math::deg_to_rad(euler[2])));
   Quaternion q2 =
-      Quaternion(Vector3(Math::deg2rad(euler[0]), Math::deg2rad(-euler[1]),
-                         Math::deg2rad(-euler[2])));
+      Quaternion(Vector3(Math::deg_to_rad(euler[0]), Math::deg_to_rad(-euler[1]),
+                         Math::deg_to_rad(-euler[2])));
   limb_leg_left->pole_offset = q;
   limb_leg_right->pole_offset = q2;
 }
@@ -2930,31 +2930,31 @@ void RenIK::set_shoulder_influence(float influence) {
 }
 
 Vector3 RenIK::get_shoulder_offset() {
-  return Vector3(Math::rad2deg(left_shoulder_offset[0]),
-                 Math::rad2deg(left_shoulder_offset[1]),
-                 Math::rad2deg(left_shoulder_offset[2]));
+  return Vector3(Math::rad_to_deg(left_shoulder_offset[0]),
+                 Math::rad_to_deg(left_shoulder_offset[1]),
+                 Math::rad_to_deg(left_shoulder_offset[2]));
 }
 void RenIK::set_shoulder_offset(Vector3 euler) {
   left_shoulder_offset =
-      Vector3(Math::deg2rad(euler[0]), Math::deg2rad(euler[1]),
-              Math::deg2rad(euler[2]));
+      Vector3(Math::deg_to_rad(euler[0]), Math::deg_to_rad(euler[1]),
+              Math::deg_to_rad(euler[2]));
   right_shoulder_offset =
-      Vector3(Math::deg2rad(euler[0]), -Math::deg2rad(euler[1]),
-              -Math::deg2rad(euler[2]));
+      Vector3(Math::deg_to_rad(euler[0]), -Math::deg_to_rad(euler[1]),
+              -Math::deg_to_rad(euler[2]));
 }
 
 Vector3 RenIK::get_shoulder_pole_offset() {
-  return Vector3(Math::rad2deg(left_shoulder_pole_offset[0]),
-                 Math::rad2deg(left_shoulder_pole_offset[1]),
-                 Math::rad2deg(left_shoulder_pole_offset[2]));
+  return Vector3(Math::rad_to_deg(left_shoulder_pole_offset[0]),
+                 Math::rad_to_deg(left_shoulder_pole_offset[1]),
+                 Math::rad_to_deg(left_shoulder_pole_offset[2]));
 }
 void RenIK::set_shoulder_pole_offset(Vector3 euler) {
   left_shoulder_pole_offset =
-      Vector3(Math::deg2rad(euler[0]), Math::deg2rad(euler[1]),
-              Math::deg2rad(euler[2]));
+      Vector3(Math::deg_to_rad(euler[0]), Math::deg_to_rad(euler[1]),
+              Math::deg_to_rad(euler[2]));
   right_shoulder_pole_offset =
-      Vector3(Math::deg2rad(euler[0]), -Math::deg2rad(euler[1]),
-              -Math::deg2rad(euler[2]));
+      Vector3(Math::deg_to_rad(euler[0]), -Math::deg_to_rad(euler[1]),
+              -Math::deg_to_rad(euler[2]));
 }
 
 // Placement
@@ -3062,23 +3062,23 @@ float RenIK::get_forward_drop_time_scalar() const {
 
 void RenIK::set_forward_tip_toe_distance_scalar(float tip_toe_distance_scalar) {
   placement.forward_gait.tip_toe_distance_scalar =
-      Math::deg2rad(tip_toe_distance_scalar);
+      Math::deg_to_rad(tip_toe_distance_scalar);
 }
 float RenIK::get_forward_tip_toe_distance_scalar() const {
-  return Math::rad2deg(placement.forward_gait.tip_toe_distance_scalar);
+  return Math::rad_to_deg(placement.forward_gait.tip_toe_distance_scalar);
 }
 void RenIK::set_forward_tip_toe_speed_scalar(float tip_toe_speed_scalar) {
   placement.forward_gait.tip_toe_speed_scalar =
-      Math::deg2rad(tip_toe_speed_scalar);
+      Math::deg_to_rad(tip_toe_speed_scalar);
 }
 float RenIK::get_forward_tip_toe_speed_scalar() const {
-  return Math::rad2deg(placement.forward_gait.tip_toe_speed_scalar);
+  return Math::rad_to_deg(placement.forward_gait.tip_toe_speed_scalar);
 }
 void RenIK::set_forward_tip_toe_angle_max(float tip_toe_angle_max) {
-  placement.forward_gait.tip_toe_angle_max = Math::deg2rad(tip_toe_angle_max);
+  placement.forward_gait.tip_toe_angle_max = Math::deg_to_rad(tip_toe_angle_max);
 }
 float RenIK::get_forward_tip_toe_angle_max() const {
-  return Math::rad2deg(placement.forward_gait.tip_toe_angle_max);
+  return Math::rad_to_deg(placement.forward_gait.tip_toe_angle_max);
 }
 
 void RenIK::set_forward_lift_vertical(float lift_vertical) {
@@ -3101,10 +3101,10 @@ float RenIK::get_forward_lift_horizontal_scalar() const {
   return placement.forward_gait.lift_horizontal_scalar * 100.0;
 }
 void RenIK::set_forward_lift_angle(float lift_angle) {
-  placement.forward_gait.lift_angle = Math::deg2rad(lift_angle);
+  placement.forward_gait.lift_angle = Math::deg_to_rad(lift_angle);
 }
 float RenIK::get_forward_lift_angle() const {
-  return Math::rad2deg(placement.forward_gait.lift_angle);
+  return Math::rad_to_deg(placement.forward_gait.lift_angle);
 }
 
 void RenIK::set_forward_apex_vertical(float apex_vertical) {
@@ -3120,10 +3120,10 @@ float RenIK::get_forward_apex_vertical_scalar() const {
   return placement.forward_gait.apex_vertical_scalar * 100.0;
 }
 void RenIK::set_forward_apex_angle(float apex_angle) {
-  placement.forward_gait.apex_angle = Math::deg2rad(apex_angle);
+  placement.forward_gait.apex_angle = Math::deg_to_rad(apex_angle);
 }
 float RenIK::get_forward_apex_angle() const {
-  return Math::rad2deg(placement.forward_gait.apex_angle);
+  return Math::rad_to_deg(placement.forward_gait.apex_angle);
 }
 
 void RenIK::set_forward_drop_vertical(float drop_vertical) {
@@ -3146,10 +3146,10 @@ float RenIK::get_forward_drop_horizontal_scalar() const {
   return placement.forward_gait.drop_horizontal_scalar * 100.0;
 }
 void RenIK::set_forward_drop_angle(float drop_angle) {
-  placement.forward_gait.drop_angle = Math::deg2rad(drop_angle);
+  placement.forward_gait.drop_angle = Math::deg_to_rad(drop_angle);
 }
 float RenIK::get_forward_drop_angle() const {
-  return Math::rad2deg(placement.forward_gait.drop_angle);
+  return Math::rad_to_deg(placement.forward_gait.drop_angle);
 }
 
 void RenIK::set_forward_contact_point_ease(float contact_point_ease) {
@@ -3244,23 +3244,23 @@ float RenIK::get_backward_drop_time_scalar() const {
 void RenIK::set_backward_tip_toe_distance_scalar(
     float tip_toe_distance_scalar) {
   placement.backward_gait.tip_toe_distance_scalar =
-      Math::deg2rad(tip_toe_distance_scalar);
+      Math::deg_to_rad(tip_toe_distance_scalar);
 }
 float RenIK::get_backward_tip_toe_distance_scalar() const {
-  return Math::rad2deg(placement.backward_gait.tip_toe_distance_scalar);
+  return Math::rad_to_deg(placement.backward_gait.tip_toe_distance_scalar);
 }
 void RenIK::set_backward_tip_toe_speed_scalar(float tip_toe_speed_scalar) {
   placement.backward_gait.tip_toe_speed_scalar =
-      Math::deg2rad(tip_toe_speed_scalar);
+      Math::deg_to_rad(tip_toe_speed_scalar);
 }
 float RenIK::get_backward_tip_toe_speed_scalar() const {
-  return Math::rad2deg(placement.backward_gait.tip_toe_speed_scalar);
+  return Math::rad_to_deg(placement.backward_gait.tip_toe_speed_scalar);
 }
 void RenIK::set_backward_tip_toe_angle_max(float tip_toe_angle_max) {
-  placement.backward_gait.tip_toe_angle_max = Math::deg2rad(tip_toe_angle_max);
+  placement.backward_gait.tip_toe_angle_max = Math::deg_to_rad(tip_toe_angle_max);
 }
 float RenIK::get_backward_tip_toe_angle_max() const {
-  return Math::rad2deg(placement.backward_gait.tip_toe_angle_max);
+  return Math::rad_to_deg(placement.backward_gait.tip_toe_angle_max);
 }
 
 void RenIK::set_backward_lift_vertical(float lift_vertical) {
@@ -3283,10 +3283,10 @@ float RenIK::get_backward_lift_horizontal_scalar() const {
   return placement.backward_gait.lift_horizontal_scalar * 100.0;
 }
 void RenIK::set_backward_lift_angle(float lift_angle) {
-  placement.backward_gait.lift_angle = Math::deg2rad(lift_angle);
+  placement.backward_gait.lift_angle = Math::deg_to_rad(lift_angle);
 }
 float RenIK::get_backward_lift_angle() const {
-  return Math::rad2deg(placement.backward_gait.lift_angle);
+  return Math::rad_to_deg(placement.backward_gait.lift_angle);
 }
 
 void RenIK::set_backward_apex_vertical(float apex_vertical) {
@@ -3302,10 +3302,10 @@ float RenIK::get_backward_apex_vertical_scalar() const {
   return placement.backward_gait.apex_vertical_scalar * 100.0;
 }
 void RenIK::set_backward_apex_angle(float apex_angle) {
-  placement.backward_gait.apex_angle = Math::deg2rad(apex_angle);
+  placement.backward_gait.apex_angle = Math::deg_to_rad(apex_angle);
 }
 float RenIK::get_backward_apex_angle() const {
-  return Math::rad2deg(placement.backward_gait.apex_angle);
+  return Math::rad_to_deg(placement.backward_gait.apex_angle);
 }
 
 void RenIK::set_backward_drop_vertical(float drop_vertical) {
@@ -3328,10 +3328,10 @@ float RenIK::get_backward_drop_horizontal_scalar() const {
   return placement.backward_gait.drop_horizontal_scalar * 100.0;
 }
 void RenIK::set_backward_drop_angle(float drop_angle) {
-  placement.backward_gait.drop_angle = Math::deg2rad(drop_angle);
+  placement.backward_gait.drop_angle = Math::deg_to_rad(drop_angle);
 }
 float RenIK::get_backward_drop_angle() const {
-  return Math::rad2deg(placement.backward_gait.drop_angle);
+  return Math::rad_to_deg(placement.backward_gait.drop_angle);
 }
 
 void RenIK::set_backward_contact_point_ease(float contact_point_ease) {
@@ -3426,23 +3426,23 @@ float RenIK::get_sideways_drop_time_scalar() const {
 void RenIK::set_sideways_tip_toe_distance_scalar(
     float tip_toe_distance_scalar) {
   placement.sideways_gait.tip_toe_distance_scalar =
-      Math::deg2rad(tip_toe_distance_scalar);
+      Math::deg_to_rad(tip_toe_distance_scalar);
 }
 float RenIK::get_sideways_tip_toe_distance_scalar() const {
-  return Math::rad2deg(placement.sideways_gait.tip_toe_distance_scalar);
+  return Math::rad_to_deg(placement.sideways_gait.tip_toe_distance_scalar);
 }
 void RenIK::set_sideways_tip_toe_speed_scalar(float tip_toe_speed_scalar) {
   placement.sideways_gait.tip_toe_speed_scalar =
-      Math::deg2rad(tip_toe_speed_scalar);
+      Math::deg_to_rad(tip_toe_speed_scalar);
 }
 float RenIK::get_sideways_tip_toe_speed_scalar() const {
-  return Math::rad2deg(placement.sideways_gait.tip_toe_speed_scalar);
+  return Math::rad_to_deg(placement.sideways_gait.tip_toe_speed_scalar);
 }
 void RenIK::set_sideways_tip_toe_angle_max(float tip_toe_angle_max) {
-  placement.sideways_gait.tip_toe_angle_max = Math::deg2rad(tip_toe_angle_max);
+  placement.sideways_gait.tip_toe_angle_max = Math::deg_to_rad(tip_toe_angle_max);
 }
 float RenIK::get_sideways_tip_toe_angle_max() const {
-  return Math::rad2deg(placement.sideways_gait.tip_toe_angle_max);
+  return Math::rad_to_deg(placement.sideways_gait.tip_toe_angle_max);
 }
 
 void RenIK::set_sideways_lift_vertical(float lift_vertical) {
@@ -3465,10 +3465,10 @@ float RenIK::get_sideways_lift_horizontal_scalar() const {
   return placement.sideways_gait.lift_horizontal_scalar * 100.0;
 }
 void RenIK::set_sideways_lift_angle(float lift_angle) {
-  placement.sideways_gait.lift_angle = Math::deg2rad(lift_angle);
+  placement.sideways_gait.lift_angle = Math::deg_to_rad(lift_angle);
 }
 float RenIK::get_sideways_lift_angle() const {
-  return Math::rad2deg(placement.sideways_gait.lift_angle);
+  return Math::rad_to_deg(placement.sideways_gait.lift_angle);
 }
 
 void RenIK::set_sideways_apex_vertical(float apex_vertical) {
@@ -3484,10 +3484,10 @@ float RenIK::get_sideways_apex_vertical_scalar() const {
   return placement.sideways_gait.apex_vertical_scalar * 100.0;
 }
 void RenIK::set_sideways_apex_angle(float apex_angle) {
-  placement.sideways_gait.apex_angle = Math::deg2rad(apex_angle);
+  placement.sideways_gait.apex_angle = Math::deg_to_rad(apex_angle);
 }
 float RenIK::get_sideways_apex_angle() const {
-  return Math::rad2deg(placement.sideways_gait.apex_angle);
+  return Math::rad_to_deg(placement.sideways_gait.apex_angle);
 }
 
 void RenIK::set_sideways_drop_vertical(float drop_vertical) {
@@ -3510,10 +3510,10 @@ float RenIK::get_sideways_drop_horizontal_scalar() const {
   return placement.sideways_gait.drop_horizontal_scalar * 100.0;
 }
 void RenIK::set_sideways_drop_angle(float drop_angle) {
-  placement.sideways_gait.drop_angle = Math::deg2rad(drop_angle);
+  placement.sideways_gait.drop_angle = Math::deg_to_rad(drop_angle);
 }
 float RenIK::get_sideways_drop_angle() const {
-  return Math::rad2deg(placement.sideways_gait.drop_angle);
+  return Math::rad_to_deg(placement.sideways_gait.drop_angle);
 }
 
 void RenIK::set_sideways_contact_point_ease(float contact_point_ease) {
