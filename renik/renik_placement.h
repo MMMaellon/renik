@@ -167,7 +167,7 @@ public:
   Vector3 right_hip_offset;
 
   // Everything scales logarithmically
-  float strafe_angle_limit = Math::cos(Math::deg2rad(30.0));
+  float strafe_angle_limit = Math::cos(Math::deg_to_rad(30.0));
   float step_pace = 0.015;
 
   Transform3D prev_hip;        // relative to world
