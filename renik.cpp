@@ -1436,7 +1436,6 @@ void RenIK::apply_ik_map(HashMap<BoneId, Quaternion> ik_map,
 void RenIK::apply_ik_map(HashMap<BoneId, Basis> ik_map, Transform3D global_parent,
                          Vector<BoneId> apply_order) {
   if (skeleton) {
-    Transform3D global_pose = global_parent;
     for (int i = 0; i < apply_order.size(); i++) {
       Basis local_basis = ik_map[apply_order[i]];
       skeleton->set_bone_pose_rotation(apply_order[i], local_basis.get_rotation_quaternion());
