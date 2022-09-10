@@ -190,20 +190,20 @@ public:
   RenIKPlacement() {}
 
   void save_previous_transforms();
-  void interpolate_transforms(float fraction, bool update_hips,
-                              bool update_feet);
+  void interpolate_transforms(float p_fraction, bool p_update_hips,
+                              bool p_update_feet);
 
-  void hip_place(float delta, Transform3D head, Transform3D left_foot,
-                 Transform3D right_foot, float twist, bool instant);
-  void foot_place(float delta, Transform3D head, Ref<World3D> w3d,
-                  bool instant);
-  void foot_place(float delta, Transform3D head,
-                  PhysicsDirectSpaceState3D::RayResult left_raycast,
-                  PhysicsDirectSpaceState3D::RayResult right_raycast,
-                  PhysicsDirectSpaceState3D::RayResult laying_raycast,
-                  bool instant);
+  void hip_place(float p_delta, Transform3D p_head, Transform3D p_left_foot,
+                 Transform3D p_right_foot, float p_twist, bool p_instant);
+  void foot_place(float p_delta, Transform3D p_head, Ref<World3D> p_world_3d,
+                  bool p_instant);
+  void foot_place(float p_delta, Transform3D p_head,
+                  PhysicsDirectSpaceState3D::RayResult p_left_raycast,
+                  PhysicsDirectSpaceState3D::RayResult p_right_raycast,
+                  PhysicsDirectSpaceState3D::RayResult p_laying_raycast,
+                  bool p_instant);
   // All used in leg trace
-  void set_falling(bool falling);
+  void set_falling(bool p_falling);
   void set_collision_mask_bit(int p_bit, bool p_value);
   bool get_collision_mask_bit(int p_bit) const;
   void set_collision_mask(uint32_t p_mask);
@@ -254,28 +254,28 @@ private:
   float loop_scaling = 0;
 
   // helpers
-  bool is_balanced(Transform3D left, Transform3D right);
-  void stand_foot(Transform3D foot, Transform3D &stand,
-                  Transform3D &stand_local, Node3D *ground);
-  Transform3D dangle_foot(Transform3D head, float distance, float leg_length,
-                          Vector3 hip_offset);
-  void initialize_loop(Vector3 velocity, Vector3 left_ground,
-                       Vector3 right_ground, bool left_grounded,
-                       bool right_grounded);
-  void loop(Transform3D head, Vector3 velocity, Vector3 left_ground_pos,
-            Vector3 left_normal, Vector3 right_ground_pos, Vector3 right_normal,
-            bool left_grounded, bool right_grounded, Gait gait);
-  void loop_foot(Transform3D &step, Transform3D &stand,
-                 Transform3D &stand_local, Node3D *ground, Node3D **prev_ground,
-                 int &loop_state, Vector3 &grounded_stop, Transform3D head,
-                 float leg_length, float foot_length, Vector3 velocity,
-                 float loop_scaling, float step_progress, Vector3 ground_pos,
-                 Vector3 ground_normal, Gait gait);
-  void step_direction(Vector3 forward, Vector3 side, Vector3 velocity,
-                      Vector3 left_ground, Vector3 right_ground,
-                      bool left_grounded, bool right_grounded);
-  int get_loop_state(float loop_state_scaling, float loop_progress,
-                     float &loop_state_progress, Gait gait);
+  bool is_balanced(Transform3D p_left, Transform3D p_right);
+  void stand_foot(Transform3D p_foot, Transform3D &r_stand,
+                  Transform3D &r_stand_local, Node3D *p_ground);
+  Transform3D dangle_foot(Transform3D p_head, float p_distance, float p_leg_length,
+                          Vector3 p_hip_offset);
+  void initialize_loop(Vector3 p_velocity, Vector3 p_left_ground,
+                       Vector3 p_right_ground, bool p_left_grounded,
+                       bool p_right_grounded);
+  void loop(Transform3D p_head, Vector3 p_velocity, Vector3 p_left_ground_pos,
+            Vector3 p_left_normal, Vector3 p_right_ground_pos, Vector3 p_right_normal,
+            bool p_left_grounded, bool p_right_grounded, Gait p_gait);
+  void loop_foot(Transform3D &r_step, Transform3D &r_stand,
+                 Transform3D &r_stand_local, Node3D *p_ground, Node3D **p_prev_ground,
+                 int &r_loop_state, Vector3 &r_grounded_stop, Transform3D p_head,
+                 float p_leg_length, float p_foot_length, Vector3 p_velocity,
+                 float p_loop_scaling, float p_step_progress, Vector3 p_ground_pos,
+                 Vector3 p_ground_normal, Gait p_gait);
+  void step_direction(Vector3 p_forward, Vector3 p_side, Vector3 p_velocity,
+                      Vector3 p_left_ground, Vector3 p_right_ground,
+                      bool p_left_grounded, bool p_right_grounded);
+  int get_loop_state(float p_loop_state_scaling, float p_loop_progress,
+                     float &r_loop_state_progress, Gait p_gait);
 };
 
 #endif // RENIK_PLACEMENT_H
