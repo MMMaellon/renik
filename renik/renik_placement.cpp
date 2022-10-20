@@ -47,7 +47,7 @@ void RenIKPlacement::hip_place(float p_delta, Transform3D p_head,
   Vector3 hip_z = RenIKHelper::vector_rejection(hip_forward.normalized(), hip_y)
                       .normalized();
   Vector3 hip_x = hip_y.cross(hip_z).normalized();
-  target_hip.basis = Basis(hip_x, hip_y, hip_z).inverse().orthonormalized();
+  target_hip.basis = Basis(hip_x, hip_y, hip_z).orthonormalized();
 
   float crouch_distance = p_head.origin.distance_to(foot) * crouch_ratio;
   float extra_hip_distance = hip_offset.length() - crouch_distance;

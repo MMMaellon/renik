@@ -1956,10 +1956,10 @@ HashMap<BoneId, Basis> RenIK::solve_trig_ik_redux(Ref<RenIKLimb> limb,
         Vector3(0, 1, 0).rotated(rolledLowerJointAxis, angles.second);
     Vector3 twistedJointAxis = jointAxis.rotated(upperJointVector, upperTwist);
     Basis upperBasis = Basis(twistedJointAxis, upperJointVector,
-                             twistedJointAxis.cross(upperJointVector))
-                           .inverse();
+                             twistedJointAxis.cross(upperJointVector));
     Basis lowerBasis = Basis(rolledLowerJointAxis, lowerJointVector,
                              rolledLowerJointAxis.cross(lowerJointVector));
+    lowerBasis.transpose();
     lowerBasis.rotate_local(Vector3(0, 1, 0), lowerTwist);
     lowerBasis.rotate(Vector3(0, 1, 0), -upperTwist);
 
