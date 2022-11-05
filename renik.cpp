@@ -1546,8 +1546,8 @@ void RenIK::perform_hand_left_ik(Transform3D global_parent, Transform3D target) 
         // }
         root = root * skeleton->get_bone_rest(rootBone);
         Vector3 targetVector = root.affine_inverse().xform(target.origin);
-        Quaternion offsetQuat = Quaternion(left_shoulder_offset);
-        Quaternion poleOffset = Quaternion(left_shoulder_pole_offset);
+        Quaternion offsetQuat = Quaternion::from_euler(left_shoulder_offset);
+        Quaternion poleOffset = Quaternion::from_euler(left_shoulder_pole_offset);
         Quaternion poleOffsetScaled =
             poleOffset.slerp(Quaternion(), 1 - shoulder_influence);
         Quaternion quatAlignToTarget =
@@ -1584,8 +1584,8 @@ void RenIK::perform_hand_right_ik(Transform3D global_parent, Transform3D target)
         // }
         root = root * skeleton->get_bone_rest(rootBone);
         Vector3 targetVector = root.affine_inverse().xform(target.origin);
-        Quaternion offsetQuat = Quaternion(right_shoulder_offset);
-        Quaternion poleOffset = Quaternion(right_shoulder_pole_offset);
+        Quaternion offsetQuat = Quaternion::from_euler(right_shoulder_offset);
+        Quaternion poleOffset = Quaternion::from_euler(right_shoulder_pole_offset);
         Quaternion poleOffsetScaled =
             poleOffset.slerp(Quaternion(), 1 - shoulder_influence);
         Quaternion quatAlignToTarget =
@@ -1788,13 +1788,13 @@ HashMap<BoneId, Quaternion> RenIK::solve_trig_ik(Ref<RenIKLimb> limb,
     //  leaf)).slerp(Quaternion(), 1 - limb->lower_limb_twist).normalized();
     Vector3 twist = (leafRest * leaf).get_euler();
     Quaternion lowerTwist =
-        Quaternion((leafRest * leaf).get_euler() * lowerVector.normalized() *
+        Quaternion::from_euler((leafRest * leaf).get_euler() * lowerVector.normalized() *
                    (limb->lower_limb_twist));
     lower = lower * lowerTwist;
     leaf = (lowerTwist * leafRest).inverse() * leafRest * leaf;
 
     Quaternion upperTwist =
-        Quaternion(twist * upperVector.normalized() *
+        Quaternion::from_euler(twist * upperVector.normalized() *
                    (limb->upper_limb_twist * limb->lower_limb_twist));
     upper = upper * upperTwist;
     lower = (upperTwist * lowerRest).inverse() * lowerRest * lower;
@@ -2792,10 +2792,10 @@ Vector3 RenIK::get_arm_pole_offset() {
 }
 void RenIK::set_arm_pole_offset(Vector3 euler) {
   Quaternion q =
-      Quaternion(Vector3(Math::deg_to_rad(euler[0]), Math::deg_to_rad(euler[1]),
+      Quaternion::from_euler(Vector3(Math::deg_to_rad(euler[0]), Math::deg_to_rad(euler[1]),
                          Math::deg_to_rad(euler[2])));
   Quaternion q2 =
-      Quaternion(Vector3(Math::deg_to_rad(euler[0]), Math::deg_to_rad(-euler[1]),
+      Quaternion::from_euler(Vector3(Math::deg_to_rad(euler[0]), Math::deg_to_rad(-euler[1]),
                          Math::deg_to_rad(-euler[2])));
   limb_arm_left->pole_offset = q;
   limb_arm_right->pole_offset = q2;
@@ -2872,10 +2872,10 @@ Vector3 RenIK::get_leg_pole_offset() {
 }
 void RenIK::set_leg_pole_offset(Vector3 euler) {
   Quaternion q =
-      Quaternion(Vector3(Math::deg_to_rad(euler[0]), Math::deg_to_rad(euler[1]),
+      Quaternion::from_euler(Vector3(Math::deg_to_rad(euler[0]), Math::deg_to_rad(euler[1]),
                          Math::deg_to_rad(euler[2])));
   Quaternion q2 =
-      Quaternion(Vector3(Math::deg_to_rad(euler[0]), Math::deg_to_rad(-euler[1]),
+      Quaternion::from_euler(Vector3(Math::deg_to_rad(euler[0]), Math::deg_to_rad(-euler[1]),
                          Math::deg_to_rad(-euler[2])));
   limb_leg_left->pole_offset = q;
   limb_leg_right->pole_offset = q2;
