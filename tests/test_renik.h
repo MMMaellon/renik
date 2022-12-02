@@ -1,5 +1,5 @@
 /*************************************************************************/
-/*  register_types.h                                                     */
+/*  test_renik.h                                                         */
 /*************************************************************************/
 /*                       This file is part of:                           */
 /*                           GODOT ENGINE                                */
@@ -28,11 +28,60 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
 /*************************************************************************/
 
-#ifndef RENIK_REGISTER_TYPES_H
-#define RENIK_REGISTER_TYPES_H
+#ifndef TEST_RENIK_H
+#define TEST_RENIK_H
 
-#include "modules/register_module_types.h"
+#include "core/math/basis.h"
+#include "tests/test_macros.h"
 
-void initialize_renik_module(ModuleInitializationLevel p_level);
-void uninitialize_renik_module(ModuleInitializationLevel p_level);
-#endif
+#include "../renik.h"
+
+namespace TestRenIK {
+
+/*
+Testing the small helper functions, we'll test the Fabrik algorithm, the
+quaternion rotation algorithms, and some basic foot placement logic.
+*/
+TEST_CASE("[Modules][RENIK] math") {
+  Quaternion rightAngle =
+      RenIKHelper::align_vectors(Vector3(1, 0, 0), Vector3(0, 1, 0));
+  Quaternion rightAngleCheck =
+      Quaternion(Vector3(0, 0, 1), Math::deg2rad(90.0));
+  CHECK_MESSAGE(rightAngle.is_equal_approx(rightAngleCheck), "align_vectors");
+  Quaternion noRotation =
+      RenIKHelper::align_vectors(Vector3(1, 0, 0), Vector3(0.5, 0, 0));
+  Quaternion noRotationCheck = Quaternion(Vector3(0, 0, 1), 0);
+  CHECK_MESSAGE(noRotation.is_equal_approx(noRotationCheck), "align_vectors 2");
+  CHECK_MESSAGE(
+      Math::is_equal_approx(Vector3(1, 0, 0).angle_to(Vector3(0, 1, 0)),
+                            (real_t)Math_PI / 2.f),
+      "math 1");
+  CHECK_MESSAGE(
+      Math::is_equal_approx(Vector3(1, 0, 0).angle_to(Vector3(0, 0, 1)),
+                            (real_t)Math_PI / 2.f),
+      "math 2");
+  CHECK_MESSAGE(
+      Math::is_equal_approx(Vector3(1, 0, 0).angle_to(Vector3(0, 1, 1)),
+                            (real_t)Math_PI / 2.f),
+      "math 3");
+  CHECK_MESSAGE(
+      Math::is_equal_approx(Vector3(1, 0, 0).angle_to(Vector3(1, 1, 0)),
+                            (real_t)Math_PI / 4.f),
+      "math 4");
+  CHECK_MESSAGE(
+      Math::is_equal_approx(Vector3(1, 0, 0).angle_to(Vector3(-1, 0, 0)),
+                            (real_t)Math_PI),
+      "math 5");
+  CHECK_MESSAGE(
+      Math::is_equal_approx(Vector3(1, 0, 0).angle_to(Vector3(-1, -1, 0)),
+                            (real_t)Math_PI * .75f),
+      "math 6");
+  CHECK_MESSAGE(
+      Math::is_equal_approx(Vector3(3, 7, -13).angle_to(Vector3(-14, -12, -10)),
+                            (real_t)1.558139),
+      "math 7");
+}
+
+} // namespace TestRenIK
+
+#endif // TEST_REINK_H

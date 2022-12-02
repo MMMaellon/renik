@@ -16,8 +16,7 @@ float log_clamp(float value, float target, float looseness);
 Vector3 log_clamp(Vector3 vector, Vector3 target, float looseness);
 Quat log_clamp(Quat quat, Quat target, float looseness);
 Basis log_clamp(Basis basis, Basis target, float looseness);
-
-} // namespace RenIK
+} // namespace RenIKHelper
 
 #endif
 #endif
