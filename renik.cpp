@@ -912,7 +912,7 @@ void RenIK::_bind_methods() {
                "set_leg_twist_inflection_point_offset",
                "get_leg_twist_inflection_point_offset");
   ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "leg_twist_overflow",
-                            PROPERTY_HINT_RANGE, "0,180,0.1"),
+                            PROPERTY_HINT_RANGE, "0,-180,0.1"),
                "set_leg_twist_overflow", "get_leg_twist_overflow");
 
   ADD_GROUP("Leg IK Settings (Advanced)", "leg_");
