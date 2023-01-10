@@ -217,7 +217,7 @@
 		</member>
 		<member name="arm_forearm_twisting" type="float" setter="set_arm_lower_limb_twist" getter="get_arm_lower_limb_twist" default="66.666">
 		</member>
-		<member name="arm_pole_offset" type="Vector3" setter="set_arm_pole_offset" getter="get_arm_pole_offset" default="Vector3(15, -4.41946e-07, 60)">
+		<member name="arm_pole_offset" type="Vector3" setter="set_arm_pole_offset" getter="get_arm_pole_offset" default="Vector3(15, 8.23188e-16, 60)">
 		</member>
 		<member name="arm_shoulder_influence" type="float" setter="set_shoulder_influence" getter="get_shoulder_influence" default="25.0">
 		</member>
@@ -397,7 +397,7 @@
 		</member>
 		<member name="leg_lower_leg_twisting" type="float" setter="set_leg_lower_limb_twist" getter="get_leg_lower_limb_twist" default="25.0">
 		</member>
-		<member name="leg_pole_offset" type="Vector3" setter="set_leg_pole_offset" getter="get_leg_pole_offset" default="Vector3(0, 0, -180)">
+		<member name="leg_pole_offset" type="Vector3" setter="set_leg_pole_offset" getter="get_leg_pole_offset" default="Vector3(0, 0, 180)">
 		</member>
 		<member name="leg_target_position_influence" type="Vector3" setter="set_leg_target_position_influence" getter="get_leg_target_position_influence" default="Vector3(0, 0, 0)">
 		</member>
