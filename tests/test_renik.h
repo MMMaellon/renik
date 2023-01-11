@@ -46,7 +46,7 @@ TEST_CASE("[Modules][RENIK] math") {
   Quaternion rightAngle =
       RenIKHelper::align_vectors(Vector3(1, 0, 0), Vector3(0, 1, 0));
   Quaternion rightAngleCheck =
-      Quaternion(Vector3(0, 0, 1), Math::deg2rad(90.0));
+      Quaternion(Vector3(0, 0, 1), Math::deg_to_rad(90.0));
   CHECK_MESSAGE(rightAngle.is_equal_approx(rightAngleCheck), "align_vectors");
   Quaternion noRotation =
       RenIKHelper::align_vectors(Vector3(1, 0, 0), Vector3(0.5, 0, 0));
