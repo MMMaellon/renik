@@ -1264,7 +1264,7 @@ void RenIK::_bind_methods() {
                "set_sideways_scaling_ease", "get_sideways_scaling_ease");
 
   ClassDB::bind_method(D_METHOD("update_ik"), &RenIK::update_ik);
-  ClassDB::bind_method(D_METHOD("update_placement"), &RenIK::update_placement);
+  ClassDB::bind_method(D_METHOD("update_placement", "delta"), &RenIK::update_placement);
 }
 
 void RenIK::_validate_property(PropertyInfo &property) const {
