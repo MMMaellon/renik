@@ -9,5 +9,5 @@ env_renik = env_modules.Clone()
 env_renik.add_source_files(env.modules_sources, "*.cpp")
 env_renik.add_source_files(env.modules_sources, "renik/*.cpp")
 
-if(env['target'] == 'debug'):
+if env["target"] == "debug":
     env_renik.add_source_files(env.modules_sources, "renTest/renTest.cpp")
