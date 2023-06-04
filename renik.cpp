@@ -1,3 +1,33 @@
+/**************************************************************************/
+/*  renik.cpp                                                             */
+/**************************************************************************/
+/*                         This file is part of:                          */
+/*                             GODOT ENGINE                               */
+/*                        https://godotengine.org                         */
+/**************************************************************************/
+/* Copyright (c) 2014-present Godot Engine contributors (see AUTHORS.md). */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
+
 #include "renik.h"
 #ifndef _3D_DISABLED
 
@@ -63,8 +93,8 @@ RenIK::RenIK() : // IK DEFAULTS
 	limb_leg_right.instantiate();
 	limb_leg_right->init(0, 0, 0, 0.25, 0.25, 0, Math::deg_to_rad(45.0), 0.5,
 			Vector3(0, 0, -Math_PI), Vector3());
-  set_leg_pole_offset(Vector3(0, 0, 180));
-  set_arm_pole_offset(Vector3(15, 0, 60));
+	set_leg_pole_offset(Vector3(0, 0, 180));
+	set_arm_pole_offset(Vector3(15, 0, 60));
 };
 
 void RenIK::_bind_methods() {
@@ -2863,26 +2893,26 @@ void RenIK::set_leg_twist_overflow(float degrees) {
 }
 
 Vector3 RenIK::get_leg_pole_offset() {
-  Vector3 v = limb_leg_left->pole_offset.get_euler();
-  return Vector3(Math::rad_to_deg(v[0]), Math::rad_to_deg(v[1]), Math::rad_to_deg(v[2]));
+	Vector3 v = limb_leg_left->pole_offset.get_euler();
+	return Vector3(Math::rad_to_deg(v[0]), Math::rad_to_deg(v[1]), Math::rad_to_deg(v[2]));
 }
 void RenIK::set_leg_pole_offset(Vector3 euler) {
-  Quaternion q =
-      Quaternion::from_euler(Vector3(Math::deg_to_rad(euler[0]), Math::deg_to_rad(euler[1]),
-                         Math::deg_to_rad(euler[2])));
-  Quaternion q2 =
-      Quaternion::from_euler(Vector3(Math::deg_to_rad(euler[0]), Math::deg_to_rad(-euler[1]),
-                         Math::deg_to_rad(-euler[2])));
-  limb_leg_left->pole_offset = q;
-  limb_leg_right->pole_offset = q2;
+	Quaternion q =
+			Quaternion::from_euler(Vector3(Math::deg_to_rad(euler[0]), Math::deg_to_rad(euler[1]),
+					Math::deg_to_rad(euler[2])));
+	Quaternion q2 =
+			Quaternion::from_euler(Vector3(Math::deg_to_rad(euler[0]), Math::deg_to_rad(-euler[1]),
+					Math::deg_to_rad(-euler[2])));
+	limb_leg_left->pole_offset = q;
+	limb_leg_right->pole_offset = q2;
 }
 Vector3 RenIK::get_leg_target_position_influence() {
-  return limb_leg_left->target_position_influence * 10.0;
+	return limb_leg_left->target_position_influence * 10.0;
 }
 void RenIK::set_leg_target_position_influence(Vector3 xyz) {
-  limb_leg_left->target_position_influence = xyz / 10.0;
-  limb_leg_right->target_position_influence =
-      Vector3(xyz[0], -xyz[1], -xyz[2]) / 10.0;
+	limb_leg_left->target_position_influence = xyz / 10.0;
+	limb_leg_right->target_position_influence =
+			Vector3(xyz[0], -xyz[1], -xyz[2]) / 10.0;
 }
 float RenIK::get_leg_target_rotation_influence() {
 	return limb_leg_left->target_rotation_influence * 100.0;
