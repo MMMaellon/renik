@@ -30,6 +30,7 @@
 
 #ifndef RENIK_H
 #define RENIK_H
+
 #ifndef _3D_DISABLED
 
 #include "renik/renik_chain.h"
@@ -548,4 +549,5 @@ private:
 };
 
 #endif
-#endif
+
+#endif // RENIK_H

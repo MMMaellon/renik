@@ -35,4 +35,5 @@
 
 void initialize_renik_module(ModuleInitializationLevel p_level);
 void uninitialize_renik_module(ModuleInitializationLevel p_level);
-#endif
+
+#endif // RENIK_REGISTER_TYPES_H

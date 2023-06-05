@@ -143,4 +143,4 @@ struct RenIKMultiLimb : public Resource {
 			BoneId p_leaf_bone); // Create sections and calc all imaginary bones.
 };
 
-#endif
+#endif // RENIK_LIMB_H

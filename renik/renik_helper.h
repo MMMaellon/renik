@@ -28,8 +28,9 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef RENIKHELPER_H
-#define RENIKHELPER_H
+#ifndef RENIK_HELPER_H
+#define RENIK_HELPER_H
+
 #ifndef _3D_DISABLED
 
 #include <scene/main/node.h>
@@ -49,4 +50,5 @@ Basis log_clamp(Basis basis, Basis target, float looseness);
 } // namespace RenIKHelper
 
 #endif
-#endif
+
+#endif // RENIK_HELPER_H

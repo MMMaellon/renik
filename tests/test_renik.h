@@ -84,4 +84,4 @@ TEST_CASE("[Modules][RENIK] math") {
 
 } // namespace TestRenIK
 
-#endif // TEST_REINK_H
+#endif // TEST_RENIK_H

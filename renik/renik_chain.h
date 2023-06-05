@@ -94,4 +94,4 @@ public:
 	bool contains_bone(Skeleton3D *skeleton, BoneId bone);
 };
 
-#endif
+#endif // RENIK_CHAIN_H
