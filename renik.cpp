@@ -66,36 +66,7 @@ const int DEFAULT_LOOP_LIMIT = 16;
 #define RENIK_PROPERTY_STRING_FOOT_RIGHT_TARGET_PATH \
 	"armature_right_foot_target"
 
-RenIK::RenIK() : // IK DEFAULTS
-		left_shoulder_offset(Math::deg_to_rad(0.0), Math::deg_to_rad(0.0),
-				Math::deg_to_rad(0.0)),
-		right_shoulder_offset(Math::deg_to_rad(0.0), Math::deg_to_rad(0.0),
-				Math::deg_to_rad(0.0)),
-		left_shoulder_pole_offset(Math::deg_to_rad(0.0), Math::deg_to_rad(0.0),
-				Math::deg_to_rad(78.0)),
-		right_shoulder_pole_offset(Math::deg_to_rad(0.0), Math::deg_to_rad(0.0),
-				Math::deg_to_rad(-78.0)) {
-	spine_chain.instantiate();
-	spine_chain->init(Vector3(0, 15, -15), 0.5, 0.5, 1, 0);
-	limb_arm_left.instantiate();
-	limb_arm_left->init(0, 0, Math::deg_to_rad(70.0), 0.5, 0.66666,
-			Math::deg_to_rad(20.0), Math::deg_to_rad(45.0), 0.33,
-			Vector3(Math::deg_to_rad(15.0), 0, Math::deg_to_rad(60.0)),
-			Vector3(2.0, -1.5, -1.0));
-	limb_arm_right.instantiate();
-	limb_arm_right->init(0, 0, Math::deg_to_rad(-70.0), 0.5, 0.66666,
-			Math::deg_to_rad(-20.0), Math::deg_to_rad(45.0), 0.33,
-			Vector3(Math::deg_to_rad(15.0), 0, Math::deg_to_rad(-60.0)),
-			Vector3(2.0, 1.5, 1.0));
-	limb_leg_left.instantiate();
-	limb_leg_left->init(0, 0, 0, 0.25, 0.25, 0, Math::deg_to_rad(45.0), 0.5,
-			Vector3(0, 0, Math_PI), Vector3());
-	limb_leg_right.instantiate();
-	limb_leg_right->init(0, 0, 0, 0.25, 0.25, 0, Math::deg_to_rad(45.0), 0.5,
-			Vector3(0, 0, -Math_PI), Vector3());
-	set_leg_pole_offset(Vector3(0, 0, 180));
-	set_arm_pole_offset(Vector3(15, 0, 60));
-};
+RenIK::RenIK(){};
 
 void RenIK::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_live_preview", "p_enable"),
@@ -1331,19 +1302,50 @@ void RenIK::_validate_property(PropertyInfo &property) const {
 
 void RenIK::_notification(int p_what) {
 	switch (p_what) {
-		case NOTIFICATION_READY:
+		case NOTIFICATION_POSTINITIALIZE: {
+			left_shoulder_offset = Vector3(Math::deg_to_rad(0.0), Math::deg_to_rad(0.0),
+					Math::deg_to_rad(0.0));
+			right_shoulder_offset = Vector3(Math::deg_to_rad(0.0), Math::deg_to_rad(0.0),
+					Math::deg_to_rad(0.0));
+			left_shoulder_pole_offset = Vector3(Math::deg_to_rad(0.0), Math::deg_to_rad(0.0),
+					Math::deg_to_rad(78.0));
+			right_shoulder_pole_offset = Vector3(Math::deg_to_rad(0.0), Math::deg_to_rad(0.0),
+					Math::deg_to_rad(-78.0));
+			spine_chain.instantiate();
+			spine_chain->init(Vector3(0, 15, -15), 0.5, 0.5, 1, 0);
+			limb_arm_left.instantiate();
+			limb_arm_left->init(0, 0, Math::deg_to_rad(70.0), 0.5, 0.66666,
+					Math::deg_to_rad(20.0), Math::deg_to_rad(45.0), 0.33,
+					Vector3(Math::deg_to_rad(15.0), 0, Math::deg_to_rad(60.0)),
+					Vector3(2.0, -1.5, -1.0));
+			limb_arm_right.instantiate();
+			limb_arm_right->init(0, 0, Math::deg_to_rad(-70.0), 0.5, 0.66666,
+					Math::deg_to_rad(-20.0), Math::deg_to_rad(45.0), 0.33,
+					Vector3(Math::deg_to_rad(15.0), 0, Math::deg_to_rad(-60.0)),
+					Vector3(2.0, 1.5, 1.0));
+			limb_leg_left.instantiate();
+			limb_leg_left->init(0, 0, 0, 0.25, 0.25, 0, Math::deg_to_rad(45.0), 0.5,
+					Vector3(0, 0, Math_PI), Vector3());
+			limb_leg_right.instantiate();
+			limb_leg_right->init(0, 0, 0, 0.25, 0.25, 0, Math::deg_to_rad(45.0), 0.5,
+					Vector3(0, 0, -Math_PI), Vector3());
+			set_leg_pole_offset(Vector3(0, 0, 180));
+			set_arm_pole_offset(Vector3(15, 0, 60));
+		} break;
+		case NOTIFICATION_READY: {
 			_initialize();
-			break;
-		case NOTIFICATION_INTERNAL_PROCESS:
+		} break;
+		case NOTIFICATION_INTERNAL_PROCESS: {
 			if (!Engine::get_singleton()->is_editor_hint() || live_preview) {
 				update_ik();
 			}
 			break;
-		case NOTIFICATION_INTERNAL_PHYSICS_PROCESS:
+		}
+		case NOTIFICATION_INTERNAL_PHYSICS_PROCESS: {
 			if (!Engine::get_singleton()->is_editor_hint() || live_preview) {
 				update_placement(get_physics_process_delta_time());
 			}
-			break;
+		} break;
 	}
 }
 
