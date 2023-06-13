@@ -78,7 +78,7 @@ public:
 	float twist_overflow =
 			0; // How much past the inflection point we go before snapping.
 
-	Quaternion pole_offset; /*ADVANCED - Moving the limb 180 degrees from rest tends to
+	Vector3 pole_offset; /*ADVANCED - Moving the limb 180 degrees from rest tends to
 	 be a bit unpredictable as there is a pole in the forward vector sphere at
 	 that spot. This offsets the rest position so that the pole is in a place
 	 where the limb is unlikely to go*/

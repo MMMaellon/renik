@@ -1739,14 +1739,12 @@ HashMap<BoneId, Quaternion> RenIK::solve_trig_ik(Ref<RenIKLimb> limb,
 		Transform3D localTarget = trueRoot.affine_inverse() * target;
 
 		// First we offset the pole
-		upper = upper *
-				limb->pole_offset.normalized(); // pole_offset is a euler because
+		upper = upper * Quaternion::from_euler(limb->pole_offset).normalized(); // pole_offset is a euler because
 												// that's more human readable
 		upper.normalize();
 		lower.normalize();
 		// Then we line up the limb with our target
-		Vector3 targetVector =
-				limb->pole_offset.inverse().xform(localTarget.get_origin());
+		Vector3 targetVector = Quaternion::from_euler(limb->pole_offset).inverse().xform(localTarget.get_origin());
 		upper = upper * RenIKHelper::align_vectors(upperVector, targetVector);
 		// Then we calculate how much we need to bend so we don't extend past the
 		// target Law of Cosines
@@ -1886,10 +1884,10 @@ HashMap<BoneId, Basis> RenIK::solve_trig_ik_redux(Ref<RenIKLimb> limb,
 		// The local x-axis of the upper limb is axis along which the limb will bend
 		// We take into account how the pole offset and alignment with the target
 		// vector will affect this axis
-		Vector3 startingPole = limb->pole_offset.xform(
+		Vector3 startingPole = Quaternion::from_euler(limb->pole_offset).xform(
 				Vector3(0, 1, 0)); // the opposite of this vector is where the pole is
 		Vector3 jointAxis = RenIKHelper::align_vectors(startingPole, targetVector)
-									.xform(limb->pole_offset.xform(Vector3(1, 0, 0)));
+									.xform(Quaternion::from_euler(limb->pole_offset).xform(Vector3(1, 0, 0)));
 
 		// //We then find how far away from the rest position the leaf is and use
 		// that to change the rotational axis more.
@@ -2815,18 +2813,14 @@ void RenIK::set_arm_twist_overflow(float degrees) {
 }
 
 Vector3 RenIK::get_arm_pole_offset() {
-	Vector3 v = limb_arm_left->pole_offset.get_euler();
+	Vector3 v = limb_arm_left->pole_offset;
 	return Vector3(Math::rad_to_deg(v[0]), Math::rad_to_deg(v[1]), Math::rad_to_deg(v[2]));
 }
 void RenIK::set_arm_pole_offset(Vector3 euler) {
-	Quaternion q =
-			Quaternion::from_euler(Vector3(Math::deg_to_rad(euler[0]), Math::deg_to_rad(euler[1]),
-					Math::deg_to_rad(euler[2])));
-	Quaternion q2 =
-			Quaternion::from_euler(Vector3(Math::deg_to_rad(euler[0]), Math::deg_to_rad(-euler[1]),
-					Math::deg_to_rad(-euler[2])));
-	limb_arm_left->pole_offset = q;
-	limb_arm_right->pole_offset = q2;
+	limb_arm_left->pole_offset = Vector3(Math::deg_to_rad(euler[0]), Math::deg_to_rad(euler[1]),
+					Math::deg_to_rad(euler[2]));
+	limb_arm_right->pole_offset = Vector3(Math::deg_to_rad(euler[0]), Math::deg_to_rad(-euler[1]),
+					Math::deg_to_rad(-euler[2]));
 }
 Vector3 RenIK::get_arm_target_position_influence() {
 	return limb_arm_left->target_position_influence * 10.0;
@@ -2895,27 +2889,27 @@ void RenIK::set_leg_twist_overflow(float degrees) {
 }
 
 Vector3 RenIK::get_leg_pole_offset() {
-	Vector3 v = limb_leg_left->pole_offset.get_euler();
+	Vector3 v = limb_leg_left->pole_offset;
 	return Vector3(Math::rad_to_deg(v[0]), Math::rad_to_deg(v[1]), Math::rad_to_deg(v[2]));
 }
+
 void RenIK::set_leg_pole_offset(Vector3 euler) {
-	Quaternion q =
-			Quaternion::from_euler(Vector3(Math::deg_to_rad(euler[0]), Math::deg_to_rad(euler[1]),
-					Math::deg_to_rad(euler[2])));
-	Quaternion q2 =
-			Quaternion::from_euler(Vector3(Math::deg_to_rad(euler[0]), Math::deg_to_rad(-euler[1]),
-					Math::deg_to_rad(-euler[2])));
-	limb_leg_left->pole_offset = q;
-	limb_leg_right->pole_offset = q2;
+	limb_leg_left->pole_offset = Vector3(Math::deg_to_rad(euler[0]), Math::deg_to_rad(euler[1]),
+					Math::deg_to_rad(euler[2]));
+	limb_leg_right->pole_offset = Vector3(Math::deg_to_rad(euler[0]), Math::deg_to_rad(-euler[1]),
+					Math::deg_to_rad(-euler[2]));
 }
+
 Vector3 RenIK::get_leg_target_position_influence() {
 	return limb_leg_left->target_position_influence * 10.0;
 }
+
 void RenIK::set_leg_target_position_influence(Vector3 xyz) {
 	limb_leg_left->target_position_influence = xyz / 10.0;
 	limb_leg_right->target_position_influence =
 			Vector3(xyz[0], -xyz[1], -xyz[2]) / 10.0;
 }
+
 float RenIK::get_leg_target_rotation_influence() {
 	return limb_leg_left->target_rotation_influence * 100.0;
 }
