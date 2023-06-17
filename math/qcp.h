@@ -33,6 +33,7 @@
 
 #include "core/math/basis.h"
 #include "core/math/vector3.h"
+#include "core/object/ref_counted.h"
 #include "core/variant/variant.h"
 
 /**
@@ -67,7 +68,7 @@
  * @author K. S. Ernest (iFire) Lee (adapted to ManyBoneIK)
  */
 
-class RenQCP {
+class RenQCP : public RefCounted {
 	double evec_prec = static_cast<double>(1E-6);
 	double eval_prec = static_cast<double>(1E-11);
 
@@ -88,22 +89,27 @@ class RenQCP {
 	void calculate_rmsd(double r_length);
 	void set(PackedVector3Array &r_target, PackedVector3Array &r_moved);
 	Quaternion calculate_rotation();
-	void set(PackedVector3Array &p_moved, PackedVector3Array &p_target, Vector<real_t> &p_weight, bool p_translate);
+	void set(const PackedVector3Array &p_moved, const PackedVector3Array &p_target, const Vector<real_t> &p_weight, bool p_translate);
 	static void translate(Vector3 r_translate, PackedVector3Array &r_x);
-	double get_rmsd(PackedVector3Array &r_fixed, PackedVector3Array &r_moved);
 	Vector3 move_to_weighted_center(PackedVector3Array &r_to_center, Vector<real_t> &r_weight);
+	double get_rmsd_vectors(PackedVector3Array &r_fixed, PackedVector3Array &r_moved);
+protected:
+	static void _bind_methods();
 
 public:
-	RenQCP(double p_evec_prec, double p_eval_prec);
+	RenQCP(double p_evec_prec = 1E-6, double p_eval_prec = 1E-11);
 	double get_rmsd();
-	Quaternion compute_reference_and_target_positions(const Vector<Transform3D> &global_transforms,
-			const Transform3D &target,
+	Quaternion _compute_reference_and_target_positions(
+			const Vector<Transform3D> &global_transforms,
+			const Transform3D &global_target,
 			const Vector3 &priority,
-			Vector<Vector3> &rest_positions,
-			Vector<Vector3> &target_positions,
-			Vector<real_t> &weights);
-
-	Quaternion weighted_superpose(PackedVector3Array &p_moved, PackedVector3Array &p_target, Vector<real_t> &p_weight, bool translate);
+			const Vector<Vector3> &input_reference_positions,
+			const Vector<Vector3> &input_target_positions,
+			const Vector<real_t> &input_weights,
+			Vector<Vector3> &output_reference_positions,
+			Vector<Vector3> &output_target_positions,
+			Vector<real_t> &output_weights);
+	Quaternion weighted_superpose(const PackedVector3Array &p_moved, const PackedVector3Array &p_target, const Vector<real_t> &p_weight, bool translate);
 	Quaternion get_rotation();
 	Vector3 get_translation();
 };

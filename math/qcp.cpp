@@ -141,7 +141,7 @@ Quaternion RenQCP::calculate_rotation() {
 	return result;
 }
 
-double RenQCP::get_rmsd(PackedVector3Array &r_fixed, PackedVector3Array &r_moved) {
+double RenQCP::get_rmsd_vectors(PackedVector3Array &r_fixed, PackedVector3Array &r_moved) {
 	set(r_fixed, r_moved);
 	return get_rmsd();
 }
@@ -251,12 +251,12 @@ void RenQCP::calculate_rmsd(PackedVector3Array &x, PackedVector3Array &y) {
 	}
 }
 
-Quaternion RenQCP::weighted_superpose(PackedVector3Array &p_moved, PackedVector3Array &p_target, Vector<real_t> &p_weight, bool translate) {
+Quaternion RenQCP::weighted_superpose(const PackedVector3Array &p_moved, const PackedVector3Array &p_target, const Vector<real_t> &p_weight, bool translate) {
 	set(p_moved, p_target, p_weight, translate);
 	return get_rotation();
 }
 
-void RenQCP::set(PackedVector3Array &p_moved, PackedVector3Array &p_target, Vector<real_t> &p_weight, bool p_translate) {
+void RenQCP::set(const PackedVector3Array &p_moved, const PackedVector3Array &p_target, const Vector<real_t> &p_weight, bool p_translate) {
 	rmsd_calculated = false;
 	transformation_calculated = false;
 	inner_product_calculated = false;
@@ -282,12 +282,16 @@ void RenQCP::set(PackedVector3Array &p_moved, PackedVector3Array &p_target, Vect
 	}
 }
 
-Quaternion RenQCP::compute_reference_and_target_positions(const Vector<Transform3D> &global_transforms,
+Quaternion RenQCP::_compute_reference_and_target_positions(
+		const Vector<Transform3D> &global_transforms,
 		const Transform3D &target,
 		const Vector3 &priority,
-		Vector<Vector3> &rest_positions,
-		Vector<Vector3> &target_positions,
-		Vector<real_t> &weights) {
+		const Vector<Vector3> &input_rest_positions,
+		const Vector<Vector3> &input_target_positions,
+		const Vector<real_t> &input_weights,
+		Vector<Vector3> &output_rest_positions,
+		Vector<Vector3> &output_target_positions,
+		Vector<real_t> &output_weights) {
 	int num_joints = global_transforms.size();
 
 	Vector3 target_origin = target.origin;
@@ -305,23 +309,30 @@ Quaternion RenQCP::compute_reference_and_target_positions(const Vector<Transform
 		Vector3 col_2 = current_transform.basis.get_column(2);
 
 		int idx = joint_i * 7;
-		rest_positions.write[idx + 0] = current_transform.origin;
-		rest_positions.write[idx + 1] = col_0;
-		rest_positions.write[idx + 2] = col_1;
-		rest_positions.write[idx + 3] = col_2;
-		rest_positions.write[idx + 4] = col_0 * priority.x;
-		rest_positions.write[idx + 5] = col_1 * priority.y;
-		rest_positions.write[idx + 6] = col_2 * priority.z;
+		output_rest_positions.write[idx + 0] = current_transform.origin;
+		output_rest_positions.write[idx + 1] = col_0;
+		output_rest_positions.write[idx + 2] = col_1;
+		output_rest_positions.write[idx + 3] = col_2;
+		output_rest_positions.write[idx + 4] = col_0 * priority.x;
+		output_rest_positions.write[idx + 5] = col_1 * priority.y;
+		output_rest_positions.write[idx + 6] = col_2 * priority.z;
 
-		target_positions.write[idx + 0] = target_origin;
-		target_positions.write[idx + 1] = target_col_0;
-		target_positions.write[idx + 2] = target_col_1;
-		target_positions.write[idx + 3] = target_col_2;
-		target_positions.write[idx + 4] = target_col_0_priority;
-		target_positions.write[idx + 5] = target_col_1_priority;
-		target_positions.write[idx + 6] = target_col_2_priority;
+		output_target_positions.write[idx + 0] = target_origin;
+		output_target_positions.write[idx + 1] = target_col_0;
+		output_target_positions.write[idx + 2] = target_col_1;
+		output_target_positions.write[idx + 3] = target_col_2;
+		output_target_positions.write[idx + 4] = target_col_0_priority;
+		output_target_positions.write[idx + 5] = target_col_1_priority;
+		output_target_positions.write[idx + 6] = target_col_2_priority;
 	}
 
-	Quaternion solved_global_pose = weighted_superpose(rest_positions, target_positions, weights, false);
+	Quaternion solved_global_pose = weighted_superpose(input_rest_positions, input_target_positions, input_weights, false);
 	return solved_global_pose;
+}
+
+void RenQCP::_bind_methods() {
+	ClassDB::bind_method(D_METHOD("weighted_superpose", "p_moved", "p_target", "p_weight", "translate"), &RenQCP::weighted_superpose);
+	ClassDB::bind_method(D_METHOD("get_rotation"), &RenQCP::get_rotation);
+	ClassDB::bind_method(D_METHOD("get_translation"), &RenQCP::get_translation);
+	ClassDB::bind_method(D_METHOD("get_rmsd"), &RenQCP::get_rmsd);
 }
