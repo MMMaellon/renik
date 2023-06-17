@@ -770,6 +770,12 @@ void RenIK::_bind_methods() {
 			&RenIK::set_sideways_scaling_ease);
 	ClassDB::bind_method(D_METHOD("setup_humanoid_bones"),
 			&RenIK::setup_humanoid_bones);
+
+	ClassDB::bind_method(D_METHOD("set_setup_humanoid_bones", "set_targets"), &RenIK::set_setup_humanoid_bones);
+    ClassDB::bind_method(D_METHOD("get_setup_humanoid_bones"), &RenIK::get_setup_humanoid_bones);
+
+    ADD_PROPERTY(PropertyInfo(Variant::BOOL, "setup_humanoid_bones"), "set_setup_humanoid_bones", "get_setup_humanoid_bones");
+
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "live_preview"), "set_live_preview",
 			"get_live_preview");
 
@@ -3430,16 +3436,16 @@ Vector<Transform3D> RenIK::compute_global_transforms(const Vector<RenIKChain::Jo
 
 void RenIK::compute_rest_and_target_positions(const Vector<Transform3D> &p_global_transforms, const Transform3D &p_target, const Vector3 &p_priority, Vector<Vector3> &p_reference_positions, Vector<Vector3> &p_target_positions, Vector<real_t> &r_weights) {
 	for (int joint_i = 0; joint_i < p_global_transforms.size(); joint_i++) {
-		Transform3D bone_direction_world_transform = p_global_transforms[joint_i];
+		Transform3D bone_direction_global_transform = p_global_transforms[joint_i];
 		real_t pin_weight = r_weights[joint_i];
 		int32_t rest_index = joint_i * 7;
 
-		Basis tip_basis = bone_direction_world_transform.basis.orthogonalized();
+		Basis tip_basis = bone_direction_global_transform.basis.orthogonalized();
 
 		Quaternion quaternion = tip_basis.get_rotation_quaternion();
 		tip_basis.set_quaternion_scale(quaternion, tip_basis.get_scale());
 
-		p_reference_positions.write[rest_index] = p_target.origin - bone_direction_world_transform.origin;
+		p_reference_positions.write[rest_index] = p_target.origin - bone_direction_global_transform.origin;
 		rest_index++;
 
 		double epsilon = 1e-6;
@@ -3447,9 +3453,9 @@ void RenIK::compute_rest_and_target_positions(const Vector<Transform3D> &p_globa
 
 		Vector3 target_global_space = p_target.origin;
 		if (!quaternion.is_equal_approx(Quaternion())) {
-			target_global_space = bone_direction_world_transform.xform(p_target.origin);
+			target_global_space = bone_direction_global_transform.xform(p_target.origin);
 		}
-		double distance = target_global_space.distance_to(bone_direction_world_transform.origin);
+		double distance = target_global_space.distance_to(bone_direction_global_transform.origin);
 
 		scale_by *= 1.0 / (distance * distance + epsilon);
 
@@ -3457,50 +3463,35 @@ void RenIK::compute_rest_and_target_positions(const Vector<Transform3D> &p_globa
 			if (p_priority[axis_i] > 0.0) {
 				real_t w = r_weights[rest_index];
 				Vector3 column = p_target.basis.get_column(axis_i);
-
-				if (bone_direction_world_transform.basis.is_equal_approx(Basis())) {
-					p_reference_positions.write[rest_index] = (column + p_target.origin) - bone_direction_world_transform.origin;
-				} else {
-					p_reference_positions.write[rest_index] = bone_direction_world_transform.affine_inverse().xform((column + p_target.origin) - bone_direction_world_transform.origin);
-				}
-				p_reference_positions.write[rest_index++] *= Vector3(w, w, w) * scale_by;
-
-				if (bone_direction_world_transform.basis.is_equal_approx(Basis())) {
-					p_reference_positions.write[rest_index] = (p_target.origin - column) - bone_direction_world_transform.origin;
-				} else {
-					p_reference_positions.write[rest_index] = bone_direction_world_transform.affine_inverse().xform((p_target.origin - column) - bone_direction_world_transform.origin);
-				}
-				p_reference_positions.write[rest_index++] *= Vector3(w, w, w) * scale_by;
+				p_reference_positions.write[rest_index] = bone_direction_global_transform.affine_inverse().xform((column + p_target.origin) - bone_direction_global_transform.origin);
+				p_reference_positions.write[rest_index] *= Vector3(w, w, w) * scale_by;
+				rest_index++;
+				p_reference_positions.write[rest_index] = bone_direction_global_transform.affine_inverse().xform((p_target.origin - column) - bone_direction_global_transform.origin);
+				p_reference_positions.write[rest_index] *= Vector3(w, w, w) * scale_by;
+				rest_index++;
 			}
 		}
 
 		int32_t target_index = joint_i * 7;
-		p_target_positions.write[target_index++] = p_target.origin - bone_direction_world_transform.origin;
+		p_target_positions.write[target_index] = p_target.origin - bone_direction_global_transform.origin;
+		target_index++;
 
 		scale_by = pin_weight;
 
-		Vector3 target_local_space = bone_direction_world_transform.affine_inverse().xform(target_global_space);
-		distance = target_local_space.distance_to(bone_direction_world_transform.origin);
+		Vector3 target_local = bone_direction_global_transform.affine_inverse().xform(target_global_space);
+		distance = target_local.distance_to(bone_direction_global_transform.origin);
 
 		scale_by *= 1.0 / (distance * distance + epsilon);
 
 		for (int axis_j = Vector3::AXIS_X; axis_j <= Vector3::AXIS_Z; ++axis_j) {
 			if (p_priority[axis_j] > 0.0) {
 				Vector3 column = tip_basis.get_column(axis_j) * p_priority[axis_j];
-
-				if (bone_direction_world_transform.basis.is_equal_approx(Basis())) {
-					p_target_positions.write[target_index] = (column + p_target.origin) - bone_direction_world_transform.origin;
-				} else {
-					p_target_positions.write[target_index] = bone_direction_world_transform.xform((column + p_target.origin) - bone_direction_world_transform.origin);
-				}
-				p_target_positions.write[target_index++] *= scale_by;
-
-				if (bone_direction_world_transform.basis.is_equal_approx(Basis())) {
-					p_target_positions.write[target_index] = (p_target.origin - column) - bone_direction_world_transform.origin;
-				} else {
-					p_target_positions.write[target_index] = bone_direction_world_transform.xform((p_target.origin - column) - bone_direction_world_transform.origin);
-				}
-				p_target_positions.write[target_index++] *= scale_by;
+				p_target_positions.write[target_index] = bone_direction_global_transform.xform((column + p_target.origin) - bone_direction_global_transform.origin);
+				p_target_positions.write[target_index] *= scale_by;
+				target_index++;
+				p_target_positions.write[target_index] = bone_direction_global_transform.xform((p_target.origin - column) - bone_direction_global_transform.origin);
+				p_target_positions.write[target_index] *= scale_by;
+				target_index++;
 			}
 		}
 	}
