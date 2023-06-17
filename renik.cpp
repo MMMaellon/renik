@@ -3500,9 +3500,7 @@ void RenIK::setup_humanoid_bones(bool set_targets) {
 	bone_node_paths["RightFoot"] = NodePath("RightFoot");
 	for (const KeyValue<String, NodePath> &entry : bone_node_paths) {
 		String bone_name = entry.key;
-		if (!set_targets) {
-			bone_node_paths[bone_name] = NodePath();
-		}
+		bone_node_paths[bone_name] = NodePath(bone_name);
 		int bone_idx = -1;
 		if (skeleton && set_targets) {
 			bone_idx = skeleton->find_bone(bone_name);
