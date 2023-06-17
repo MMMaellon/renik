@@ -1332,12 +1332,12 @@ void RenIK::_notification(int p_what) {
 					Vector3(Math::deg_to_rad(15.0), 0, Math::deg_to_rad(-60.0)),
 					Vector3(2.0, 1.5, 1.0));
 			limb_leg_left.instantiate();
-			limb_leg_left->init(0, 0, 0, 0.25, 0.25, 0, Math::deg_to_rad(45.0), 0.5,
+			limb_leg_left->init(0, Math::deg_to_rad(-180.0), 0, 0.25, 0.25, 0, Math::deg_to_rad(45.0), 0.5,
 					Vector3(0, 0, Math_PI), Vector3());
 			limb_leg_right.instantiate();
-			limb_leg_right->init(0, 0, 0, 0.25, 0.25, 0, Math::deg_to_rad(45.0), 0.5,
+			limb_leg_right->init(0, Math::deg_to_rad(-180.0), 0, 0.25, 0.25, 0, Math::deg_to_rad(45.0), 0.5,
 					Vector3(0, 0, -Math_PI), Vector3());
-			set_leg_pole_offset(Vector3(0, 0, -180));
+			set_leg_pole_offset(Vector3(0, 0, 180));
 			set_arm_pole_offset(Vector3(15, 0, 60));
 		} break;
 		case NOTIFICATION_READY: {
