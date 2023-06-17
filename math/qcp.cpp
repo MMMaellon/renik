@@ -30,12 +30,12 @@
 
 #include "qcp.h"
 
-QCP::QCP(double p_evec_prec, double p_eval_prec) {
+RenQCP::RenQCP(double p_evec_prec, double p_eval_prec) {
 	evec_prec = p_eval_prec;
 	eval_prec = p_evec_prec;
 }
 
-void QCP::set(PackedVector3Array &r_target, PackedVector3Array &r_moved) {
+void RenQCP::set(PackedVector3Array &r_target, PackedVector3Array &r_moved) {
 	target = r_target;
 	moved = r_moved;
 	rmsd_calculated = false;
@@ -43,7 +43,7 @@ void QCP::set(PackedVector3Array &r_target, PackedVector3Array &r_moved) {
 	inner_product_calculated = false;
 }
 
-double QCP::get_rmsd() {
+double RenQCP::get_rmsd() {
 	if (!rmsd_calculated) {
 		calculate_rmsd(moved, target);
 		rmsd_calculated = true;
@@ -51,7 +51,7 @@ double QCP::get_rmsd() {
 	return rmsd;
 }
 
-Quaternion QCP::get_rotation() {
+Quaternion RenQCP::get_rotation() {
 	Quaternion result;
 	if (!transformation_calculated) {
 		if (!inner_product_calculated) {
@@ -63,11 +63,11 @@ Quaternion QCP::get_rotation() {
 	return result;
 }
 
-void QCP::calculate_rmsd(double r_length) {
+void RenQCP::calculate_rmsd(double r_length) {
 	rmsd = Math::sqrt(Math::abs(2.0f * (e0 - max_eigenvalue) / r_length));
 }
 
-Quaternion QCP::calculate_rotation() {
+Quaternion RenQCP::calculate_rotation() {
 	Quaternion result;
 
 	if (moved.size() == 1) {
@@ -141,22 +141,22 @@ Quaternion QCP::calculate_rotation() {
 	return result;
 }
 
-double QCP::get_rmsd(PackedVector3Array &r_fixed, PackedVector3Array &r_moved) {
+double RenQCP::get_rmsd(PackedVector3Array &r_fixed, PackedVector3Array &r_moved) {
 	set(r_fixed, r_moved);
 	return get_rmsd();
 }
 
-void QCP::translate(Vector3 r_translate, PackedVector3Array &r_x) {
+void RenQCP::translate(Vector3 r_translate, PackedVector3Array &r_x) {
 	for (Vector3 &p : r_x) {
 		p += r_translate;
 	}
 }
 
-Vector3 QCP::get_translation() {
+Vector3 RenQCP::get_translation() {
 	return target_center - moved_center;
 }
 
-Vector3 QCP::move_to_weighted_center(PackedVector3Array &r_to_center, Vector<real_t> &r_weight) {
+Vector3 RenQCP::move_to_weighted_center(PackedVector3Array &r_to_center, Vector<real_t> &r_weight) {
 	Vector3 center;
 	real_t total_weight = 0;
 	bool weight_is_empty = r_weight.is_empty();
@@ -179,7 +179,7 @@ Vector3 QCP::move_to_weighted_center(PackedVector3Array &r_to_center, Vector<rea
 	return center;
 }
 
-void QCP::inner_product(PackedVector3Array &coords1, PackedVector3Array &coords2) {
+void RenQCP::inner_product(PackedVector3Array &coords1, PackedVector3Array &coords2) {
 	Vector3 weighted_coord1, weighted_coord2;
 	double sum_of_squares1 = 0, sum_of_squares2 = 0;
 
@@ -237,7 +237,7 @@ void QCP::inner_product(PackedVector3Array &coords1, PackedVector3Array &coords2
 	inner_product_calculated = true;
 }
 
-void QCP::calculate_rmsd(PackedVector3Array &x, PackedVector3Array &y) {
+void RenQCP::calculate_rmsd(PackedVector3Array &x, PackedVector3Array &y) {
 	// QCP doesn't handle alignment of single values, so if we only have one point
 	// we just compute regular distance.
 	if (x.size() == 1) {
@@ -251,12 +251,12 @@ void QCP::calculate_rmsd(PackedVector3Array &x, PackedVector3Array &y) {
 	}
 }
 
-Quaternion QCP::weighted_superpose(PackedVector3Array &p_moved, PackedVector3Array &p_target, Vector<real_t> &p_weight, bool translate) {
+Quaternion RenQCP::weighted_superpose(PackedVector3Array &p_moved, PackedVector3Array &p_target, Vector<real_t> &p_weight, bool translate) {
 	set(p_moved, p_target, p_weight, translate);
 	return get_rotation();
 }
 
-void QCP::set(PackedVector3Array &p_moved, PackedVector3Array &p_target, Vector<real_t> &p_weight, bool p_translate) {
+void RenQCP::set(PackedVector3Array &p_moved, PackedVector3Array &p_target, Vector<real_t> &p_weight, bool p_translate) {
 	rmsd_calculated = false;
 	transformation_calculated = false;
 	inner_product_calculated = false;
@@ -280,4 +280,48 @@ void QCP::set(PackedVector3Array &p_moved, PackedVector3Array &p_target, Vector<
 			w_sum = p_moved.size();
 		}
 	}
+}
+
+Quaternion RenQCP::compute_reference_and_target_positions(const Vector<Transform3D> &global_transforms,
+		const Transform3D &target,
+		const Vector3 &priority,
+		Vector<Vector3> &rest_positions,
+		Vector<Vector3> &target_positions,
+		Vector<real_t> &weights) {
+	int num_joints = global_transforms.size();
+
+	Vector3 target_origin = target.origin;
+	Vector3 target_col_0 = target.basis.get_column(0);
+	Vector3 target_col_1 = target.basis.get_column(1);
+	Vector3 target_col_2 = target.basis.get_column(2);
+	Vector3 target_col_0_priority = target_col_0 * priority.x;
+	Vector3 target_col_1_priority = target_col_1 * priority.y;
+	Vector3 target_col_2_priority = target_col_2 * priority.z;
+
+	for (int joint_i = 0; joint_i < num_joints; ++joint_i) {
+		const Transform3D &current_transform = global_transforms[joint_i];
+		Vector3 col_0 = current_transform.basis.get_column(0);
+		Vector3 col_1 = current_transform.basis.get_column(1);
+		Vector3 col_2 = current_transform.basis.get_column(2);
+
+		int idx = joint_i * 7;
+		rest_positions.write[idx + 0] = current_transform.origin;
+		rest_positions.write[idx + 1] = col_0;
+		rest_positions.write[idx + 2] = col_1;
+		rest_positions.write[idx + 3] = col_2;
+		rest_positions.write[idx + 4] = col_0 * priority.x;
+		rest_positions.write[idx + 5] = col_1 * priority.y;
+		rest_positions.write[idx + 6] = col_2 * priority.z;
+
+		target_positions.write[idx + 0] = target_origin;
+		target_positions.write[idx + 1] = target_col_0;
+		target_positions.write[idx + 2] = target_col_1;
+		target_positions.write[idx + 3] = target_col_2;
+		target_positions.write[idx + 4] = target_col_0_priority;
+		target_positions.write[idx + 5] = target_col_1_priority;
+		target_positions.write[idx + 6] = target_col_2_priority;
+	}
+
+	Quaternion solved_global_pose = weighted_superpose(rest_positions, target_positions, weights, false);
+	return solved_global_pose;
 }

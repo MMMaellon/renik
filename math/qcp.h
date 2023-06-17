@@ -67,7 +67,7 @@
  * @author K. S. Ernest (iFire) Lee (adapted to ManyBoneIK)
  */
 
-class QCP {
+class RenQCP {
 	double evec_prec = static_cast<double>(1E-6);
 	double eval_prec = static_cast<double>(1E-11);
 
@@ -94,8 +94,15 @@ class QCP {
 	Vector3 move_to_weighted_center(PackedVector3Array &r_to_center, Vector<real_t> &r_weight);
 
 public:
-	QCP(double p_evec_prec, double p_eval_prec);
+	RenQCP(double p_evec_prec, double p_eval_prec);
 	double get_rmsd();
+	Quaternion compute_reference_and_target_positions(const Vector<Transform3D> &global_transforms,
+			const Transform3D &target,
+			const Vector3 &priority,
+			Vector<Vector3> &rest_positions,
+			Vector<Vector3> &target_positions,
+			Vector<real_t> &weights);
+
 	Quaternion weighted_superpose(PackedVector3Array &p_moved, PackedVector3Array &p_target, Vector<real_t> &p_weight, bool translate);
 	Quaternion get_rotation();
 	Vector3 get_translation();

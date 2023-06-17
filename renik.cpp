@@ -3438,48 +3438,47 @@ void RenIK::compute_rest_and_target_positions(const Vector<Transform3D> &p_globa
 	}
 }
 
+
 HashMap<BoneId, Quaternion> RenIK::solve_ik_qcp(Ref<RenIKChain> chain,
-		Transform3D root,
-		Transform3D target) {
-	HashMap<BoneId, Quaternion> map;
+                                                Transform3D root,
+                                                Transform3D target) {
+    HashMap<BoneId, Quaternion> map;
 
-	if (!chain->is_valid()) {
-		return map;
-	}
+    if (!chain->is_valid()) {
+        return map;
+    }
 
-	Vector<RenIKChain::Joint> joints = chain->get_joints();
-	const Transform3D true_root = root.translated_local(joints[0].relative_prev);
-	Vector<Vector3> rest_positions;
-	Vector<Vector3> target_positions;
-	Vector<real_t> weights;
-	constexpr int TRANSFORM_TO_HEADINGS_COUNT = 7;
-	rest_positions.resize(TRANSFORM_TO_HEADINGS_COUNT * joints.size());
-	target_positions.resize(TRANSFORM_TO_HEADINGS_COUNT * joints.size());
-	weights.resize(TRANSFORM_TO_HEADINGS_COUNT * joints.size());
-	weights.fill(1.0);
-	const Vector3 priority = Vector3(0.2, 0, 0.2);
+    Vector<RenIKChain::Joint> joints = chain->get_joints();
+    const Transform3D true_root = root.translated_local(joints[0].relative_prev);
+    Vector<Vector3> rest_positions;
+    Vector<Vector3> target_positions;
+    Vector<real_t> weights;
+    constexpr int TRANSFORM_TO_HEADINGS_COUNT = 7;
+    rest_positions.resize(TRANSFORM_TO_HEADINGS_COUNT * joints.size());
+    target_positions.resize(TRANSFORM_TO_HEADINGS_COUNT * joints.size());
+    weights.resize(TRANSFORM_TO_HEADINGS_COUNT * joints.size());
+    weights.fill(1.0);
+    const Vector3 priority = Vector3(0.2, 0, 0.2);
 
-	Vector<Transform3D> global_transforms = compute_global_transforms(joints, root, true_root);
+    Vector<Transform3D> global_transforms = compute_global_transforms(joints, root, true_root);
 
-	static constexpr double evec_prec = static_cast<double>(1E-6);
-	static constexpr double eval_prec = static_cast<double>(1E-11);
-	QCP qcp = QCP(eval_prec, evec_prec);
+    static constexpr double evec_prec = static_cast<double>(1E-6);
+    static constexpr double eval_prec = static_cast<double>(1E-11);
+    RenQCP qcp = RenQCP(eval_prec, evec_prec);
 
-	compute_rest_and_target_positions(global_transforms, target, priority, rest_positions, target_positions, weights);
+    for (int joint_i = 0; joint_i < joints.size(); joint_i++) {
+        Quaternion solved_global_pose = qcp.compute_reference_and_target_positions(global_transforms, target, priority, rest_positions, target_positions, weights);
 
-	for (int joint_i = 0; joint_i < joints.size(); joint_i++) {
-		Quaternion solved_global_pose = qcp.weighted_superpose(rest_positions, target_positions, weights, false);
+        int parent_index = joint_i > 0 ? joint_i - 1 : 0;
+        const Basis new_rot = global_transforms[parent_index].basis;
 
-		int parent_index = joint_i > 0 ? joint_i - 1 : 0;
-		const Basis new_rot = global_transforms[parent_index].basis;
+        const Quaternion local_pose = new_rot.inverse() * solved_global_pose * new_rot;
+        map.insert(joints[joint_i].id, local_pose);
 
-		const Quaternion local_pose = new_rot.inverse() * solved_global_pose * new_rot;
-		map.insert(joints[joint_i].id, local_pose);
+        global_transforms.write[joint_i] = global_transforms[parent_index] * Transform3D(Basis(local_pose));
+    }
 
-		global_transforms.write[joint_i] = global_transforms[parent_index] * Transform3D(Basis(local_pose));
-	}
-
-	return map;
+    return map;
 }
 
 void RenIK::setup_humanoid_bones(bool set_targets) {
