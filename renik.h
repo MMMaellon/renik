@@ -205,7 +205,6 @@ public:
 	NodePath get_foot_left_target_path();
 	NodePath get_foot_right_target_path();
 
-	// IK Settings
 	float get_arm_upper_twist_offset();
 	void set_arm_upper_twist_offset(float degrees);
 	float get_arm_lower_twist_offset();
@@ -276,7 +275,6 @@ public:
 	bool get_use_editor_speed();
 	void set_use_editor_speed(bool enable);
 
-	// placement
 	void set_falling(bool falling);
 	void enable_solve_ik_every_frame(bool automatically_update_ik);
 	void enable_foot_placement(bool enabled);
@@ -463,11 +461,6 @@ public:
 
 	void reset_all_bones();
 
-	// void set_floor_offset(float floor_offset);
-	// float get_floor_offset() const;
-	// void set_raycast_allowance(float raycast_allowance);
-	// float get_raycast_allowance() const;
-
 	static std::pair<float, float> trig_angles(Vector3 const &length1,
 			Vector3 const &length2,
 			Vector3 const &length3);
@@ -482,10 +475,6 @@ public:
 	static HashMap<BoneId, Quaternion>
 	solve_ifabrik(Ref<RenIKChain> chain, Transform3D chain_parent_transform,
 			Transform3D target, float threshold, int loopLimit);
-
-	// static HashMap<BoneId, Quaternion> reduce_chain_to_trig_ik(Ref<RenIKChain>
-	// chain, Transform3D chain_parent_transform, Transform3D target, float bias =
-	// 0.5f, float bend_offset = 0.0f);
 
 private:
 	// Setup -------------------------
@@ -545,7 +534,6 @@ private:
 	Vector3 left_shoulder_pole_offset;
 	Vector3 right_shoulder_pole_offset;
 
-	// General Settings ------------------
 	bool hip_placement = true;
 	bool foot_placement = true;
 	bool headTrackerEnabled = true;

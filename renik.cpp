@@ -1629,8 +1629,6 @@ void RenIK::perform_hand_right_ik(Transform3D global_parent, Transform3D target)
 				skeleton->set_bone_pose_rotation(rootBone, skeleton->get_bone_rest(rootBone).get_basis().get_rotation_quaternion() * offsetQuat * quatAlignToTarget);
 				root = root * customPose;
 			}
-			// root = skeleton->get_global_transform() *
-			// skeleton->get_bone_global_pose(rootBone);
 		}
 		apply_ik_map(
 				solve_trig_ik_redux(limb_arm_right, root, target),
@@ -1663,39 +1661,10 @@ void RenIK::perform_foot_right_ik(Transform3D global_parent, Transform3D target)
 }
 
 void RenIK::reset_chain(Ref<RenIKChain> chain) {
-	/*
-	if (skeleton && chain->get_leaf_bone() < skeleton->get_bone_count() &&
-		chain->get_root_bone() < skeleton->get_bone_count()) {
-	  BoneId bone = chain->get_leaf_bone();
-	  while (bone >= 0 && bone != chain->get_root_bone()) {
-		// skeleton->set_bone_global_pose_override(bone, Transform3D(), 0, false);
-		skeleton->set_bone_global_pose_override(bone, Transform3D(), 0.0f);
-		bone = skeleton->get_bone_parent(bone);
-	  }
-	  if (bone >= 0) {
-		// skeleton->set_bone_global_pose_override(bone, Transform3D(), 0, false);
-		skeleton->set_bone_global_pose_override(bone, Transform3D(), 0.0f);
-	  }
-	}
-	*/
 }
 
 void RenIK::reset_limb(Ref<RenIKLimb> limb) {
-	/*
-	if (skeleton && limb->get_upper_bone() >= 0 && limb->get_lower_bone() >= 0 &&
-		limb->get_upper_bone() < skeleton->get_bone_count() &&
-		limb->get_lower_bone() < skeleton->get_bone_count()) {
-	  skeleton->set_bone_global_pose_override(limb->get_upper_bone(),
-											  Transform3D(), 0.0f);
-	  skeleton->set_bone_global_pose_override(limb->get_lower_bone(),
-											  Transform3D(), 0.0f);
-	  skeleton->set_bone_global_pose_override(limb->get_leaf_bone(),
-											  Transform3D(), 0.0f);
-	}
-	*/
 }
-
-// IK SOLVING
 
 Vector<BoneId> RenIK::bone_id_order(Ref<RenIKChain> chain) {
 	Vector<BoneId> ret;
