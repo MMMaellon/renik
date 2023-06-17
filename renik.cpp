@@ -29,10 +29,13 @@
 /**************************************************************************/
 
 #include "renik.h"
-#ifndef _3D_DISABLED
 
-const float DEFAULT_THRESHOLD = 0.0005;
-const int DEFAULT_LOOP_LIMIT = 16;
+#include "core/math/quaternion.h"
+#include "scene/3d/marker_3d.h"
+
+#include "math/qcp.h"
+
+#ifndef _3D_DISABLED
 
 #define RENIK_PROPERTY_STRING_SKELETON_PATH "armature_skeleton_path"
 
@@ -58,44 +61,13 @@ const int DEFAULT_LOOP_LIMIT = 16;
 
 #define RENIK_PROPERTY_STRING_HEAD_TARGET_PATH "armature_head_target"
 #define RENIK_PROPERTY_STRING_HAND_LEFT_TARGET_PATH "armature_left_hand_target"
-#define RENIK_PROPERTY_STRING_HAND_RIGHT_TARGET_PATH \
-	"armature_right_hand_target"
+#define RENIK_PROPERTY_STRING_HAND_RIGHT_TARGET_PATH "armature_right_hand_target"
 
 #define RENIK_PROPERTY_STRING_HIP_TARGET_PATH "armature_hip_target"
 #define RENIK_PROPERTY_STRING_FOOT_LEFT_TARGET_PATH "armature_left_foot_target"
-#define RENIK_PROPERTY_STRING_FOOT_RIGHT_TARGET_PATH \
-	"armature_right_foot_target"
+#define RENIK_PROPERTY_STRING_FOOT_RIGHT_TARGET_PATH "armature_right_foot_target"
 
-RenIK::RenIK() : // IK DEFAULTS
-		left_shoulder_offset(Math::deg_to_rad(0.0), Math::deg_to_rad(0.0),
-				Math::deg_to_rad(0.0)),
-		right_shoulder_offset(Math::deg_to_rad(0.0), Math::deg_to_rad(0.0),
-				Math::deg_to_rad(0.0)),
-		left_shoulder_pole_offset(Math::deg_to_rad(0.0), Math::deg_to_rad(0.0),
-				Math::deg_to_rad(78.0)),
-		right_shoulder_pole_offset(Math::deg_to_rad(0.0), Math::deg_to_rad(0.0),
-				Math::deg_to_rad(-78.0)) {
-	spine_chain.instantiate();
-	spine_chain->init(Vector3(0, 15, -15), 0.5, 0.5, 1, 0);
-	limb_arm_left.instantiate();
-	limb_arm_left->init(0, 0, Math::deg_to_rad(70.0), 0.5, 0.66666,
-			Math::deg_to_rad(20.0), Math::deg_to_rad(45.0), 0.33,
-			Vector3(Math::deg_to_rad(15.0), 0, Math::deg_to_rad(60.0)),
-			Vector3(2.0, -1.5, -1.0));
-	limb_arm_right.instantiate();
-	limb_arm_right->init(0, 0, Math::deg_to_rad(-70.0), 0.5, 0.66666,
-			Math::deg_to_rad(-20.0), Math::deg_to_rad(45.0), 0.33,
-			Vector3(Math::deg_to_rad(15.0), 0, Math::deg_to_rad(-60.0)),
-			Vector3(2.0, 1.5, 1.0));
-	limb_leg_left.instantiate();
-	limb_leg_left->init(0, 0, 0, 0.25, 0.25, 0, Math::deg_to_rad(45.0), 0.5,
-			Vector3(0, 0, Math_PI), Vector3());
-	limb_leg_right.instantiate();
-	limb_leg_right->init(0, 0, 0, 0.25, 0.25, 0, Math::deg_to_rad(45.0), 0.5,
-			Vector3(0, 0, -Math_PI), Vector3());
-	set_leg_pole_offset(Vector3(0, 0, 180));
-	set_arm_pole_offset(Vector3(15, 0, 60));
-};
+RenIK::RenIK(){};
 
 void RenIK::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_live_preview", "p_enable"),
@@ -799,6 +771,13 @@ void RenIK::_bind_methods() {
 			&RenIK::get_sideways_scaling_ease);
 	ClassDB::bind_method(D_METHOD("set_sideways_scaling_ease", "scaling_ease"),
 			&RenIK::set_sideways_scaling_ease);
+	ClassDB::bind_method(D_METHOD("setup_humanoid_bones"),
+			&RenIK::setup_humanoid_bones);
+
+	ClassDB::bind_method(D_METHOD("set_setup_humanoid_bones", "set_targets"), &RenIK::set_setup_humanoid_bones);
+	ClassDB::bind_method(D_METHOD("get_setup_humanoid_bones"), &RenIK::get_setup_humanoid_bones);
+
+	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "setup_humanoid_bones"), "set_setup_humanoid_bones", "get_setup_humanoid_bones");
 
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "live_preview"), "set_live_preview",
 			"get_live_preview");
@@ -1331,19 +1310,50 @@ void RenIK::_validate_property(PropertyInfo &property) const {
 
 void RenIK::_notification(int p_what) {
 	switch (p_what) {
-		case NOTIFICATION_READY:
+		case NOTIFICATION_POSTINITIALIZE: {
+			left_shoulder_offset = Vector3(Math::deg_to_rad(0.0), Math::deg_to_rad(0.0),
+					Math::deg_to_rad(0.0));
+			right_shoulder_offset = Vector3(Math::deg_to_rad(0.0), Math::deg_to_rad(0.0),
+					Math::deg_to_rad(0.0));
+			left_shoulder_pole_offset = Vector3(Math::deg_to_rad(0.0), Math::deg_to_rad(0.0),
+					Math::deg_to_rad(78.0));
+			right_shoulder_pole_offset = Vector3(Math::deg_to_rad(0.0), Math::deg_to_rad(0.0),
+					Math::deg_to_rad(-78.0));
+			spine_chain.instantiate();
+			spine_chain->init(Vector3(0, 15, -15), 0.5, 0.5, 1, 0);
+			limb_arm_left.instantiate();
+			limb_arm_left->init(0, 0, Math::deg_to_rad(-50.0), 0.5, 0.66666,
+					Math::deg_to_rad(20.0), Math::deg_to_rad(45.0), 0.33,
+					Vector3(Math::deg_to_rad(15.0), 0, Math::deg_to_rad(60.0)),
+					Vector3(2.0, -1.5, -1.0));
+			limb_arm_right.instantiate();
+			limb_arm_right->init(0, 0, Math::deg_to_rad(50.0), 0.5, 0.66666,
+					Math::deg_to_rad(-20.0), Math::deg_to_rad(45.0), 0.33,
+					Vector3(Math::deg_to_rad(15.0), 0, Math::deg_to_rad(-60.0)),
+					Vector3(2.0, 1.5, 1.0));
+			limb_leg_left.instantiate();
+			limb_leg_left->init(0, Math::deg_to_rad(-180.0), 0, 0.25, 0.25, 0, Math::deg_to_rad(45.0), 0.5,
+					Vector3(0, 0, Math_PI), Vector3());
+			limb_leg_right.instantiate();
+			limb_leg_right->init(0, Math::deg_to_rad(-180.0), 0, 0.25, 0.25, 0, Math::deg_to_rad(45.0), 0.5,
+					Vector3(0, 0, -Math_PI), Vector3());
+			set_leg_pole_offset(Vector3(0, 0, 180));
+			set_arm_pole_offset(Vector3(15, 0, 60));
+		} break;
+		case NOTIFICATION_READY: {
 			_initialize();
-			break;
-		case NOTIFICATION_INTERNAL_PROCESS:
+		} break;
+		case NOTIFICATION_INTERNAL_PROCESS: {
 			if (!Engine::get_singleton()->is_editor_hint() || live_preview) {
 				update_ik();
 			}
 			break;
-		case NOTIFICATION_INTERNAL_PHYSICS_PROCESS:
+		}
+		case NOTIFICATION_INTERNAL_PHYSICS_PROCESS: {
 			if (!Engine::get_singleton()->is_editor_hint() || live_preview) {
 				update_placement(get_physics_process_delta_time());
 			}
-			break;
+		} break;
 	}
 }
 
@@ -1521,10 +1531,10 @@ RenIK::SpineTransforms RenIK::perform_torso_ik() {
 							spine_chain->get_joints()[0].relative_prev));
 		}
 
-		HashMap<BoneId, Quaternion> ik_map = solve_ifabrik(
+		HashMap<BoneId, Quaternion> ik_map = solve_ik_qcp(
 				spine_chain,
 				hipGlobalTransform * skeleton->get_bone_rest(hip).basis.inverse(),
-				headGlobalTransform, DEFAULT_THRESHOLD, DEFAULT_LOOP_LIMIT);
+				headGlobalTransform);
 		//skeleton->set_bone_global_pose_override(
 		//    hip, hipGlobalTransform, 1.0f, true);
 		skeleton->set_bone_pose_rotation(hip, hipGlobalTransform.get_basis().get_rotation_quaternion());
@@ -1570,10 +1580,6 @@ void RenIK::perform_hand_left_ik(Transform3D global_parent, Transform3D target) 
 				skeleton->get_bone_parent(limb_arm_left->get_upper_bone());
 		if (rootBone >= 0) {
 			if (left_shoulder_enabled) {
-				// BoneId shoulderParent = skeleton->get_bone_parent(rootBone);
-				// if (shoulderParent >= 0) {
-				// 	root = root * skeleton->get_bone_global_pose(shoulderParent);
-				// }
 				root = root * skeleton->get_bone_rest(rootBone);
 				Vector3 targetVector = root.affine_inverse().xform(target.origin);
 				Quaternion offsetQuat = Quaternion::from_euler(left_shoulder_offset);
@@ -1582,16 +1588,14 @@ void RenIK::perform_hand_left_ik(Transform3D global_parent, Transform3D target) 
 						poleOffset.slerp(Quaternion(), 1 - shoulder_influence);
 				Quaternion quatAlignToTarget =
 						poleOffsetScaled *
-						RenIKHelper::align_vectors(
-								Vector3(0, 1, 0), poleOffset.inverse().xform(offsetQuat.inverse().xform(targetVector)))
+						Quaternion(
+								Vector3(0, 1, 0), poleOffset.inverse().xform(offsetQuat.inverse().xform(targetVector)).normalized())
 								.slerp(Quaternion(), 1 - shoulder_influence);
 				Transform3D customPose =
 						Transform3D(offsetQuat * quatAlignToTarget, Vector3());
 				skeleton->set_bone_pose_rotation(rootBone, skeleton->get_bone_rest(rootBone).get_basis().get_rotation_quaternion() * offsetQuat * quatAlignToTarget);
 				root = root * customPose;
 			}
-			// root = skeleton->get_global_transform() *
-			// skeleton->get_bone_global_pose(rootBone);
 		}
 		apply_ik_map(
 				solve_trig_ik_redux(limb_arm_left, root, target),
@@ -1616,19 +1620,18 @@ void RenIK::perform_hand_right_ik(Transform3D global_parent, Transform3D target)
 				Quaternion offsetQuat = Quaternion::from_euler(right_shoulder_offset);
 				Quaternion poleOffset = Quaternion::from_euler(right_shoulder_pole_offset);
 				Quaternion poleOffsetScaled =
-						poleOffset.slerp(Quaternion(), 1 - shoulder_influence);
+						poleOffset.normalized().slerp(Quaternion(), 1 - shoulder_influence);
 				Quaternion quatAlignToTarget =
 						poleOffsetScaled *
-						RenIKHelper::align_vectors(
+						Quaternion(
 								Vector3(0, 1, 0), poleOffset.inverse().xform(offsetQuat.inverse().xform(targetVector)))
+								.normalized()
 								.slerp(Quaternion(), 1 - shoulder_influence);
 				Transform3D customPose =
 						Transform3D(offsetQuat * quatAlignToTarget, Vector3());
 				skeleton->set_bone_pose_rotation(rootBone, skeleton->get_bone_rest(rootBone).get_basis().get_rotation_quaternion() * offsetQuat * quatAlignToTarget);
 				root = root * customPose;
 			}
-			// root = skeleton->get_global_transform() *
-			// skeleton->get_bone_global_pose(rootBone);
 		}
 		apply_ik_map(
 				solve_trig_ik_redux(limb_arm_right, root, target),
@@ -1661,39 +1664,10 @@ void RenIK::perform_foot_right_ik(Transform3D global_parent, Transform3D target)
 }
 
 void RenIK::reset_chain(Ref<RenIKChain> chain) {
-	/*
-	if (skeleton && chain->get_leaf_bone() < skeleton->get_bone_count() &&
-		chain->get_root_bone() < skeleton->get_bone_count()) {
-	  BoneId bone = chain->get_leaf_bone();
-	  while (bone >= 0 && bone != chain->get_root_bone()) {
-		// skeleton->set_bone_global_pose_override(bone, Transform3D(), 0, false);
-		skeleton->set_bone_global_pose_override(bone, Transform3D(), 0.0f);
-		bone = skeleton->get_bone_parent(bone);
-	  }
-	  if (bone >= 0) {
-		// skeleton->set_bone_global_pose_override(bone, Transform3D(), 0, false);
-		skeleton->set_bone_global_pose_override(bone, Transform3D(), 0.0f);
-	  }
-	}
-	*/
 }
 
 void RenIK::reset_limb(Ref<RenIKLimb> limb) {
-	/*
-	if (skeleton && limb->get_upper_bone() >= 0 && limb->get_lower_bone() >= 0 &&
-		limb->get_upper_bone() < skeleton->get_bone_count() &&
-		limb->get_lower_bone() < skeleton->get_bone_count()) {
-	  skeleton->set_bone_global_pose_override(limb->get_upper_bone(),
-											  Transform3D(), 0.0f);
-	  skeleton->set_bone_global_pose_override(limb->get_lower_bone(),
-											  Transform3D(), 0.0f);
-	  skeleton->set_bone_global_pose_override(limb->get_leaf_bone(),
-											  Transform3D(), 0.0f);
-	}
-	*/
 }
-
-// IK SOLVING
 
 Vector<BoneId> RenIK::bone_id_order(Ref<RenIKChain> chain) {
 	Vector<BoneId> ret;
@@ -1737,15 +1711,13 @@ HashMap<BoneId, Quaternion> RenIK::solve_trig_ik(Ref<RenIKLimb> limb,
 		Transform3D localTarget = trueRoot.affine_inverse() * target;
 
 		// First we offset the pole
-		upper = upper *
-				limb->pole_offset.normalized(); // pole_offset is a euler because
-												// that's more human readable
+		upper = upper * Quaternion::from_euler(limb->pole_offset).normalized(); // pole_offset is a euler because
+																				// that's more human readable
 		upper.normalize();
 		lower.normalize();
 		// Then we line up the limb with our target
-		Vector3 targetVector =
-				limb->pole_offset.inverse().xform(localTarget.get_origin());
-		upper = upper * RenIKHelper::align_vectors(upperVector, targetVector);
+		Vector3 targetVector = Quaternion::from_euler(limb->pole_offset).inverse().xform(localTarget.get_origin());
+		upper = upper * Quaternion(upperVector, targetVector);
 		// Then we calculate how much we need to bend so we don't extend past the
 		// target Law of Cosines
 		float upperLength = upperVector.length();
@@ -1810,10 +1782,6 @@ HashMap<BoneId, Quaternion> RenIK::solve_trig_ik(Ref<RenIKLimb> limb,
 
 		armCombined = (upperRest * upper * lowerRest * lower).normalized();
 		leaf = ((armCombined * leafRest).inverse() * targetQuat).normalized();
-		// And finally add the twisting
-		//  old way: Quaternion lowerTwist = (align_vectors(lowerVector,
-		//  leafRest.xform(leaf.xform(lowerVector))).inverse() * (leafRest *
-		//  leaf)).slerp(Quaternion(), 1 - limb->lower_limb_twist).normalized();
 		Vector3 twist = (leafRest * leaf).get_euler();
 		Quaternion lowerTwist =
 				Quaternion::from_euler((leafRest * leaf).get_euler() * lowerVector.normalized() *
@@ -1884,10 +1852,9 @@ HashMap<BoneId, Basis> RenIK::solve_trig_ik_redux(Ref<RenIKLimb> limb,
 		// The local x-axis of the upper limb is axis along which the limb will bend
 		// We take into account how the pole offset and alignment with the target
 		// vector will affect this axis
-		Vector3 startingPole = limb->pole_offset.xform(
-				Vector3(0, 1, 0)); // the opposite of this vector is where the pole is
+		Vector3 startingPole = Quaternion::from_euler(limb->pole_offset).xform(Vector3(0, 1, 0)); // the opposite of this vector is where the pole is
 		Vector3 jointAxis = RenIKHelper::align_vectors(startingPole, targetVector)
-									.xform(limb->pole_offset.xform(Vector3(1, 0, 0)));
+									.xform(Quaternion::from_euler(limb->pole_offset).xform(Vector3(1, 0, 0)));
 
 		// //We then find how far away from the rest position the leaf is and use
 		// that to change the rotational axis more.
@@ -1932,7 +1899,7 @@ HashMap<BoneId, Basis> RenIK::solve_trig_ik_redux(Ref<RenIKLimb> limb,
 		// We align the leaf's y axis with the lower limb's y-axis and see how far
 		// off the x-axis is from the joint axis to calculate the twist.
 		Vector3 leafX =
-				RenIKHelper::align_vectors(
+				Quaternion(
 						localLeafVector.rotated(normalizedTargetVector, jointRollAmount),
 						localLowerVector.rotated(normalizedTargetVector, jointRollAmount))
 						.xform(localTarget.get_basis().xform(Vector3(1, 0, 0)));
@@ -2003,148 +1970,12 @@ HashMap<BoneId, Basis> RenIK::solve_trig_ik_redux(Ref<RenIKLimb> limb,
 		}
 
 		map[limb->get_lower_bone()] =
-				lowerTransform; // limb->upper_extra_bones.affine_inverse() *
-								// (full_lower.get_basis().inverse() * lowerBasis);
+				lowerTransform;
 		for (int i = 0; i < limb->lower_extra_bone_ids.size(); i++) {
 			map[limb->lower_extra_bone_ids[i]] = Basis();
 		}
 
 		map[limb->get_leaf_bone()] = leafTransform;
-	}
-	return map;
-}
-
-HashMap<BoneId, Quaternion> RenIK::solve_ifabrik(Ref<RenIKChain> chain,
-		Transform3D root,
-		Transform3D target,
-		float threshold, int loopLimit) {
-	HashMap<BoneId, Quaternion> map;
-	if (chain->is_valid()) { // if the chain is valid there's at least one joint
-							 // in the chain and there's one bone between it and
-							 // the root
-		Vector<RenIKChain::Joint> joints =
-				chain->get_joints(); // just so I don't have to call it all the time
-		Transform3D trueRoot = root.translated_local(joints[0].relative_prev);
-		Transform3D targetDelta =
-				target *
-				chain->get_relative_rest_leaf()
-						.affine_inverse(); // how the change in the target would affect the
-										   // chain if the chain was parented to the target
-										   // instead of the root
-		Transform3D trueRelativeTarget = trueRoot.affine_inverse() * target;
-		Quaternion alignToTarget = RenIKHelper::align_vectors(
-				chain->get_relative_rest_leaf().origin - joints[0].relative_prev,
-				trueRelativeTarget.origin);
-		float heightDiff =
-				(chain->get_relative_rest_leaf().origin - joints[0].relative_prev)
-						.length() -
-				trueRelativeTarget.origin.length();
-		heightDiff = heightDiff < 0 ? 0 : heightDiff;
-		Transform3D prebentRoot =
-				Transform3D(trueRoot.basis * alignToTarget, trueRoot.origin)
-						.translated_local((chain->chain_curve_direction *
-												  chain->get_total_length() * heightDiff) -
-								joints[0].relative_prev); // The angle root is rotated
-														  // to point at the target;
-
-		Vector<Vector3> globalJointPoints;
-
-		// We generate the starting points
-		// Here is where we take into account root and target influences and the
-		// prebend vector
-		Vector3 relativeJoint = joints[0].relative_prev;
-		for (int i = 1; i < joints.size(); i++) {
-			relativeJoint = relativeJoint + joints[i].relative_prev;
-			Vector3 prebentJoint = prebentRoot.xform(
-					relativeJoint); // if you rotated the root around the true root so
-									// that the whole chain was pointing to the leaf and
-									// then you moved everything along the prebend vector
-			Vector3 rootJoint =
-					root.xform(relativeJoint); // if you moved the joint with the root
-			Vector3 leafJoint = targetDelta.xform(
-					relativeJoint); // if you moved the joint with the leaf
-			prebentJoint = prebentJoint.lerp(rootJoint, joints[i].root_influence);
-			prebentJoint = prebentJoint.lerp(
-					leafJoint, joints[i].leaf_influence); // leaf influence dominates
-			globalJointPoints.push_back(prebentJoint);
-		}
-
-		// We then do regular FABRIK
-		for (int i = 0; i < loopLimit; i++) {
-			Vector3 lastJoint = target.origin;
-			// Backward
-			for (int j = joints.size() - 1; j >= 1;
-					j--) { // we skip the first joint because we're not allowed to move
-						   // that joint
-				Vector3 delta = globalJointPoints[j - 1] - lastJoint;
-				delta = delta.normalized() * joints[j].next_distance;
-				globalJointPoints.set(j - 1, lastJoint + delta);
-				lastJoint = globalJointPoints[j - 1];
-			}
-			lastJoint = trueRoot.origin; // the root joint
-
-			// Forwards
-			for (int j = 1; j < joints.size();
-					j++) { // we skip the first joint because we're not allowed to move
-						   // that joint
-				Vector3 delta = globalJointPoints[j - 1] - lastJoint;
-				delta = delta.normalized() * joints[j].prev_distance;
-				globalJointPoints.set(j - 1, lastJoint + delta);
-				lastJoint = globalJointPoints[j - 1];
-			}
-
-			float error = (lastJoint - trueRoot.origin).length();
-			if (error < threshold) {
-				break;
-			}
-		}
-
-		// Add a little twist
-		// We align the leaf's y axis with the rest_leaf's y-axis and see how far
-		// off the x-axes are to calculate the twist.
-		trueRelativeTarget.orthonormalize();
-		Vector3 leafX =
-				RenIKHelper::align_vectors(
-						trueRelativeTarget.basis.xform(Vector3(0, 1, 0)),
-						chain->get_relative_rest_leaf().basis.xform(Vector3(0, 1, 0)))
-						.normalized()
-						.xform(trueRelativeTarget.basis.xform(Vector3(1, 0, 0)));
-		Vector3 restX =
-				chain->get_relative_rest_leaf().basis.xform(Vector3(1, 0, 0));
-		float maxTwist = leafX.angle_to(restX);
-		if (leafX.cross(restX).dot(Vector3(0, 1, 0)) > 0) {
-			maxTwist *= -1;
-		}
-
-		// Convert everything to quaternions and store it in the map
-		Quaternion parentRot = root.get_basis().get_rotation_quaternion();
-		Vector3 parentPos = trueRoot.origin;
-		Quaternion prevTwist;
-		globalJointPoints.push_back(target.origin);
-		for (int i = 0; i < joints.size();
-				i++) { // the last one's rotation is defined by the leaf position not a
-					   // joint so we skip it
-			Quaternion pose = RenIKHelper::align_vectors(
-					Vector3(0, 1, 0),
-					Transform3D(parentRot * joints[i].rotation, parentPos)
-							.affine_inverse()
-							.xform(globalJointPoints[i])); // offset by one because joints has
-														   // one extra element
-			Quaternion twist =
-					Quaternion(Vector3(0, 1, 0), maxTwist * joints[i].twist_influence);
-			pose = prevTwist.inverse() * joints[i].rotation * pose * twist;
-			prevTwist = twist;
-			map.insert(joints[i].id, pose);
-			parentRot = parentRot * pose;
-			parentPos = globalJointPoints[i];
-		}
-
-		// parentRot = parentRot * joints[0].rotation;
-		// parent.translate(joints[0].relative_prev);
-		// Quaternion pose = align_vectors(axis, Transform3D(parentRot,
-		// parent.origin).affine_inverse().xform(target.origin)); //offset by one
-		// because joints has one extra element map.insert(joints[0].id, pose);
-		// parentRot = parentRot * pose;
 	}
 	return map;
 }
@@ -2171,45 +2002,9 @@ Vector<BoneId> RenIK::calculate_bone_chain(BoneId root, BoneId leaf) {
 bool RenIK::get_live_preview() { return live_preview; }
 void RenIK::set_live_preview(bool p_enable) {
 	live_preview = p_enable;
-	/*
-	if (!live_preview && skeleton) {
-	  if (head_target_spatial || hip_target_spatial || hip_placement) {
-		reset_chain(spine_chain);
-	  }
-	  if (hand_left_target_spatial) {
-		reset_limb(limb_arm_left);
-		if (skeleton && left_shoulder_enabled) {
-		  skeleton->set_bone_global_pose_override(
-			  skeleton->get_bone_parent(limb_arm_left->get_upper_bone()),
-			  Transform3D(), 0.0f);
-		}
-	  }
-	  if (hand_right_target_spatial) {
-		reset_limb(limb_arm_right);
-		if (skeleton && right_shoulder_enabled) {
-		  skeleton->set_bone_global_pose_override(
-			  skeleton->get_bone_parent(limb_arm_right->get_upper_bone()),
-			  Transform3D(), 0.0f);
-		}
-	  }
-	  if (foot_left_target_spatial || foot_placement) {
-		reset_limb(limb_leg_left);
-	  }
-	  if (foot_right_target_spatial || foot_placement) {
-		reset_limb(limb_leg_right);
-	  }
-	}
-	*/
 }
 
 void RenIK::reset_all_bones() {
-	/*
-	if (skeleton != nullptr) {
-	  for (int i = 0; i < skeleton->get_bone_count(); i++) {
-		skeleton->set_bone_global_pose_override(i, Transform3D(), 0.0f);
-	  }
-	}
-	*/
 }
 
 NodePath RenIK::get_skeleton_path() {
@@ -2813,18 +2608,14 @@ void RenIK::set_arm_twist_overflow(float degrees) {
 }
 
 Vector3 RenIK::get_arm_pole_offset() {
-	Vector3 v = limb_arm_left->pole_offset.get_euler();
+	Vector3 v = limb_arm_left->pole_offset;
 	return Vector3(Math::rad_to_deg(v[0]), Math::rad_to_deg(v[1]), Math::rad_to_deg(v[2]));
 }
 void RenIK::set_arm_pole_offset(Vector3 euler) {
-	Quaternion q =
-			Quaternion::from_euler(Vector3(Math::deg_to_rad(euler[0]), Math::deg_to_rad(euler[1]),
-					Math::deg_to_rad(euler[2])));
-	Quaternion q2 =
-			Quaternion::from_euler(Vector3(Math::deg_to_rad(euler[0]), Math::deg_to_rad(-euler[1]),
-					Math::deg_to_rad(-euler[2])));
-	limb_arm_left->pole_offset = q;
-	limb_arm_right->pole_offset = q2;
+	limb_arm_left->pole_offset = Vector3(Math::deg_to_rad(euler[0]), Math::deg_to_rad(euler[1]),
+			Math::deg_to_rad(euler[2]));
+	limb_arm_right->pole_offset = Vector3(Math::deg_to_rad(euler[0]), Math::deg_to_rad(-euler[1]),
+			Math::deg_to_rad(-euler[2]));
 }
 Vector3 RenIK::get_arm_target_position_influence() {
 	return limb_arm_left->target_position_influence * 10.0;
@@ -2893,27 +2684,27 @@ void RenIK::set_leg_twist_overflow(float degrees) {
 }
 
 Vector3 RenIK::get_leg_pole_offset() {
-	Vector3 v = limb_leg_left->pole_offset.get_euler();
+	Vector3 v = limb_leg_left->pole_offset;
 	return Vector3(Math::rad_to_deg(v[0]), Math::rad_to_deg(v[1]), Math::rad_to_deg(v[2]));
 }
+
 void RenIK::set_leg_pole_offset(Vector3 euler) {
-	Quaternion q =
-			Quaternion::from_euler(Vector3(Math::deg_to_rad(euler[0]), Math::deg_to_rad(euler[1]),
-					Math::deg_to_rad(euler[2])));
-	Quaternion q2 =
-			Quaternion::from_euler(Vector3(Math::deg_to_rad(euler[0]), Math::deg_to_rad(-euler[1]),
-					Math::deg_to_rad(-euler[2])));
-	limb_leg_left->pole_offset = q;
-	limb_leg_right->pole_offset = q2;
+	limb_leg_left->pole_offset = Vector3(Math::deg_to_rad(euler[0]), Math::deg_to_rad(euler[1]),
+			Math::deg_to_rad(euler[2]));
+	limb_leg_right->pole_offset = Vector3(Math::deg_to_rad(euler[0]), Math::deg_to_rad(-euler[1]),
+			Math::deg_to_rad(-euler[2]));
 }
+
 Vector3 RenIK::get_leg_target_position_influence() {
 	return limb_leg_left->target_position_influence * 10.0;
 }
+
 void RenIK::set_leg_target_position_influence(Vector3 xyz) {
 	limb_leg_left->target_position_influence = xyz / 10.0;
 	limb_leg_right->target_position_influence =
 			Vector3(xyz[0], -xyz[1], -xyz[2]) / 10.0;
 }
+
 float RenIK::get_leg_target_rotation_influence() {
 	return limb_leg_left->target_rotation_influence * 100.0;
 }
@@ -3562,6 +3353,216 @@ void RenIK::set_sideways_scaling_ease(float scaling_ease) {
 }
 float RenIK::get_sideways_scaling_ease() const {
 	return placement.sideways_gait.scaling_ease * 100.0;
+}
+
+Vector<Transform3D> RenIK::compute_global_transforms(const Vector<RenIKChain::Joint> &joints, const Transform3D &root, const Transform3D &true_root) {
+	Vector<Transform3D> global_transforms;
+	global_transforms.resize(joints.size());
+	Transform3D current_global_transform = true_root;
+
+	for (int i = 0; i < joints.size(); i++) {
+		Transform3D local_transform;
+		local_transform.basis = Basis(joints[i].rotation);
+		if (i == 0) {
+			local_transform.origin = root.origin;
+		} else {
+			local_transform.origin = joints[i - 1].relative_next;
+		}
+		current_global_transform *= local_transform;
+		global_transforms.write[i] = current_global_transform;
+	}
+
+	return global_transforms;
+}
+
+void RenIK::compute_rest_and_target_positions(const Vector<Transform3D> &p_global_transforms, const Transform3D &p_target, const Vector3 &p_priority, Vector<Vector3> &p_reference_positions, Vector<Vector3> &p_target_positions, Vector<real_t> &r_weights) {
+	for (int joint_i = 0; joint_i < p_global_transforms.size(); joint_i++) {
+		Transform3D bone_direction_global_transform = p_global_transforms[joint_i];
+		real_t pin_weight = r_weights[joint_i];
+		int32_t rest_index = joint_i * 7;
+
+		Basis tip_basis = bone_direction_global_transform.basis.orthogonalized();
+
+		Quaternion quaternion = tip_basis.get_rotation_quaternion();
+		tip_basis.set_quaternion_scale(quaternion, tip_basis.get_scale());
+
+		p_reference_positions.write[rest_index] = p_target.origin - bone_direction_global_transform.origin;
+		rest_index++;
+
+		double epsilon = 1e-6;
+		double scale_by = pin_weight;
+
+		Vector3 target_global_space = p_target.origin;
+		if (!quaternion.is_equal_approx(Quaternion())) {
+			target_global_space = bone_direction_global_transform.xform(p_target.origin);
+		}
+		double distance = target_global_space.distance_to(bone_direction_global_transform.origin);
+
+		scale_by *= 1.0 / (distance * distance + epsilon);
+
+		for (int axis_i = Vector3::AXIS_X; axis_i <= Vector3::AXIS_Z; ++axis_i) {
+			if (p_priority[axis_i] > 0.0) {
+				real_t w = r_weights[rest_index];
+				Vector3 column = p_target.basis.get_column(axis_i);
+				p_reference_positions.write[rest_index] = bone_direction_global_transform.affine_inverse().xform((column + p_target.origin) - bone_direction_global_transform.origin);
+				p_reference_positions.write[rest_index] *= Vector3(w, w, w) * scale_by;
+				rest_index++;
+				p_reference_positions.write[rest_index] = bone_direction_global_transform.affine_inverse().xform((p_target.origin - column) - bone_direction_global_transform.origin);
+				p_reference_positions.write[rest_index] *= Vector3(w, w, w) * scale_by;
+				rest_index++;
+			}
+		}
+
+		int32_t target_index = joint_i * 7;
+		p_target_positions.write[target_index] = p_target.origin - bone_direction_global_transform.origin;
+		target_index++;
+
+		scale_by = pin_weight;
+
+		Vector3 target_local = bone_direction_global_transform.affine_inverse().xform(target_global_space);
+		distance = target_local.distance_to(bone_direction_global_transform.origin);
+
+		scale_by *= 1.0 / (distance * distance + epsilon);
+
+		for (int axis_j = Vector3::AXIS_X; axis_j <= Vector3::AXIS_Z; ++axis_j) {
+			if (p_priority[axis_j] > 0.0) {
+				Vector3 column = tip_basis.get_column(axis_j) * p_priority[axis_j];
+				p_target_positions.write[target_index] = bone_direction_global_transform.xform((column + p_target.origin) - bone_direction_global_transform.origin);
+				p_target_positions.write[target_index] *= scale_by;
+				target_index++;
+				p_target_positions.write[target_index] = bone_direction_global_transform.xform((p_target.origin - column) - bone_direction_global_transform.origin);
+				p_target_positions.write[target_index] *= scale_by;
+				target_index++;
+			}
+		}
+	}
+}
+
+HashMap<BoneId, Quaternion> RenIK::solve_ik_qcp(Ref<RenIKChain> chain,
+		Transform3D root,
+		Transform3D target) {
+	HashMap<BoneId, Quaternion> map;
+
+	if (!chain->is_valid()) {
+		return map;
+	}
+
+	Vector<RenIKChain::Joint> joints = chain->get_joints();
+	const Transform3D true_root = root.translated_local(joints[0].relative_prev);
+	Vector<Vector3> rest_positions;
+	Vector<Vector3> target_positions;
+	Vector<real_t> weights;
+	constexpr int TRANSFORM_TO_HEADINGS_COUNT = 7;
+	rest_positions.resize(TRANSFORM_TO_HEADINGS_COUNT * joints.size());
+	target_positions.resize(TRANSFORM_TO_HEADINGS_COUNT * joints.size());
+	weights.resize(TRANSFORM_TO_HEADINGS_COUNT * joints.size());
+	weights.fill(1.0);
+	const Vector3 priority = Vector3(0.2, 0, 0.2);
+
+	Vector<Transform3D> global_transforms = compute_global_transforms(joints, root, true_root);
+
+	static constexpr double evec_prec = static_cast<double>(1E-6);
+	static constexpr double eval_prec = static_cast<double>(1E-11);
+	QCP qcp = QCP(eval_prec, evec_prec);
+
+	compute_rest_and_target_positions(global_transforms, target, priority, rest_positions, target_positions, weights);
+
+	for (int joint_i = 0; joint_i < joints.size(); joint_i++) {
+		Quaternion solved_global_pose = qcp.weighted_superpose(rest_positions, target_positions, weights, false);
+
+		int parent_index = joint_i > 0 ? joint_i - 1 : 0;
+		const Basis new_rot = global_transforms[parent_index].basis;
+
+		const Quaternion local_pose = new_rot.inverse() * solved_global_pose * new_rot;
+		map.insert(joints[joint_i].id, local_pose);
+
+		global_transforms.write[joint_i] = global_transforms[parent_index] * Transform3D(Basis(local_pose));
+	}
+
+	return map;
+}
+
+void RenIK::setup_humanoid_bones(bool set_targets) {
+	ERR_FAIL_NULL(skeleton);
+	static const String HEAD = "Head";
+	static const String LEFT_HAND = "LeftHand";
+	static const String RIGHT_HAND = "RightHand";
+	static const String HIPS = "Hips";
+	static const String LEFT_FOOT = "LeftFoot";
+	static const String RIGHT_FOOT = "RightFoot";
+	HashMap<String, Node3D *> ik_target_spatials;
+	HashMap<String, NodePath> bone_node_paths;
+	bone_node_paths["Head"] = NodePath("Head");
+	bone_node_paths["LeftHand"] = NodePath("LeftHand");
+	bone_node_paths["RightHand"] = NodePath("RightHand");
+	bone_node_paths["Hips"] = NodePath("Hips");
+	bone_node_paths["LeftFoot"] = NodePath("LeftFoot");
+	bone_node_paths["RightFoot"] = NodePath("RightFoot");
+	for (const KeyValue<String, NodePath> &entry : bone_node_paths) {
+		String bone_name = entry.key;
+		int bone_idx = -1;
+		if (skeleton && set_targets) {
+			bone_idx = skeleton->find_bone(bone_name);
+		}
+		if (has_node(entry.value)) {
+			ik_target_spatials[bone_name] = Object::cast_to<Node3D>(get_node(entry.value));
+			bone_node_paths[bone_name] = entry.value;
+		} else {
+			Marker3D *new_position_3d = memnew(Marker3D);
+			new_position_3d->set_name(set_targets ? bone_name : String(""));
+			add_child(new_position_3d, true);
+			new_position_3d->set_owner(get_owner());
+			ik_target_spatials[bone_name] = new_position_3d;
+			bone_node_paths[bone_name] = new_position_3d->get_path();
+		}
+		if (bone_name == HEAD) {
+			set_head_bone(bone_idx);
+		} else if (bone_name == LEFT_HAND) {
+			set_hand_left_bone(bone_idx);
+		} else if (bone_name == RIGHT_HAND) {
+			set_hand_right_bone(bone_idx);
+		} else if (bone_name == HIPS) {
+			set_hip_bone(bone_idx);
+		} else if (bone_name == LEFT_FOOT) {
+			set_foot_left_bone(bone_idx);
+		} else if (bone_name == RIGHT_FOOT) {
+			set_foot_right_bone(bone_idx);
+		}
+	}
+	set_head_target_path(bone_node_paths[HEAD]);
+	set_hand_left_target_path(bone_node_paths[LEFT_HAND]);
+	set_hand_right_target_path(bone_node_paths[RIGHT_HAND]);
+	set_hip_target_path(bone_node_paths[HIPS]);
+	set_foot_left_target_path(bone_node_paths[LEFT_FOOT]);
+	set_foot_right_target_path(bone_node_paths[RIGHT_FOOT]);
+	for (const KeyValue<String, Node3D *> &entry : ik_target_spatials) {
+		String bone_name = entry.key;
+
+		if (skeleton && set_targets) {
+			int bone_idx = skeleton->find_bone(bone_name);
+
+			if (bone_idx != -1) {
+				Transform3D global_pose = skeleton->get_bone_global_pose_no_override(bone_idx);
+
+				if (ik_target_spatials[bone_name]) {
+					ik_target_spatials[bone_name]->set_transform(global_pose);
+				}
+			}
+		} else {
+			if (ik_target_spatials[bone_name]) {
+				ik_target_spatials[bone_name]->set_transform(Transform3D());
+			}
+		}
+	}
+}
+
+void RenIK::set_setup_humanoid_bones(bool set_targets) {
+	is_setup_humanoid_bones = set_targets;
+	setup_humanoid_bones(is_setup_humanoid_bones);
+}
+
+bool RenIK::get_setup_humanoid_bones() const {
+	return is_setup_humanoid_bones;
 }
 
 #endif // _3D_DISABLED

@@ -45,7 +45,7 @@ void RenIKLimb::init(float p_upper_twist_offset, float p_lower_twist_offset,
 	twist_inflection_point_offset = p_twist_inflection_point_offset;
 	twist_overflow = p_twist_overflow;
 	target_rotation_influence = p_target_rotation_influence;
-	pole_offset = Quaternion::from_euler(p_pole_offset);
+	pole_offset = p_pole_offset;
 	target_position_influence = p_target_position_influence;
 }
 
