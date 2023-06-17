@@ -1337,7 +1337,7 @@ void RenIK::_notification(int p_what) {
 			limb_leg_right.instantiate();
 			limb_leg_right->init(0, 0, 0, 0.25, 0.25, 0, Math::deg_to_rad(45.0), 0.5,
 					Vector3(0, 0, -Math_PI), Vector3());
-			set_leg_pole_offset(Vector3(0, 0, 180));
+			set_leg_pole_offset(Vector3(0, 0, -180));
 			set_arm_pole_offset(Vector3(15, 0, 60));
 		} break;
 		case NOTIFICATION_READY: {
