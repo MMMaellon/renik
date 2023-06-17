@@ -1881,46 +1881,15 @@ HashMap<BoneId, Basis> RenIK::solve_trig_ik_redux(Ref<RenIKLimb> limb,
 		// The local x-axis of the upper limb is axis along which the limb will bend
 		// We take into account how the pole offset and alignment with the target
 		// vector will affect this axis
-		Vector3 startingPole = Quaternion::from_euler(limb->pole_offset).xform(Vector3(0, 1, 0)); // the opposite of this vector is where the pole is
-		Vector3 limbPoleOffsetEuler = limb->pole_offset;
-		Quaternion limbPoleOffset = Quaternion::from_euler(limbPoleOffsetEuler);
-		Vector3 xAxis = Vector3(1, 0, 0);
+		Vector3 startingPole = Quaternion::from_euler(limb->pole_offset).xform(
+				Vector3(0, 1, 0)); // the opposite of this vector is where the pole is
+		Vector3 jointAxis = RenIKHelper::align_vectors(startingPole, targetVector)
+									.xform(Quaternion::from_euler(limb->pole_offset).xform(Vector3(1, 0, 0)));
 
-		Quaternion rotation = Quaternion(startingPole, targetVector).normalized();
-
-		Vector3 transformedXAxis = xAxis;
-		if (!limbPoleOffset.is_equal_approx(Quaternion())) {
-			transformedXAxis = limbPoleOffset.xform(xAxis);
-		}
-
-		Vector3 jointAxis = transformedXAxis;
-		if (!rotation.is_equal_approx(Quaternion())) {
-			jointAxis = rotation.xform(transformedXAxis);
-		}
-		// We then find how far away from the rest position the leaf is and use
+		// //We then find how far away from the rest position the leaf is and use
 		// that to change the rotational axis more.
-		Basis full_upper_basis;
-
-		if (full_upper.basis.is_equal_approx(Basis())) {
-			full_upper_basis = full_upper.basis;
-		} else {
-			full_upper_basis = full_upper.basis.orthogonalized();
-		}
-		Vector3 full_lower_transform;
-
-		if (full_lower.is_equal_approx(Basis())) {
-			full_lower_transform = limb->get_leaf().get_origin();
-		} else {
-			full_lower_transform = full_lower.xform(limb->get_leaf().get_origin());
-		}
-		Vector3 leafRestVector;
-
-		if (full_upper_basis.is_equal_approx(Basis())) {
-			leafRestVector = full_lower_transform;
-		} else {
-			leafRestVector = full_upper_basis.xform(full_lower_transform);
-		}
-
+		Vector3 leafRestVector = full_upper.get_basis().xform(
+				full_lower.xform(limb->get_leaf().get_origin()));
 		float positionalOffset =
 				limb->target_position_influence.dot(targetVector - leafRestVector);
 		jointAxis.rotate(normalizedTargetVector,
