@@ -1617,12 +1617,13 @@ void RenIK::perform_hand_right_ik(Transform3D global_parent, Transform3D target)
 				Quaternion offsetQuat = Quaternion::from_euler(right_shoulder_offset);
 				Quaternion poleOffset = Quaternion::from_euler(right_shoulder_pole_offset);
 				Quaternion poleOffsetScaled =
-						poleOffset.slerp(Quaternion(), 1 - shoulder_influence);
+					poleOffset.normalized().slerp(Quaternion(), 1 - shoulder_influence);
 				Quaternion quatAlignToTarget =
-						poleOffsetScaled *
-						Quaternion(
-								Vector3(0, 1, 0), poleOffset.inverse().xform(offsetQuat.inverse().xform(targetVector)))
-								.slerp(Quaternion(), 1 - shoulder_influence);
+					poleOffsetScaled *
+					Quaternion(
+						Vector3(0, 1, 0), poleOffset.inverse().xform(offsetQuat.inverse().xform(targetVector)))
+						.normalized()
+						.slerp(Quaternion(), 1 - shoulder_influence);
 				Transform3D customPose =
 						Transform3D(offsetQuat * quatAlignToTarget, Vector3());
 				skeleton->set_bone_pose_rotation(rootBone, skeleton->get_bone_rest(rootBone).get_basis().get_rotation_quaternion() * offsetQuat * quatAlignToTarget);
