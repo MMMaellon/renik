@@ -29,9 +29,12 @@
 /**************************************************************************/
 
 #include "renik.h"
+
 #include "core/math/quaternion.h"
-#include "modules/many_bone_ik/src/math/qcp.h"
 #include "scene/3d/marker_3d.h"
+
+#include "math/qcp.h"
+
 #ifndef _3D_DISABLED
 
 #define RENIK_PROPERTY_STRING_SKELETON_PATH "armature_skeleton_path"
@@ -1617,13 +1620,13 @@ void RenIK::perform_hand_right_ik(Transform3D global_parent, Transform3D target)
 				Quaternion offsetQuat = Quaternion::from_euler(right_shoulder_offset);
 				Quaternion poleOffset = Quaternion::from_euler(right_shoulder_pole_offset);
 				Quaternion poleOffsetScaled =
-					poleOffset.normalized().slerp(Quaternion(), 1 - shoulder_influence);
+						poleOffset.normalized().slerp(Quaternion(), 1 - shoulder_influence);
 				Quaternion quatAlignToTarget =
-					poleOffsetScaled *
-					Quaternion(
-						Vector3(0, 1, 0), poleOffset.inverse().xform(offsetQuat.inverse().xform(targetVector)))
-						.normalized()
-						.slerp(Quaternion(), 1 - shoulder_influence);
+						poleOffsetScaled *
+						Quaternion(
+								Vector3(0, 1, 0), poleOffset.inverse().xform(offsetQuat.inverse().xform(targetVector)))
+								.normalized()
+								.slerp(Quaternion(), 1 - shoulder_influence);
 				Transform3D customPose =
 						Transform3D(offsetQuat * quatAlignToTarget, Vector3());
 				skeleton->set_bone_pose_rotation(rootBone, skeleton->get_bone_rest(rootBone).get_basis().get_rotation_quaternion() * offsetQuat * quatAlignToTarget);
@@ -1849,8 +1852,7 @@ HashMap<BoneId, Basis> RenIK::solve_trig_ik_redux(Ref<RenIKLimb> limb,
 		// The local x-axis of the upper limb is axis along which the limb will bend
 		// We take into account how the pole offset and alignment with the target
 		// vector will affect this axis
-		Vector3 startingPole = Quaternion::from_euler(limb->pole_offset).xform(
-				Vector3(0, 1, 0)); // the opposite of this vector is where the pole is
+		Vector3 startingPole = Quaternion::from_euler(limb->pole_offset).xform(Vector3(0, 1, 0)); // the opposite of this vector is where the pole is
 		Vector3 jointAxis = RenIKHelper::align_vectors(startingPole, targetVector)
 									.xform(Quaternion::from_euler(limb->pole_offset).xform(Vector3(1, 0, 0)));
 
