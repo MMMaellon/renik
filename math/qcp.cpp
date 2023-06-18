@@ -36,8 +36,8 @@ RenQCP::RenQCP(double p_evec_prec, double p_eval_prec) {
 }
 
 void RenQCP::set(PackedVector3Array &r_target, PackedVector3Array &r_moved) {
-	target = r_target;
-	moved = r_moved;
+	ren_target = r_target;
+	ren_moved = r_moved;
 	rmsd_calculated = false;
 	transformation_calculated = false;
 	inner_product_calculated = false;
@@ -45,7 +45,7 @@ void RenQCP::set(PackedVector3Array &r_target, PackedVector3Array &r_moved) {
 
 double RenQCP::get_rmsd() {
 	if (!rmsd_calculated) {
-		calculate_rmsd(moved, target);
+		calculate_rmsd(ren_moved, ren_target);
 		rmsd_calculated = true;
 	}
 	return rmsd;
@@ -55,7 +55,7 @@ Quaternion RenQCP::get_rotation() {
 	Quaternion result;
 	if (!transformation_calculated) {
 		if (!inner_product_calculated) {
-			inner_product(target, moved);
+			inner_product(ren_target, ren_moved);
 		}
 		result = calculate_rotation();
 		transformation_calculated = true;
@@ -70,9 +70,9 @@ void RenQCP::calculate_rmsd(double r_length) {
 Quaternion RenQCP::calculate_rotation() {
 	Quaternion result;
 
-	if (moved.size() == 1) {
-		Vector3 u = moved[0];
-		Vector3 v = target[0];
+	if (ren_moved.size() == 1) {
+		Vector3 u = ren_moved[0];
+		Vector3 v = ren_target[0];
 		double norm_product = u.length() * v.length();
 
 		if (norm_product == 0.0) {
@@ -261,16 +261,16 @@ void RenQCP::set(const PackedVector3Array &p_moved, const PackedVector3Array &p_
 	transformation_calculated = false;
 	inner_product_calculated = false;
 
-	moved = p_moved;
-	target = p_target;
+	ren_moved = p_moved;
+	ren_target = p_target;
 	weight = p_weight;
 
 	if (p_translate) {
-		moved_center = move_to_weighted_center(moved, weight);
+		moved_center = move_to_weighted_center(ren_moved, weight);
 		w_sum = 0; // set wsum to 0 so we don't double up.
-		target_center = move_to_weighted_center(target, weight);
-		translate(moved_center * -1, moved);
-		translate(target_center * -1, target);
+		target_center = move_to_weighted_center(ren_target, weight);
+		translate(moved_center * -1, ren_moved);
+		translate(target_center * -1, ren_target);
 	} else {
 		if (!p_weight.is_empty()) {
 			for (int i = 0; i < p_weight.size(); i++) {
@@ -280,54 +280,6 @@ void RenQCP::set(const PackedVector3Array &p_moved, const PackedVector3Array &p_
 			w_sum = p_moved.size();
 		}
 	}
-}
-
-Quaternion RenQCP::_compute_reference_and_target_positions(
-		const Vector<Transform3D> &global_transforms,
-		const Transform3D &target,
-		const Vector3 &priority,
-		const Vector<Vector3> &input_rest_positions,
-		const Vector<Vector3> &input_target_positions,
-		const Vector<real_t> &input_weights,
-		Vector<Vector3> &output_rest_positions,
-		Vector<Vector3> &output_target_positions,
-		Vector<real_t> &output_weights) {
-	int num_joints = global_transforms.size();
-
-	Vector3 target_origin = target.origin;
-	Vector3 target_col_0 = target.basis.get_column(0);
-	Vector3 target_col_1 = target.basis.get_column(1);
-	Vector3 target_col_2 = target.basis.get_column(2);
-	Vector3 target_col_0_priority = target_col_0 * priority.x;
-	Vector3 target_col_1_priority = target_col_1 * priority.y;
-	Vector3 target_col_2_priority = target_col_2 * priority.z;
-
-	for (int joint_i = 0; joint_i < num_joints; ++joint_i) {
-		const Transform3D &current_transform = global_transforms[joint_i];
-		Vector3 col_0 = current_transform.basis.get_column(0);
-		Vector3 col_1 = current_transform.basis.get_column(1);
-		Vector3 col_2 = current_transform.basis.get_column(2);
-
-		int idx = joint_i * 7;
-		output_rest_positions.write[idx + 0] = current_transform.origin;
-		output_rest_positions.write[idx + 1] = col_0;
-		output_rest_positions.write[idx + 2] = col_1;
-		output_rest_positions.write[idx + 3] = col_2;
-		output_rest_positions.write[idx + 4] = col_0 * priority.x;
-		output_rest_positions.write[idx + 5] = col_1 * priority.y;
-		output_rest_positions.write[idx + 6] = col_2 * priority.z;
-
-		output_target_positions.write[idx + 0] = target_origin;
-		output_target_positions.write[idx + 1] = target_col_0;
-		output_target_positions.write[idx + 2] = target_col_1;
-		output_target_positions.write[idx + 3] = target_col_2;
-		output_target_positions.write[idx + 4] = target_col_0_priority;
-		output_target_positions.write[idx + 5] = target_col_1_priority;
-		output_target_positions.write[idx + 6] = target_col_2_priority;
-	}
-
-	Quaternion solved_global_pose = weighted_superpose(input_rest_positions, input_target_positions, input_weights, false);
-	return solved_global_pose;
 }
 
 void RenQCP::_bind_methods() {

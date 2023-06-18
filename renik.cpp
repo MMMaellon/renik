@@ -3355,6 +3355,89 @@ float RenIK::get_sideways_scaling_ease() const {
 	return placement.sideways_gait.scaling_ease * 100.0;
 }
 
+void RenIK::setup_humanoid_bones(bool set_targets) {
+	ERR_FAIL_NULL(skeleton);
+	static const String HEAD = "Head";
+	static const String LEFT_HAND = "LeftHand";
+	static const String RIGHT_HAND = "RightHand";
+	static const String HIPS = "Hips";
+	static const String LEFT_FOOT = "LeftFoot";
+	static const String RIGHT_FOOT = "RightFoot";
+	HashMap<String, Node3D *> ik_target_spatials;
+	HashMap<String, NodePath> bone_node_paths;
+	bone_node_paths["Head"] = NodePath("Head");
+	bone_node_paths["LeftHand"] = NodePath("LeftHand");
+	bone_node_paths["RightHand"] = NodePath("RightHand");
+	bone_node_paths["Hips"] = NodePath("Hips");
+	bone_node_paths["LeftFoot"] = NodePath("LeftFoot");
+	bone_node_paths["RightFoot"] = NodePath("RightFoot");
+	for (const KeyValue<String, NodePath> &entry : bone_node_paths) {
+		String bone_name = entry.key;
+		int bone_idx = -1;
+		if (skeleton && set_targets) {
+			bone_idx = skeleton->find_bone(bone_name);
+		}
+		if (has_node(entry.value)) {
+			ik_target_spatials[bone_name] = Object::cast_to<Node3D>(get_node(entry.value));
+			bone_node_paths[bone_name] = entry.value;
+		} else {
+			Marker3D *new_position_3d = memnew(Marker3D);
+			new_position_3d->set_name(set_targets ? bone_name : String(""));
+			add_child(new_position_3d, true);
+			new_position_3d->set_owner(get_owner());
+			ik_target_spatials[bone_name] = new_position_3d;
+			bone_node_paths[bone_name] = new_position_3d->get_path();
+		}
+		if (bone_name == HEAD) {
+			set_head_bone(bone_idx);
+		} else if (bone_name == LEFT_HAND) {
+			set_hand_left_bone(bone_idx);
+		} else if (bone_name == RIGHT_HAND) {
+			set_hand_right_bone(bone_idx);
+		} else if (bone_name == HIPS) {
+			set_hip_bone(bone_idx);
+		} else if (bone_name == LEFT_FOOT) {
+			set_foot_left_bone(bone_idx);
+		} else if (bone_name == RIGHT_FOOT) {
+			set_foot_right_bone(bone_idx);
+		}
+	}
+	set_head_target_path(bone_node_paths[HEAD]);
+	set_hand_left_target_path(bone_node_paths[LEFT_HAND]);
+	set_hand_right_target_path(bone_node_paths[RIGHT_HAND]);
+	set_hip_target_path(bone_node_paths[HIPS]);
+	set_foot_left_target_path(bone_node_paths[LEFT_FOOT]);
+	set_foot_right_target_path(bone_node_paths[RIGHT_FOOT]);
+	for (const KeyValue<String, Node3D *> &entry : ik_target_spatials) {
+		String bone_name = entry.key;
+
+		if (skeleton && set_targets) {
+			int bone_idx = skeleton->find_bone(bone_name);
+
+			if (bone_idx != -1) {
+				Transform3D global_pose = skeleton->get_bone_global_pose_no_override(bone_idx);
+
+				if (ik_target_spatials[bone_name]) {
+					ik_target_spatials[bone_name]->set_transform(global_pose);
+				}
+			}
+		} else {
+			if (ik_target_spatials[bone_name]) {
+				ik_target_spatials[bone_name]->set_transform(Transform3D());
+			}
+		}
+	}
+}
+
+void RenIK::set_setup_humanoid_bones(bool set_targets) {
+	is_setup_humanoid_bones = set_targets;
+	setup_humanoid_bones(is_setup_humanoid_bones);
+}
+
+bool RenIK::get_setup_humanoid_bones() const {
+	return is_setup_humanoid_bones;
+}
+
 Vector<Transform3D> RenIK::compute_global_transforms(const Vector<RenIKChain::Joint> &joints, const Transform3D &root, const Transform3D &true_root) {
 	Vector<Transform3D> global_transforms;
 	global_transforms.resize(joints.size());
@@ -3461,10 +3544,14 @@ HashMap<BoneId, Quaternion> RenIK::solve_ik_qcp(Ref<RenIKChain> chain,
 
 	Vector<Transform3D> global_transforms = compute_global_transforms(joints, root, true_root);
 
-	RenQCP qcp = RenQCP();
+	static constexpr double evec_prec = static_cast<double>(1E-6);
+	static constexpr double eval_prec = static_cast<double>(1E-11);
+	RenQCP qcp = RenQCP(eval_prec, evec_prec);
+
+	compute_rest_and_target_positions(global_transforms, target, priority, rest_positions, target_positions, weights);
 
 	for (int joint_i = 0; joint_i < joints.size(); joint_i++) {
-		Quaternion solved_global_pose = qcp._compute_reference_and_target_positions(global_transforms, target, priority, rest_positions, target_positions, weights, rest_positions, target_positions, weights);
+		Quaternion solved_global_pose = qcp.weighted_superpose(rest_positions, target_positions, weights, false);
 
 		int parent_index = joint_i > 0 ? joint_i - 1 : 0;
 		const Basis new_rot = global_transforms[parent_index].basis;
@@ -3476,89 +3563,6 @@ HashMap<BoneId, Quaternion> RenIK::solve_ik_qcp(Ref<RenIKChain> chain,
 	}
 
 	return map;
-}
-
-void RenIK::setup_humanoid_bones(bool set_targets) {
-	ERR_FAIL_NULL(skeleton);
-	static const String HEAD = "Head";
-	static const String LEFT_HAND = "LeftHand";
-	static const String RIGHT_HAND = "RightHand";
-	static const String HIPS = "Hips";
-	static const String LEFT_FOOT = "LeftFoot";
-	static const String RIGHT_FOOT = "RightFoot";
-	HashMap<String, Node3D *> ik_target_spatials;
-	HashMap<String, NodePath> bone_node_paths;
-	bone_node_paths["Head"] = NodePath("Head");
-	bone_node_paths["LeftHand"] = NodePath("LeftHand");
-	bone_node_paths["RightHand"] = NodePath("RightHand");
-	bone_node_paths["Hips"] = NodePath("Hips");
-	bone_node_paths["LeftFoot"] = NodePath("LeftFoot");
-	bone_node_paths["RightFoot"] = NodePath("RightFoot");
-	for (const KeyValue<String, NodePath> &entry : bone_node_paths) {
-		String bone_name = entry.key;
-		int bone_idx = -1;
-		if (skeleton && set_targets) {
-			bone_idx = skeleton->find_bone(bone_name);
-		}
-		if (has_node(entry.value)) {
-			ik_target_spatials[bone_name] = Object::cast_to<Node3D>(get_node(entry.value));
-			bone_node_paths[bone_name] = entry.value;
-		} else {
-			Marker3D *new_position_3d = memnew(Marker3D);
-			new_position_3d->set_name(set_targets ? bone_name : String(""));
-			add_child(new_position_3d, true);
-			new_position_3d->set_owner(get_owner());
-			ik_target_spatials[bone_name] = new_position_3d;
-			bone_node_paths[bone_name] = new_position_3d->get_path();
-		}
-		if (bone_name == HEAD) {
-			set_head_bone(bone_idx);
-		} else if (bone_name == LEFT_HAND) {
-			set_hand_left_bone(bone_idx);
-		} else if (bone_name == RIGHT_HAND) {
-			set_hand_right_bone(bone_idx);
-		} else if (bone_name == HIPS) {
-			set_hip_bone(bone_idx);
-		} else if (bone_name == LEFT_FOOT) {
-			set_foot_left_bone(bone_idx);
-		} else if (bone_name == RIGHT_FOOT) {
-			set_foot_right_bone(bone_idx);
-		}
-	}
-	set_head_target_path(bone_node_paths[HEAD]);
-	set_hand_left_target_path(bone_node_paths[LEFT_HAND]);
-	set_hand_right_target_path(bone_node_paths[RIGHT_HAND]);
-	set_hip_target_path(bone_node_paths[HIPS]);
-	set_foot_left_target_path(bone_node_paths[LEFT_FOOT]);
-	set_foot_right_target_path(bone_node_paths[RIGHT_FOOT]);
-	for (const KeyValue<String, Node3D *> &entry : ik_target_spatials) {
-		String bone_name = entry.key;
-
-		if (skeleton && set_targets) {
-			int bone_idx = skeleton->find_bone(bone_name);
-
-			if (bone_idx != -1) {
-				Transform3D global_pose = skeleton->get_bone_global_pose_no_override(bone_idx);
-
-				if (ik_target_spatials[bone_name]) {
-					ik_target_spatials[bone_name]->set_transform(global_pose);
-				}
-			}
-		} else {
-			if (ik_target_spatials[bone_name]) {
-				ik_target_spatials[bone_name]->set_transform(Transform3D());
-			}
-		}
-	}
-}
-
-void RenIK::set_setup_humanoid_bones(bool set_targets) {
-	is_setup_humanoid_bones = set_targets;
-	setup_humanoid_bones(is_setup_humanoid_bones);
-}
-
-bool RenIK::get_setup_humanoid_bones() const {
-	return is_setup_humanoid_bones;
 }
 
 #endif // _3D_DISABLED

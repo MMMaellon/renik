@@ -72,7 +72,7 @@ class RenQCP : public RefCounted {
 	double evec_prec = static_cast<double>(1E-6);
 	double eval_prec = static_cast<double>(1E-11);
 
-	PackedVector3Array target, moved;
+	PackedVector3Array ren_target, ren_moved;
 	Vector<real_t> weight;
 	double w_sum = 0;
 
@@ -99,16 +99,6 @@ protected:
 public:
 	RenQCP(double p_evec_prec = 1E-6, double p_eval_prec = 1E-11);
 	double get_rmsd();
-	Quaternion _compute_reference_and_target_positions(
-			const Vector<Transform3D> &global_transforms,
-			const Transform3D &global_target,
-			const Vector3 &priority,
-			const Vector<Vector3> &input_reference_positions,
-			const Vector<Vector3> &input_target_positions,
-			const Vector<real_t> &input_weights,
-			Vector<Vector3> &output_reference_positions,
-			Vector<Vector3> &output_target_positions,
-			Vector<real_t> &output_weights);
 	Quaternion weighted_superpose(const PackedVector3Array &p_moved, const PackedVector3Array &p_target, const Vector<real_t> &p_weight, bool translate);
 	Quaternion get_rotation();
 	Vector3 get_translation();
