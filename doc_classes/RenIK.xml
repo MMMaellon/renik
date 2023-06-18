@@ -200,7 +200,7 @@
 		</method>
 		<method name="setup_humanoid_bones">
 			<return type="void" />
-			<param index="0" name="_unnamed_arg0" type="bool" />
+			<param index="0" name="enable" type="bool" />
 			<description>
 			</description>
 		</method>
