@@ -3432,6 +3432,7 @@ void RenIK::setup_humanoid_bones(bool set_targets) {
 void RenIK::set_setup_humanoid_bones(bool set_targets) {
 	is_setup_humanoid_bones = set_targets;
 	setup_humanoid_bones(is_setup_humanoid_bones);
+	set_live_preview(set_targets);
 }
 
 bool RenIK::get_setup_humanoid_bones() const {
