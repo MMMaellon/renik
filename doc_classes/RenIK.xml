@@ -198,6 +198,12 @@
 			<description>
 			</description>
 		</method>
+		<method name="setup_humanoid_bones">
+			<return type="void" />
+			<param index="0" name="_unnamed_arg0" type="bool" />
+			<description>
+			</description>
+		</method>
 		<method name="update_ik">
 			<return type="void" />
 			<description>
@@ -211,7 +217,7 @@
 		</method>
 	</methods>
 	<members>
-		<member name="arm_elbow_direction_offset" type="float" setter="set_arm_roll_offset" getter="get_arm_roll_offset" default="70.0">
+		<member name="arm_elbow_direction_offset" type="float" setter="set_arm_roll_offset" getter="get_arm_roll_offset" default="-50.0">
 		</member>
 		<member name="arm_forearm_twist_offset" type="float" setter="set_arm_lower_twist_offset" getter="get_arm_lower_twist_offset" default="0.0">
 		</member>
@@ -391,9 +397,11 @@
 		</member>
 		<member name="forward_tip_toe_speed_scalar" type="float" setter="set_forward_tip_toe_speed_scalar" getter="get_forward_tip_toe_speed_scalar" default="45.0">
 		</member>
+		<member name="human_bones_setup" type="bool" setter="set_setup_humanoid_bones" getter="get_setup_humanoid_bones" default="false">
+		</member>
 		<member name="leg_knee_direction_offset" type="float" setter="set_leg_roll_offset" getter="get_leg_roll_offset" default="0.0">
 		</member>
-		<member name="leg_lower_leg_twist_offset" type="float" setter="set_leg_lower_twist_offset" getter="get_leg_lower_twist_offset" default="0.0">
+		<member name="leg_lower_leg_twist_offset" type="float" setter="set_leg_lower_twist_offset" getter="get_leg_lower_twist_offset" default="-180.0">
 		</member>
 		<member name="leg_lower_leg_twisting" type="float" setter="set_leg_lower_limb_twist" getter="get_leg_lower_limb_twist" default="25.0">
 		</member>
