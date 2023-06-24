@@ -1295,8 +1295,9 @@ void RenIK::_validate_property(PropertyInfo &property) const {
 		if (skeleton) {
 			String names(",");
 			for (int i = 0; i < skeleton->get_bone_count(); i++) {
-				if (i > 0)
+				if (i > 0) {
 					names += ",";
+				}
 				names += skeleton->get_bone_name(i);
 			}
 			property.hint = PROPERTY_HINT_ENUM;
