@@ -8,6 +8,7 @@ env_renik = env_modules.Clone()
 # Godot's own source files
 env_renik.add_source_files(env.modules_sources, "*.cpp")
 env_renik.add_source_files(env.modules_sources, "renik/*.cpp")
+env_renik.add_source_files(env.modules_sources, "math/*.cpp")
 
 if env["target"] == "debug":
     env_renik.add_source_files(env.modules_sources, "renTest/renTest.cpp")

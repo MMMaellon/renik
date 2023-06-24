@@ -33,6 +33,7 @@
 
 #include "core/math/basis.h"
 #include "core/math/vector3.h"
+#include "core/object/ref_counted.h"
 #include "core/variant/variant.h"
 
 /**
@@ -67,11 +68,11 @@
  * @author K. S. Ernest (iFire) Lee (adapted to ManyBoneIK)
  */
 
-class QCP {
+class RenQCP : public RefCounted {
 	double evec_prec = static_cast<double>(1E-6);
 	double eval_prec = static_cast<double>(1E-11);
 
-	PackedVector3Array target, moved;
+	PackedVector3Array ren_target, ren_moved;
 	Vector<real_t> weight;
 	double w_sum = 0;
 
@@ -88,15 +89,17 @@ class QCP {
 	void calculate_rmsd(double r_length);
 	void set(PackedVector3Array &r_target, PackedVector3Array &r_moved);
 	Quaternion calculate_rotation();
-	void set(PackedVector3Array &p_moved, PackedVector3Array &p_target, Vector<real_t> &p_weight, bool p_translate);
+	void set(const PackedVector3Array &p_moved, const PackedVector3Array &p_target, const Vector<real_t> &p_weight, bool p_translate);
 	static void translate(Vector3 r_translate, PackedVector3Array &r_x);
-	double get_rmsd(PackedVector3Array &r_fixed, PackedVector3Array &r_moved);
 	Vector3 move_to_weighted_center(PackedVector3Array &r_to_center, Vector<real_t> &r_weight);
+	double get_rmsd_vectors(PackedVector3Array &r_fixed, PackedVector3Array &r_moved);
+protected:
+	static void _bind_methods();
 
 public:
-	QCP(double p_evec_prec, double p_eval_prec);
+	RenQCP(double p_evec_prec = 1E-6, double p_eval_prec = 1E-11);
 	double get_rmsd();
-	Quaternion weighted_superpose(PackedVector3Array &p_moved, PackedVector3Array &p_target, Vector<real_t> &p_weight, bool translate);
+	Quaternion weighted_superpose(const PackedVector3Array &p_moved, const PackedVector3Array &p_target, const Vector<real_t> &p_weight, bool translate);
 	Quaternion get_rotation();
 	Vector3 get_translation();
 };
