@@ -3446,8 +3446,6 @@ void RenIK::compute_rest_and_target_positions(const Vector<Transform3D> &p_globa
 		p_reference_positions.write[rest_index] = p_target.origin - bone_direction_global_transform.origin;
 		rest_index++;
 
-		double epsilon = 1e-6;
-
 		Vector3 target_global_space = p_target.origin;
 		if (!quaternion.is_equal_approx(Quaternion())) {
 			target_global_space = bone_direction_global_transform.xform(p_target.origin);
