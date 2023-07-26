@@ -3477,8 +3477,6 @@ void RenIK::compute_rest_and_target_positions(const Vector<Transform3D> &p_globa
 		Vector3 target_local = bone_direction_global_transform.affine_inverse().xform(target_global_space);
 		distance = target_local.distance_to(bone_direction_global_transform.origin);
 
-		scale_by *= 1.0 / (distance * distance + epsilon);
-
 		for (int axis_j = Vector3::AXIS_X; axis_j <= Vector3::AXIS_Z; ++axis_j) {
 			if (p_priority[axis_j] > 0.0) {
 				Vector3 column = tip_basis.get_column(axis_j) * p_priority[axis_j];
