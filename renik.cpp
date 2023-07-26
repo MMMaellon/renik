@@ -37,9 +37,6 @@
 
 #ifndef _3D_DISABLED
 
-const float DEFAULT_THRESHOLD = 0.0005;
-const int DEFAULT_LOOP_LIMIT = 16;
-
 #define RENIK_PROPERTY_STRING_SKELETON_PATH "armature_skeleton_path"
 
 #define RENIK_PROPERTY_STRING_HEAD_BONE "armature_head"
@@ -1380,13 +1377,6 @@ void RenIK::_initialize() {
 		set_process_internal(true);
 		set_physics_process_internal(true);
 	}
-	// #ifdef TOOLS_ENABLED
-	// set_process_priority(1); //makes sure that ik is done last after all
-	// physics and movement have taken place enable_solve_ik_every_frame(true);
-	// enable_hip_placement(true);
-	// enable_foot_placement(true);
-	// set_physics_process_internal(true);
-	// #endif
 }
 
 void RenIK::enable_solve_ik_every_frame(bool automatically_update_ik) {
@@ -1535,10 +1525,10 @@ RenIK::SpineTransforms RenIK::perform_torso_ik() {
 							spine_chain->get_joints()[0].relative_prev));
 		}
 
-		HashMap<BoneId, Quaternion> ik_map = solve_ifabrik(
+		HashMap<BoneId, Quaternion> ik_map = solve_ik_qcp(
 				spine_chain,
 				hipGlobalTransform * skeleton->get_bone_rest(hip).basis.inverse(),
-				headGlobalTransform, DEFAULT_THRESHOLD, DEFAULT_LOOP_LIMIT);
+				headGlobalTransform);
 		skeleton->set_bone_pose_rotation(hip, hipGlobalTransform.get_basis().get_rotation_quaternion());
 		skeleton->set_bone_pose_position(hip, hipGlobalTransform.get_origin());
 
@@ -3457,15 +3447,13 @@ void RenIK::compute_rest_and_target_positions(const Vector<Transform3D> &p_globa
 		rest_index++;
 
 		double epsilon = 1e-6;
-		double scale_by = pin_weight;
 
 		Vector3 target_global_space = p_target.origin;
 		if (!quaternion.is_equal_approx(Quaternion())) {
 			target_global_space = bone_direction_global_transform.xform(p_target.origin);
 		}
 		double distance = target_global_space.distance_to(bone_direction_global_transform.origin);
-
-		scale_by *= 1.0 / (distance * distance + epsilon);
+		double scale_by = MAX(1.0, distance);
 
 		for (int axis_i = Vector3::AXIS_X; axis_i <= Vector3::AXIS_Z; ++axis_i) {
 			if (p_priority[axis_i] > 0.0) {
@@ -3546,134 +3534,6 @@ HashMap<BoneId, Quaternion> RenIK::solve_ik_qcp(Ref<RenIKChain> chain,
 		global_transforms.write[joint_i] = global_transforms[parent_index] * Transform3D(Basis(local_pose));
 	}
 
-	return map;
-}
-
-HashMap<BoneId, Quaternion> RenIK::solve_ifabrik(Ref<RenIKChain> chain,
-		Transform3D root,
-		Transform3D target,
-		float threshold, int loopLimit) {
-	HashMap<BoneId, Quaternion> map;
-	if (chain->is_valid()) { // if the chain is valid there's at least one joint
-							 // in the chain and there's one bone between it and
-							 // the root
-		Vector<RenIKChain::Joint> joints =
-				chain->get_joints(); // just so I don't have to call it all the time
-		Transform3D trueRoot = root.translated_local(joints[0].relative_prev);
-		Transform3D targetDelta =
-				target *
-				chain->get_relative_rest_leaf()
-						.affine_inverse(); // how the change in the target would affect the
-										   // chain if the chain was parented to the target
-										   // instead of the root
-		Transform3D trueRelativeTarget = trueRoot.affine_inverse() * target;
-		Quaternion alignToTarget = RenIKHelper::align_vectors(
-				chain->get_relative_rest_leaf().origin - joints[0].relative_prev,
-				trueRelativeTarget.origin);
-		float heightDiff =
-				(chain->get_relative_rest_leaf().origin - joints[0].relative_prev)
-						.length() -
-				trueRelativeTarget.origin.length();
-		heightDiff = heightDiff < 0 ? 0 : heightDiff;
-		Transform3D prebentRoot =
-				Transform3D(trueRoot.basis * alignToTarget, trueRoot.origin)
-						.translated_local((chain->chain_curve_direction *
-												  chain->get_total_length() * heightDiff) -
-								joints[0].relative_prev); // The angle root is rotated
-														  // to point at the target;
-
-		Vector<Vector3> globalJointPoints;
-
-		// We generate the starting points
-		// Here is where we take into account root and target influences and the
-		// prebend vector
-		Vector3 relativeJoint = joints[0].relative_prev;
-		for (int i = 1; i < joints.size(); i++) {
-			relativeJoint = relativeJoint + joints[i].relative_prev;
-			Vector3 prebentJoint = prebentRoot.xform(
-					relativeJoint); // if you rotated the root around the true root so
-									// that the whole chain was pointing to the leaf and
-									// then you moved everything along the prebend vector
-			Vector3 rootJoint =
-					root.xform(relativeJoint); // if you moved the joint with the root
-			Vector3 leafJoint = targetDelta.xform(
-					relativeJoint); // if you moved the joint with the leaf
-			prebentJoint = prebentJoint.lerp(rootJoint, joints[i].root_influence);
-			prebentJoint = prebentJoint.lerp(
-					leafJoint, joints[i].leaf_influence); // leaf influence dominates
-			globalJointPoints.push_back(prebentJoint);
-		}
-
-		// We then do regular FABRIK
-		for (int i = 0; i < loopLimit; i++) {
-			Vector3 lastJoint = target.origin;
-			// Backward
-			for (int j = joints.size() - 1; j >= 1;
-					j--) { // we skip the first joint because we're not allowed to move
-						   // that joint
-				Vector3 delta = globalJointPoints[j - 1] - lastJoint;
-				delta = delta.normalized() * joints[j].next_distance;
-				globalJointPoints.set(j - 1, lastJoint + delta);
-				lastJoint = globalJointPoints[j - 1];
-			}
-			lastJoint = trueRoot.origin; // the root joint
-
-			// Forwards
-			for (int j = 1; j < joints.size();
-					j++) { // we skip the first joint because we're not allowed to move
-						   // that joint
-				Vector3 delta = globalJointPoints[j - 1] - lastJoint;
-				delta = delta.normalized() * joints[j].prev_distance;
-				globalJointPoints.set(j - 1, lastJoint + delta);
-				lastJoint = globalJointPoints[j - 1];
-			}
-
-			float error = (lastJoint - trueRoot.origin).length();
-			if (error < threshold) {
-				break;
-			}
-		}
-
-		// Add a little twist
-		// We align the leaf's y axis with the rest_leaf's y-axis and see how far
-		// off the x-axes are to calculate the twist.
-		trueRelativeTarget.orthonormalize();
-		Vector3 leafX =
-				RenIKHelper::align_vectors(
-						trueRelativeTarget.basis.xform(Vector3(0, 1, 0)),
-						chain->get_relative_rest_leaf().basis.xform(Vector3(0, 1, 0)))
-						.normalized()
-						.xform(trueRelativeTarget.basis.xform(Vector3(1, 0, 0)));
-		Vector3 restX =
-				chain->get_relative_rest_leaf().basis.xform(Vector3(1, 0, 0));
-		float maxTwist = leafX.angle_to(restX);
-		if (leafX.cross(restX).dot(Vector3(0, 1, 0)) > 0) {
-			maxTwist *= -1;
-		}
-
-		// Convert everything to quaternions and store it in the map
-		Quaternion parentRot = root.get_basis().get_rotation_quaternion();
-		Vector3 parentPos = trueRoot.origin;
-		Quaternion prevTwist;
-		globalJointPoints.push_back(target.origin);
-		for (int i = 0; i < joints.size();
-				i++) { // the last one's rotation is defined by the leaf position not a
-					   // joint so we skip it
-			Quaternion pose = RenIKHelper::align_vectors(
-					Vector3(0, 1, 0),
-					Transform3D(parentRot * joints[i].rotation, parentPos)
-							.affine_inverse()
-							.xform(globalJointPoints[i])); // offset by one because joints has
-														   // one extra element
-			Quaternion twist =
-					Quaternion(Vector3(0, 1, 0), maxTwist * joints[i].twist_influence);
-			pose = prevTwist.inverse() * joints[i].rotation * pose * twist;
-			prevTwist = twist;
-			map.insert(joints[i].id, pose);
-			parentRot = parentRot * pose;
-			parentPos = globalJointPoints[i];
-		}
-	}
 	return map;
 }
 

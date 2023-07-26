@@ -467,10 +467,6 @@ public:
 	solve_trig_ik_redux(Ref<RenIKLimb> limb, Transform3D limb_parent_transform,
 			Transform3D target);
 
-	static HashMap<BoneId, Quaternion>
-	solve_ifabrik(Ref<RenIKChain> chain, Transform3D chain_parent_transform,
-			Transform3D target, float threshold, int loopLimit);
-
 	Vector<Transform3D> compute_global_transforms(const Vector<RenIKChain::Joint> &joints, const Transform3D &root, const Transform3D &true_root);
 
 	void compute_rest_and_target_positions(const Vector<Transform3D> &p_global_transforms, const Transform3D &p_target, const Vector3 &p_priority, Vector<Vector3> &p_reference_positions, Vector<Vector3> &p_target_positions, Vector<real_t> &r_weights);
