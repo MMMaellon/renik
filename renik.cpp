@@ -1531,10 +1531,9 @@ RenIK::SpineTransforms RenIK::perform_torso_ik() {
 					hipGlobalTransform.basis.xform(
 							spine_chain->get_joints()[0].relative_prev));
 		}
-
 		HashMap<BoneId, Quaternion> ik_map = solve_ik_qcp(
 				spine_chain,
-				hipGlobalTransform * skeleton->get_bone_rest(hip).basis.inverse(),
+				hipGlobalTransform,
 				headGlobalTransform);
 		skeleton->set_bone_pose_rotation(hip, hipGlobalTransform.get_basis().get_rotation_quaternion());
 		skeleton->set_bone_pose_position(hip, hipGlobalTransform.get_origin());
