@@ -37,9 +37,6 @@
 
 #ifndef _3D_DISABLED
 
-const float DEFAULT_THRESHOLD = 0.0005;
-const int DEFAULT_LOOP_LIMIT = 16;
-
 #define RENIK_PROPERTY_STRING_SKELETON_PATH "armature_skeleton_path"
 
 #define RENIK_PROPERTY_STRING_HEAD_BONE "armature_head"
@@ -1535,10 +1532,10 @@ RenIK::SpineTransforms RenIK::perform_torso_ik() {
 							spine_chain->get_joints()[0].relative_prev));
 		}
 
-		HashMap<BoneId, Quaternion> ik_map = solve_ifabrik(
+		HashMap<BoneId, Quaternion> ik_map = solve_ik_qcp(
 				spine_chain,
 				hipGlobalTransform * skeleton->get_bone_rest(hip).basis.inverse(),
-				headGlobalTransform, DEFAULT_THRESHOLD, DEFAULT_LOOP_LIMIT);
+				headGlobalTransform);
 		skeleton->set_bone_pose_rotation(hip, hipGlobalTransform.get_basis().get_rotation_quaternion());
 		skeleton->set_bone_pose_position(hip, hipGlobalTransform.get_origin());
 
@@ -3534,17 +3531,14 @@ HashMap<BoneId, Quaternion> RenIK::solve_ik_qcp(Ref<RenIKChain> chain,
 
 	compute_rest_and_target_positions(global_transforms, target, priority, rest_positions, target_positions, weights);
 
-	for (int joint_i = 0; joint_i < joints.size(); joint_i++) {
-		Quaternion solved_global_pose = qcp.weighted_superpose(rest_positions, target_positions, weights, false);
-
-		int parent_index = joint_i > 0 ? joint_i - 1 : 0;
-		const Basis new_rot = global_transforms[parent_index].basis;
-
-		const Quaternion local_pose = new_rot.inverse() * solved_global_pose * new_rot;
-		map.insert(joints[joint_i].id, local_pose);
-
-		global_transforms.write[joint_i] = global_transforms[parent_index] * Transform3D(Basis(local_pose));
-	}
+    for (int joint_i = 0; joint_i < joints.size(); joint_i++) {
+        Quaternion solved_global_pose = qcp.weighted_superpose(rest_positions, target_positions, weights, false);
+        int parent_index = joint_i > 0 ? joint_i - 1 : 0;
+        const Basis parent_global_rot = global_transforms[parent_index].basis;
+        const Quaternion local_pose = parent_global_rot.inverse() * solved_global_pose;
+        map.insert(joints[joint_i].id, local_pose);
+        global_transforms.write[joint_i] = global_transforms[parent_index] * Transform3D(Basis(local_pose));
+    }
 
 	return map;
 }
