@@ -1,5 +1,5 @@
 /**************************************************************************/
-/*  renik_chain.h                                                         */
+/*  test_renik.h                                                          */
 /**************************************************************************/
 /*                         This file is part of:                          */
 /*                             GODOT ENGINE                               */
@@ -28,70 +28,60 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef RENIK_CHAIN_H
-#define RENIK_CHAIN_H
+#ifndef TEST_RENIK_H
+#define TEST_RENIK_H
 
-#include <scene/3d/skeleton_3d.h>
+#include "core/math/basis.h"
+#include "tests/test_macros.h"
 
-struct RenIKChain : public Resource {
-	GDCLASS(RenIKChain, Resource);
+#include "../renik.h"
 
-public:
-	struct Joint {
-		Quaternion rotation;
-		BoneId id;
-		Vector3 relative_prev;
-		Vector3 relative_next;
-		float prev_distance = 0;
-		float next_distance = 0;
+namespace TestRenIK {
 
-		float root_influence = 0;
-		float leaf_influence = 0;
-		float twist_influence = 1;
-	};
+/*
+Testing the small helper functions, we'll test the Fabrik algorithm, the
+quaternion rotation algorithms, and some basic foot placement logic.
+*/
+TEST_CASE("[Modules][RENIK] math") {
+	Quaternion rightAngle =
+			RenIKHelper::align_vectors(Vector3(1, 0, 0), Vector3(0, 1, 0));
+	Quaternion rightAngleCheck =
+			Quaternion(Vector3(0, 0, 1), Math::deg_to_rad(90.0));
+	CHECK_MESSAGE(rightAngle.is_equal_approx(rightAngleCheck), "align_vectors");
+	Quaternion noRotation =
+			RenIKHelper::align_vectors(Vector3(1, 0, 0), Vector3(0.5, 0, 0));
+	Quaternion noRotationCheck = Quaternion(Vector3(0, 0, 1), 0);
+	CHECK_MESSAGE(noRotation.is_equal_approx(noRotationCheck), "align_vectors 2");
+	CHECK_MESSAGE(
+			Math::is_equal_approx(Vector3(1, 0, 0).angle_to(Vector3(0, 1, 0)),
+					(real_t)Math_PI / 2.f),
+			"math 1");
+	CHECK_MESSAGE(
+			Math::is_equal_approx(Vector3(1, 0, 0).angle_to(Vector3(0, 0, 1)),
+					(real_t)Math_PI / 2.f),
+			"math 2");
+	CHECK_MESSAGE(
+			Math::is_equal_approx(Vector3(1, 0, 0).angle_to(Vector3(0, 1, 1)),
+					(real_t)Math_PI / 2.f),
+			"math 3");
+	CHECK_MESSAGE(
+			Math::is_equal_approx(Vector3(1, 0, 0).angle_to(Vector3(1, 1, 0)),
+					(real_t)Math_PI / 4.f),
+			"math 4");
+	CHECK_MESSAGE(
+			Math::is_equal_approx(Vector3(1, 0, 0).angle_to(Vector3(-1, 0, 0)),
+					(real_t)Math_PI),
+			"math 5");
+	CHECK_MESSAGE(
+			Math::is_equal_approx(Vector3(1, 0, 0).angle_to(Vector3(-1, -1, 0)),
+					(real_t)Math_PI * .75f),
+			"math 6");
+	CHECK_MESSAGE(
+			Math::is_equal_approx(Vector3(3, 7, -13).angle_to(Vector3(-14, -12, -10)),
+					(real_t)1.558139),
+			"math 7");
+}
 
-private:
-	BoneId root_bone = -1;
-	BoneId first_bone = -1;
-	BoneId leaf_bone = -1;
+} // namespace TestRenIK
 
-	Vector<Joint> joints;
-	float total_length = 0;
-	Transform3D rest_leaf;
-	void init_chain(Skeleton3D *skeleton);
-	float root_influence =
-			0; // how much the start bone is influenced by the root rotation
-	float leaf_influence =
-			0; // how much the end bone is influenced by the goal rotation
-	float twist_influence =
-			1; // How much the chain tries to twist to follow the end when the start
-			   // is facing a different direction
-	float twist_start = 0; // Where along the chain the twisting starts
-
-public:
-	void init(Vector3 p_chain_curve_direction, float p_root_influence,
-			float p_leaf_influence, float p_twist_influence,
-			float p_twist_start);
-	void set_root_bone(Skeleton3D *skeleton, BoneId p_root_bone);
-	void set_leaf_bone(Skeleton3D *skeleton, BoneId p_leaf_bone);
-	bool is_valid();
-	Vector3 chain_curve_direction; // This defines which way to prebend it
-	float get_total_length();
-	Vector<RenIKChain::Joint> get_joints();
-	Transform3D get_relative_rest_leaf();
-	BoneId get_first_bone();
-	BoneId get_root_bone();
-	BoneId get_leaf_bone();
-
-	float get_root_stiffness();
-	void set_root_stiffness(Skeleton3D *skeleton, float stiffness);
-	float get_leaf_stiffness();
-	void set_leaf_stiffness(Skeleton3D *skeleton, float stiffness);
-	float get_twist();
-	void set_twist(Skeleton3D *skeleton, float p_twist);
-	float get_twist_start();
-	void set_twist_start(Skeleton3D *skeleton, float p_twist_start);
-	bool contains_bone(Skeleton3D *skeleton, BoneId bone);
-};
-
-#endif // RENIK_CHAIN_H
+#endif // TEST_RENIK_H
