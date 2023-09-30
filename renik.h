@@ -475,10 +475,6 @@ public:
 
 	void compute_rest_and_target_positions(const Vector<Transform3D> &p_global_transforms, const Transform3D &p_target, const Vector3 &p_priority, Vector<Vector3> &p_reference_positions, Vector<Vector3> &p_target_positions, Vector<real_t> &r_weights);
 
-	HashMap<BoneId, Quaternion> solve_ik_qcp(Ref<RenIKChain> chain,
-			Transform3D root,
-			Transform3D target);
-
 private:
 	// Setup -------------------------
 	bool live_preview = false;
