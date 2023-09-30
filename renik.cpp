@@ -1324,13 +1324,13 @@ void RenIK::_notification(int p_what) {
 			spine_chain.instantiate();
 			spine_chain->init(Vector3(0, 15, -15), 0.5, 0.5, 1, 0);
 			limb_arm_left.instantiate();
-			limb_arm_left->init(0, 0, Math::deg_to_rad(-50.0), 0.5, 0.66666,
-					Math::deg_to_rad(20.0), Math::deg_to_rad(45.0), 0.33,
+			limb_arm_left->init(0, 0, Math::deg_to_rad(80.0), 0.5, 0.66666,
+					Math::deg_to_rad(-180.0), Math::deg_to_rad(45.0), 0.33,
 					Vector3(Math::deg_to_rad(15.0), 0, Math::deg_to_rad(60.0)),
 					Vector3(2.0, -1.5, -1.0));
 			limb_arm_right.instantiate();
-			limb_arm_right->init(0, 0, Math::deg_to_rad(50.0), 0.5, 0.66666,
-					Math::deg_to_rad(-20.0), Math::deg_to_rad(45.0), 0.33,
+			limb_arm_right->init(0, 0, Math::deg_to_rad(80.0), 0.5, 0.66666,
+					Math::deg_to_rad(-180.0), Math::deg_to_rad(45.0), 0.33,
 					Vector3(Math::deg_to_rad(15.0), 0, Math::deg_to_rad(-60.0)),
 					Vector3(2.0, 1.5, 1.0));
 			limb_leg_left.instantiate();
@@ -2863,9 +2863,11 @@ void RenIK::set_forward_tip_toe_distance_scalar(float tip_toe_distance_scalar) {
 	placement.forward_gait.tip_toe_distance_scalar =
 			Math::deg_to_rad(tip_toe_distance_scalar);
 }
+
 float RenIK::get_forward_tip_toe_distance_scalar() const {
 	return Math::rad_to_deg(placement.forward_gait.tip_toe_distance_scalar);
 }
+
 void RenIK::set_forward_tip_toe_speed_scalar(float tip_toe_speed_scalar) {
 	placement.forward_gait.tip_toe_speed_scalar =
 			Math::deg_to_rad(tip_toe_speed_scalar);
